@@ -1,13 +1,18 @@
 import request from 'supertest';
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createApp } from '../src/app';
 import { buildDocument } from '../src/openapi/document';
-import { listRoutes } from '../src/openapi/list-routes';
+import { listRoutes } from './helpers/list-routes';
 
 const app = createApp();
 
 /** Routes that serve the documentation itself are deliberately not documented. */
 const UNDOCUMENTED = new Set(['GET /api/docs', 'GET /api/openapi.json']);
+
+/** OpenAPI path items may carry non-operation keys (parameters, summary, $ref, ...). */
+const HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
 
 describe('OpenAPI document', () => {
   it('is a valid OpenAPI 3.1 document with the project identity', () => {
@@ -32,6 +37,17 @@ describe('OpenAPI document', () => {
     const doc = buildDocument() as any;
     expect(doc.paths['/api/auth/me'].get.security).toEqual([{ bearerAuth: [] }]);
   });
+
+  it('matches the committed openapi.json artifact', () => {
+    const generated = buildDocument();
+    const committedRaw = readFileSync(join(__dirname, '..', 'openapi.json'), 'utf-8');
+    const committed = JSON.parse(committedRaw);
+
+    expect(
+      committed,
+      'backend/openapi.json is stale relative to buildDocument(). Run `npm run openapi:write` and commit the result.',
+    ).toEqual(JSON.parse(JSON.stringify(generated)));
+  });
 });
 
 describe('drift guard', () => {
@@ -40,11 +56,33 @@ describe('drift guard', () => {
     const documented = new Set<string>();
     for (const [path, methods] of Object.entries(doc.paths as Record<string, object>)) {
       for (const method of Object.keys(methods)) {
+        if (!HTTP_METHODS.has(method)) continue;
         documented.add(`${method.toUpperCase()} ${path}`);
       }
     }
 
-    const missing = listRoutes(app)
+    const enumerated = listRoutes(app);
+
+    // express-list-endpoints returns [] silently for shapes it doesn't recognize
+    // (e.g. after an Express major upgrade removes app._router). If enumeration
+    // itself is broken, `missing` below would be vacuously empty and this guard
+    // would pass while checking nothing. Assert enumeration actually happened.
+    expect(
+      enumerated.length,
+      'Route enumeration returned zero routes: listRoutes(app)/express-list-endpoints ' +
+        'no longer recognizes this Express app shape, so this drift guard is not actually ' +
+        "checking anything. This is NOT a missing-route problem — fix route enumeration itself " +
+        '(see tests/helpers/list-routes.ts) before trusting this test again.',
+    ).toBeGreaterThan(0);
+
+    expect(
+      enumerated.length,
+      'The number of routes enumerated on the app does not equal the number of documented ' +
+        'operations plus the deliberately-undocumented docs routes. Either route enumeration is ' +
+        'broken (see tests/helpers/list-routes.ts) or UNDOCUMENTED in this file is out of date.',
+    ).toBe(documented.size + UNDOCUMENTED.size);
+
+    const missing = enumerated
       .map((r) => `${r.method} ${r.path}`)
       .filter((key) => !UNDOCUMENTED.has(key) && !documented.has(key));
 
