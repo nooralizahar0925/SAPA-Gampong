@@ -241,6 +241,11 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     );
   }
 
+  // DELETE endpoints answer 204 with no body; calling .json() on those would throw.
+  if (response.status === 204 || response.headers.get('Content-Length') === '0') {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -333,6 +338,321 @@ export function updateEmailProviderConfigRequest(input: UpdateEmailProviderConfi
 export function sendEmailProviderTestRequest(input: SendEmailProviderTestInput) {
   return apiRequest<MessageResponse>('/settings/email-provider/test', {
     method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Content management                                                         */
+/* -------------------------------------------------------------------------- */
+
+export type BannerSlide = {
+  id: string;
+  image_file_id: string;
+  image_url: string | null;
+  link_url: string | null;
+  order: number;
+  active: boolean;
+  start_at: string | null;
+  end_at: string | null;
+};
+
+export type VillageProfile = {
+  name: string | null;
+  founded_date: string | null;
+  kecamatan: string | null;
+  kabupaten: string | null;
+  kemukiman: string | null;
+  area_size: string | null;
+  elevation: string | null;
+  contact_phone: string | null;
+  email: string | null;
+  map_lat: number | null;
+  map_lng: number | null;
+  description: string | null;
+  photo_file_id: string | null;
+  photo_url: string | null;
+  updated_at: string | null;
+};
+
+export type VisionMission = {
+  vision: string | null;
+  missions: string[];
+  updated_at: string | null;
+};
+
+export type Official = {
+  id: string;
+  name: string;
+  role: string;
+  photo_file_id: string | null;
+  photo_url: string | null;
+  order: number;
+  is_leadership_highlight: boolean;
+};
+
+export type VillageStrength = {
+  id: string;
+  title: string;
+  body: string;
+  photo_file_id: string | null;
+  photo_url: string | null;
+  order: number;
+};
+
+export type Mosque = {
+  id: string;
+  name: string;
+  address: string;
+  landmark: string | null;
+  photo_file_id: string | null;
+  photo_url: string | null;
+};
+
+export type PrayerConfig = {
+  lat: number | null;
+  lng: number | null;
+  calc_method: string | null;
+  timezone: string;
+  updated_at: string | null;
+};
+
+export type DemographicBlockType = 'number' | 'split' | 'bar' | 'pie';
+
+export type DemographicBlock = {
+  key: string;
+  label: string;
+  type: DemographicBlockType;
+  data: unknown;
+  order: number;
+  visible: boolean;
+};
+
+export function listBannersRequest() {
+  return apiRequest<BannerSlide[]>('/content/banners');
+}
+
+export function createBannerRequest(input: {
+  image_file_id: string;
+  link_url?: string | null;
+  order?: number;
+  active?: boolean;
+}) {
+  return apiRequest<BannerSlide>('/content/banners', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateBannerRequest(
+  id: string,
+  input: { link_url?: string | null; active?: boolean; order?: number },
+) {
+  return apiRequest<BannerSlide>(`/content/banners/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteBannerRequest(id: string) {
+  return apiRequest<void>(`/content/banners/${id}`, { method: 'DELETE' });
+}
+
+export function reorderBannersRequest(ids: string[]) {
+  return apiRequest<BannerSlide[]>('/content/banners/reorder', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export function getVillageProfileRequest() {
+  return apiRequest<VillageProfile>('/content/profile');
+}
+
+export function updateVillageProfileRequest(input: Partial<Omit<VillageProfile, 'updated_at' | 'photo_url'>>) {
+  return apiRequest<VillageProfile>('/content/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function getVisionMissionRequest() {
+  return apiRequest<VisionMission>('/content/vision-mission');
+}
+
+export function updateVisionMissionRequest(input: { vision?: string; missions?: string[] }) {
+  return apiRequest<VisionMission>('/content/vision-mission', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function listOfficialsRequest() {
+  return apiRequest<Official[]>('/content/officials');
+}
+
+export function createOfficialRequest(input: {
+  name: string;
+  role: string;
+  order?: number;
+  is_leadership_highlight?: boolean;
+}) {
+  return apiRequest<Official>('/content/officials', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateOfficialRequest(
+  id: string,
+  input: { name?: string; role?: string; order?: number; is_leadership_highlight?: boolean },
+) {
+  return apiRequest<Official>(`/content/officials/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteOfficialRequest(id: string) {
+  return apiRequest<void>(`/content/officials/${id}`, { method: 'DELETE' });
+}
+
+export function listStrengthsRequest() {
+  return apiRequest<VillageStrength[]>('/content/strengths');
+}
+
+export function createStrengthRequest(input: { title: string; body: string; order?: number }) {
+  return apiRequest<VillageStrength>('/content/strengths', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateStrengthRequest(
+  id: string,
+  input: { title?: string; body?: string; order?: number },
+) {
+  return apiRequest<VillageStrength>(`/content/strengths/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteStrengthRequest(id: string) {
+  return apiRequest<void>(`/content/strengths/${id}`, { method: 'DELETE' });
+}
+
+export function listMosquesRequest() {
+  return apiRequest<Mosque[]>('/content/mosques');
+}
+
+export function createMosqueRequest(input: { name: string; address: string; landmark?: string | null }) {
+  return apiRequest<Mosque>('/content/mosques', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateMosqueRequest(
+  id: string,
+  input: { name?: string; address?: string; landmark?: string | null },
+) {
+  return apiRequest<Mosque>(`/content/mosques/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteMosqueRequest(id: string) {
+  return apiRequest<void>(`/content/mosques/${id}`, { method: 'DELETE' });
+}
+
+export function getPrayerConfigRequest() {
+  return apiRequest<PrayerConfig>('/content/prayer-config');
+}
+
+export function updatePrayerConfigRequest(input: {
+  lat?: number;
+  lng?: number;
+  calc_method?: string;
+  timezone?: string;
+}) {
+  return apiRequest<PrayerConfig>('/content/prayer-config', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function listDemographicsRequest() {
+  return apiRequest<DemographicBlock[]>('/content/demographics');
+}
+
+export function updateDemographicsRequest(
+  blocks: Array<{
+    key: string;
+    label: string;
+    type: DemographicBlockType;
+    data: unknown;
+    order?: number;
+    visible?: boolean;
+  }>,
+) {
+  return apiRequest<DemographicBlock[]>('/content/demographics', {
+    method: 'PATCH',
+    body: JSON.stringify({ blocks }),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Application settings                                                       */
+/* -------------------------------------------------------------------------- */
+
+export type AppSettings = {
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_address: string | null;
+  letterhead_line1: string | null;
+  letterhead_line2: string | null;
+  letterhead_line3: string | null;
+  keuchik_title: string | null;
+  keuchik_name: string | null;
+  secretary_title: string | null;
+  secretary_name: string | null;
+  updated_at: string | null;
+};
+
+export type LetterCounterEntry = {
+  letter_type: LetterTypeCode;
+  last_number: number;
+};
+
+export type LetterCountersResponse = {
+  year: number;
+  counters: LetterCounterEntry[];
+};
+
+export function getAppSettingsRequest() {
+  return apiRequest<AppSettings>('/settings/app');
+}
+
+export function updateAppSettingsRequest(input: Partial<Omit<AppSettings, 'updated_at'>>) {
+  return apiRequest<AppSettings>('/settings/app', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function getLetterCountersRequest(year: number) {
+  return apiRequest<LetterCountersResponse>(`/settings/letter-counters?year=${year}`);
+}
+
+export function updateLetterCounterRequest(input: {
+  letter_type: LetterTypeCode;
+  year: number;
+  last_number: number;
+}) {
+  return apiRequest<LetterCountersResponse>('/settings/letter-counters', {
+    method: 'PATCH',
     body: JSON.stringify(input),
   });
 }

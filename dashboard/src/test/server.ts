@@ -1,6 +1,17 @@
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import type { EmailProviderSettingsResponse } from '../api/client';
+import type {
+  AppSettings,
+  BannerSlide,
+  DemographicBlock,
+  EmailProviderSettingsResponse,
+  Mosque,
+  Official,
+  PrayerConfig,
+  VillageProfile,
+  VillageStrength,
+  VisionMission,
+} from '../api/client';
 
 const letterTypes = [
   {
@@ -287,6 +298,150 @@ function updateProviderSummary(
       };
     }),
   };
+}
+
+/**
+ * Mutable fixture for the content + settings endpoints. Handlers write to it so a test
+ * can assert that a save actually round-trips, rather than only that a request fired.
+ * `resetContentState()` runs between tests (see test/setup.ts).
+ */
+function initialContentState(): {
+  banners: BannerSlide[];
+  profile: VillageProfile;
+  visionMission: VisionMission;
+  officials: Official[];
+  strengths: VillageStrength[];
+  mosques: Mosque[];
+  prayerConfig: PrayerConfig;
+  demographics: DemographicBlock[];
+  appSettings: AppSettings;
+  letterCounters: Array<{ letter_type: string; last_number: number }>;
+} {
+  return {
+    banners: [
+      {
+        id: 'banner-1',
+        image_file_id: 'file-1',
+        image_url: 'http://localhost:8080/api/uploads/file-1',
+        link_url: null,
+        order: 0,
+        active: true,
+        start_at: null,
+        end_at: null,
+      },
+      {
+        id: 'banner-2',
+        image_file_id: 'file-2',
+        image_url: 'http://localhost:8080/api/uploads/file-2',
+        link_url: null,
+        order: 1,
+        active: true,
+        start_at: null,
+        end_at: null,
+      },
+    ],
+    profile: {
+      name: 'Gampong Blang',
+      founded_date: null,
+      kecamatan: 'Krueng Sabee',
+      kabupaten: 'Aceh Jaya',
+      kemukiman: 'Calang',
+      area_size: '1.300 ha',
+      elevation: '3,4 mdpl · dataran rendah',
+      contact_phone: '0651-123456',
+      email: 'gampongblang@acehjaya.go.id',
+      map_lat: 4.7,
+      map_lng: 95.6,
+      description: 'Gampong pesisir di Aceh Jaya.',
+      photo_file_id: null,
+      photo_url: null,
+      updated_at: '2026-07-20T10:00:00.000Z',
+    },
+    visionMission: {
+      vision: 'Gampong mandiri dan sejahtera.',
+      missions: ['Meningkatkan pelayanan publik'],
+      updated_at: '2026-07-20T10:00:00.000Z',
+    },
+    officials: [
+      {
+        id: 'official-1',
+        name: 'Sofian',
+        role: 'Keuchik',
+        photo_file_id: null,
+        photo_url: null,
+        order: 0,
+        is_leadership_highlight: true,
+      },
+    ],
+    strengths: [
+      {
+        id: 'strength-1',
+        title: 'Wisata Pantai',
+        body: 'Pantai bersih sepanjang tahun.',
+        photo_file_id: null,
+        photo_url: null,
+        order: 0,
+      },
+    ],
+    mosques: [
+      {
+        id: 'mosque-1',
+        name: 'Masjid Baiturrahim',
+        address: 'Jl. Pesisir No. 1',
+        landmark: null,
+        photo_file_id: null,
+        photo_url: null,
+      },
+    ],
+    prayerConfig: {
+      lat: 4.7,
+      lng: 95.6,
+      calc_method: 'Kemenag',
+      timezone: 'Asia/Jakarta',
+      updated_at: '2026-07-20T10:00:00.000Z',
+    },
+    demographics: [
+      {
+        key: 'total_penduduk',
+        label: 'Total Penduduk',
+        type: 'number',
+        data: { value: 1240 },
+        order: 0,
+        visible: true,
+      },
+      {
+        key: 'jenis_kelamin',
+        label: 'Jenis Kelamin',
+        type: 'split',
+        data: { male: 620, female: 620 },
+        order: 1,
+        visible: true,
+      },
+    ],
+    appSettings: {
+      contact_phone: '0651-123456',
+      contact_email: 'gampongblang@acehjaya.go.id',
+      contact_address: 'Jl. Pesisir No. 1',
+      letterhead_line1: 'PEMERINTAH KABUPATEN ACEH JAYA',
+      letterhead_line2: 'KECAMATAN KRUENG SABEE',
+      letterhead_line3: 'GAMPONG BLANG',
+      keuchik_title: 'Keuchik Gampong Blang',
+      keuchik_name: 'SOFIAN',
+      secretary_title: 'Sekretaris Gampong a.n. Keuchik',
+      secretary_name: 'AFZALUL ZIKRI, S.P',
+      updated_at: '2026-07-20T10:00:00.000Z',
+    },
+    letterCounters: [
+      { letter_type: 'L1', last_number: 12 },
+      { letter_type: 'L2', last_number: 0 },
+    ],
+  };
+}
+
+export let contentState = initialContentState();
+
+export function resetContentState() {
+  contentState = initialContentState();
 }
 
 export const server = setupServer(
@@ -614,5 +769,160 @@ export const server = setupServer(
       },
       { status: 400 },
     );
+  }),
+
+  /* ---------------------------------------------------------------------- */
+  /* Content management                                                     */
+  /* ---------------------------------------------------------------------- */
+
+  http.get('http://localhost:8080/api/content/banners', () =>
+    HttpResponse.json(contentState.banners),
+  ),
+  http.post('http://localhost:8080/api/content/banners/reorder', async ({ request }) => {
+    const body = (await request.json()) as { ids: string[] };
+    contentState.banners = body.ids.map((id, index) => {
+      const found = contentState.banners.find((b) => b.id === id)!;
+      return { ...found, order: index };
+    });
+    return HttpResponse.json(contentState.banners);
+  }),
+  http.delete('http://localhost:8080/api/content/banners/:id', ({ params }) => {
+    contentState.banners = contentState.banners.filter((b) => b.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/profile', () =>
+    HttpResponse.json(contentState.profile),
+  ),
+  http.patch('http://localhost:8080/api/content/profile', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    contentState.profile = { ...contentState.profile, ...body };
+    return HttpResponse.json(contentState.profile);
+  }),
+
+  http.get('http://localhost:8080/api/content/vision-mission', () =>
+    HttpResponse.json(contentState.visionMission),
+  ),
+  http.patch('http://localhost:8080/api/content/vision-mission', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    contentState.visionMission = { ...contentState.visionMission, ...body };
+    return HttpResponse.json(contentState.visionMission);
+  }),
+
+  http.get('http://localhost:8080/api/content/officials', () =>
+    HttpResponse.json(contentState.officials),
+  ),
+  http.post('http://localhost:8080/api/content/officials', async ({ request }) => {
+    const body = (await request.json()) as { name: string; role: string; order?: number };
+    const created = {
+      id: `official-${contentState.officials.length + 1}`,
+      name: body.name,
+      role: body.role,
+      photo_file_id: null,
+      photo_url: null,
+      order: body.order ?? contentState.officials.length,
+      is_leadership_highlight: false,
+    };
+    contentState.officials = [...contentState.officials, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.delete('http://localhost:8080/api/content/officials/:id', ({ params }) => {
+    contentState.officials = contentState.officials.filter((o) => o.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/strengths', () =>
+    HttpResponse.json(contentState.strengths),
+  ),
+  http.post('http://localhost:8080/api/content/strengths', async ({ request }) => {
+    const body = (await request.json()) as { title: string; body: string };
+    const created = {
+      id: `strength-${contentState.strengths.length + 1}`,
+      title: body.title,
+      body: body.body,
+      photo_file_id: null,
+      photo_url: null,
+      order: contentState.strengths.length,
+    };
+    contentState.strengths = [...contentState.strengths, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.delete('http://localhost:8080/api/content/strengths/:id', ({ params }) => {
+    contentState.strengths = contentState.strengths.filter((s) => s.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/mosques', () =>
+    HttpResponse.json(contentState.mosques),
+  ),
+  http.post('http://localhost:8080/api/content/mosques', async ({ request }) => {
+    const body = (await request.json()) as { name: string; address: string; landmark?: string };
+    const created = {
+      id: `mosque-${contentState.mosques.length + 1}`,
+      name: body.name,
+      address: body.address,
+      landmark: body.landmark ?? null,
+      photo_file_id: null,
+      photo_url: null,
+    };
+    contentState.mosques = [...contentState.mosques, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.delete('http://localhost:8080/api/content/mosques/:id', ({ params }) => {
+    contentState.mosques = contentState.mosques.filter((m) => m.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/prayer-config', () =>
+    HttpResponse.json(contentState.prayerConfig),
+  ),
+  http.patch('http://localhost:8080/api/content/prayer-config', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    contentState.prayerConfig = { ...contentState.prayerConfig, ...body };
+    return HttpResponse.json(contentState.prayerConfig);
+  }),
+
+  http.get('http://localhost:8080/api/content/demographics', () =>
+    HttpResponse.json(contentState.demographics),
+  ),
+  http.patch('http://localhost:8080/api/content/demographics', async ({ request }) => {
+    const body = (await request.json()) as { blocks: Array<Record<string, unknown>> };
+    for (const block of body.blocks) {
+      const index = contentState.demographics.findIndex((d) => d.key === block.key);
+      if (index >= 0) {
+        contentState.demographics[index] = { ...contentState.demographics[index], ...block } as never;
+      } else {
+        contentState.demographics.push(block as never);
+      }
+    }
+    return HttpResponse.json(contentState.demographics);
+  }),
+
+  /* ---------------------------------------------------------------------- */
+  /* Application settings                                                   */
+  /* ---------------------------------------------------------------------- */
+
+  http.get('http://localhost:8080/api/settings/app', () =>
+    HttpResponse.json(contentState.appSettings),
+  ),
+  http.patch('http://localhost:8080/api/settings/app', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    contentState.appSettings = { ...contentState.appSettings, ...body };
+    return HttpResponse.json(contentState.appSettings);
+  }),
+
+  http.get('http://localhost:8080/api/settings/letter-counters', ({ request }) => {
+    const year = Number(new URL(request.url).searchParams.get('year')) || 2026;
+    return HttpResponse.json({ year, counters: contentState.letterCounters });
+  }),
+  http.patch('http://localhost:8080/api/settings/letter-counters', async ({ request }) => {
+    const body = (await request.json()) as {
+      letter_type: string;
+      year: number;
+      last_number: number;
+    };
+    const index = contentState.letterCounters.findIndex((c) => c.letter_type === body.letter_type);
+    if (index >= 0) contentState.letterCounters[index].last_number = body.last_number;
+    return HttpResponse.json({ year: body.year, counters: contentState.letterCounters });
   }),
 );

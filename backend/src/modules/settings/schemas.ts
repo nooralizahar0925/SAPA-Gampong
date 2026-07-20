@@ -81,3 +81,81 @@ export const SettingsMessageResponse = registry.register(
     message: z.string(),
   }),
 );
+
+/* -------------------------------------------------------------------------- */
+/* Application settings (contact, letterhead, signatory)                      */
+/* -------------------------------------------------------------------------- */
+
+export const AppSettingsResponse = registry.register(
+  'AppSettingsResponse',
+  z.object({
+    contact_phone: z.string().nullable(),
+    contact_email: z.string().nullable(),
+    contact_address: z.string().nullable(),
+    letterhead_line1: z.string().nullable(),
+    letterhead_line2: z.string().nullable(),
+    letterhead_line3: z.string().nullable(),
+    keuchik_title: z.string().nullable(),
+    keuchik_name: z.string().nullable(),
+    secretary_title: z.string().nullable(),
+    secretary_name: z.string().nullable(),
+    updated_at: z.string().nullable(),
+  }),
+);
+
+export const UpdateAppSettingsBody = registry.register(
+  'UpdateAppSettingsBody',
+  z.object({
+    contact_phone: z.string().max(40).nullish(),
+    contact_email: z.string().email().nullish(),
+    contact_address: z.string().max(300).nullish(),
+    letterhead_line1: z.string().max(200).nullish(),
+    letterhead_line2: z.string().max(200).nullish(),
+    letterhead_line3: z.string().max(200).nullish(),
+    keuchik_title: z.string().max(200).nullish(),
+    keuchik_name: z.string().max(200).nullish(),
+    secretary_title: z.string().max(200).nullish(),
+    secretary_name: z.string().max(200).nullish(),
+  }),
+);
+
+/* -------------------------------------------------------------------------- */
+/* Letter number counters                                                     */
+/* -------------------------------------------------------------------------- */
+
+export const LetterTypeEnum = registry.register(
+  'LetterTypeEnum',
+  z.enum(['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10']),
+);
+
+export const LetterCounterEntry = registry.register(
+  'LetterCounterEntry',
+  z.object({
+    letter_type: LetterTypeEnum,
+    last_number: z.number().int(),
+  }),
+);
+
+export const LetterCountersResponse = registry.register(
+  'LetterCountersResponse',
+  z.object({
+    year: z.number().int(),
+    counters: z.array(LetterCounterEntry),
+  }),
+);
+
+export const LetterCountersQuery = registry.register(
+  'LetterCountersQuery',
+  z.object({
+    year: z.coerce.number().int().min(2000).max(2200).optional(),
+  }),
+);
+
+export const UpdateLetterCounterBody = registry.register(
+  'UpdateLetterCounterBody',
+  z.object({
+    letter_type: LetterTypeEnum,
+    year: z.number().int().min(2000).max(2200),
+    last_number: z.number().int().min(0),
+  }),
+);

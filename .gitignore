@@ -11,6 +11,9 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
+# Browser automation artifacts (snapshots, console logs, screenshots)
+.playwright-mcp/
+
 # Env / secrets (NEVER commit)
 .env
 .env.*

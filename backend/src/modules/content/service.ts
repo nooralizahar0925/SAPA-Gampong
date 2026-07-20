@@ -15,6 +15,9 @@ const EMPTY_PROFILE = {
   founded_date: null,
   kecamatan: null,
   kabupaten: null,
+  kemukiman: null,
+  area_size: null,
+  elevation: null,
   contact_phone: null,
   email: null,
   map_lat: null,
@@ -192,6 +195,9 @@ export async function getProfile() {
     founded_date: row.foundedDate,
     kecamatan: row.kecamatan,
     kabupaten: row.kabupaten,
+    kemukiman: row.kemukiman,
+    area_size: row.areaSize,
+    elevation: row.elevation,
     contact_phone: row.contactPhone,
     email: row.email,
     map_lat: row.mapLat,
@@ -208,6 +214,9 @@ export async function updateProfile(input: {
   founded_date?: string | null;
   kecamatan?: string;
   kabupaten?: string;
+  kemukiman?: string | null;
+  area_size?: string | null;
+  elevation?: string | null;
   contact_phone?: string | null;
   email?: string | null;
   map_lat?: number | null;
@@ -236,6 +245,9 @@ export async function updateProfile(input: {
     foundedDate: input.founded_date,
     kecamatan: input.kecamatan,
     kabupaten: input.kabupaten,
+    kemukiman: input.kemukiman,
+    areaSize: input.area_size,
+    elevation: input.elevation,
     contactPhone: input.contact_phone,
     email: input.email,
     mapLat: input.map_lat,
@@ -255,6 +267,9 @@ export async function updateProfile(input: {
         name: input.name!,
         kecamatan: input.kecamatan!,
         kabupaten: input.kabupaten!,
+        kemukiman: input.kemukiman ?? null,
+        areaSize: input.area_size ?? null,
+        elevation: input.elevation ?? null,
         foundedDate: input.founded_date ?? null,
         contactPhone: input.contact_phone ?? null,
         email: input.email ?? null,

@@ -34,17 +34,32 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Konten Aplikasi',
     items: [
-      { label: 'Banner Beranda', icon: 'layout' },
-      { label: 'Profil Desa', icon: 'landmark' },
-      { label: 'Perangkat Gampong', icon: 'users' },
-      { label: 'Masjid & Jadwal Sholat', icon: 'mosque' },
-      { label: 'Demografi', icon: 'chart' },
+      { label: 'Banner Beranda', icon: 'layout', to: '/content/banners', matchPrefix: '/content/banners' },
+      { label: 'Profil Desa', icon: 'landmark', to: '/content/profile', matchPrefix: '/content/profile' },
+      {
+        label: 'Perangkat Gampong',
+        icon: 'users',
+        to: '/content/officials',
+        matchPrefix: '/content/officials',
+      },
+      {
+        label: 'Masjid & Jadwal Sholat',
+        icon: 'mosque',
+        to: '/content/mosques',
+        matchPrefix: '/content/mosques',
+      },
+      {
+        label: 'Demografi',
+        icon: 'chart',
+        to: '/content/demographics',
+        matchPrefix: '/content/demographics',
+      },
     ],
   },
   {
     title: 'Sistem',
     items: [
-      { label: 'Pengaturan Email', icon: 'settings', to: '/settings/email-provider', matchPrefix: '/settings' },
+      { label: 'Pengaturan', icon: 'settings', to: '/settings/app', matchPrefix: '/settings' },
       { label: 'Akun Pengguna', icon: 'users' },
     ],
   },

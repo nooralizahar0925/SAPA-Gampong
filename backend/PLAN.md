@@ -234,9 +234,12 @@ Prove L1 end-to-end, then generalize to 7.
 - [x] Steps: (1) test: `PATCH /content/profile` (admin) then `GET /content/profile` (public) reflects the change; reorder banners persists order; (2) FAIL; (3) implement CRUD + Zod; (4) PASS; (5) commit `feat(api): content management`.
 
 ### Task 17: Content management hub UI (A5)
-**Files:** `dashboard/src/pages/Content.tsx` + sub-forms; Test with MSW
+**Files:** `dashboard/src/pages/Content.tsx` (tabbed hub) + `dashboard/src/components/content/*Tab.tsx`, `dashboard/src/pages/AppSettings.tsx`; Test `dashboard/src/__tests__/content-management.test.tsx` (RTL + MSW)
 - Tabs: Banner (add/reorder/remove + image upload), Profil & perangkat (CRUD officials, strengths, map), Prayer/Mosque (coords + mosque CRUD), Demografi (edit stat blocks), App settings (contact, letterhead, signatory, letter-number counters).
-- [ ] Steps: (1) test: editing a demographics number saves via `PATCH /content/demographics`; (2) FAIL; (3) implement forms; (4) PASS; (5) commit `feat(web): content hub`.
+- **Built to an approved visual mock**, which supersedes the earlier "separate pages" attempt. One hub at `/content/:tab` with six tabs (Banner · Profil & Visi Misi · Perangkat · Masjid & Sholat · Demografi · Potensi Desa), a two-column layout (form + contextual aside), and a **single global "Simpan Perubahan"** in the page header with a last-saved timestamp. Tabs register a save handler with the header via `components/content/save-context.tsx`; list CRUD (banner reorder/delete, add perangkat/potensi/masjid) still acts immediately since those are not form state. The five sidebar "Konten Aplikasi" links deep-link into their tab.
+- **App settings required backend work first**, done as part of this task: `AppConfig` gained contact/letterhead/signatory columns (migration `20260720175908_add_app_config_contact_letterhead_signatory`) plus `GET|PATCH /api/settings/app` and `GET|PATCH /api/settings/letter-counters`. The mock's Kemukiman / Luas Wilayah / Ketinggian fields needed `VillageProfile` columns too (migration `20260720181716_add_village_profile_kemukiman_area_elevation`). The keuchik/secretary signatory blocks are still hardcoded in `modules/letters/rendering.ts` — wiring the PDF renderer to read them from `AppConfig` is **not** done and remains open.
+- Not implemented from the mock, and still open: banner image **upload** (ordering/activation/removal only — needs `POST /uploads` wired in), the profile **header photo** ("Ganti Foto" is inert), the **Pratinjau** button, and **drag-to-reorder** for demographic blocks (the aside shows grips but reordering is not wired).
+- [x] Steps: (1) test: editing a demographics number saves via `PATCH /content/demographics`; (2) FAIL; (3) implement forms; (4) PASS; (5) commit `feat(web): content hub`.
 
 ---
 

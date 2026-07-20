@@ -192,6 +192,9 @@ model VillageProfile {
   foundedDate  String?
   kecamatan    String
   kabupaten    String
+  kemukiman    String?
+  areaSize     String?
+  elevation    String?
   contactPhone String?
   email        String?
   mapLat       Float?
@@ -270,5 +273,22 @@ model AppConfig {
   id                  String        @id @default("singleton")
   activeEmailProvider EmailProvider @default(mailersend)
   emailProviderConfigs Json?
+
+  // Contact block shown to residents in the app and on letters.
+  contactPhone   String?
+  contactEmail   String?
+  contactAddress String?
+
+  // Letterhead ("kop surat"): the lines printed above the letter body.
+  letterheadLine1 String?
+  letterheadLine2 String?
+  letterheadLine3 String?
+
+  // Signatory blocks, previously hardcoded in modules/letters/rendering.ts.
+  keuchikTitle     String?
+  keuchikName      String?
+  secretaryTitle   String?
+  secretaryName    String?
+
   updatedAt           DateTime      @updatedAt
 }

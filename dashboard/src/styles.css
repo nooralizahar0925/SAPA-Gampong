@@ -2101,3 +2101,519 @@ select.field-input:focus {
     height: 420px;
   }
 }
+
+
+/* Content management hub (Task 17) */
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.content-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.content-saved-at {
+  color: var(--ink500);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.content-header-actions .primary-button,
+.content-header-actions .secondary-button {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.content-header-actions .primary-button {
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+/* Tab row: the underline indicator is the page's primary navigation cue. */
+.content-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 6px;
+  margin-bottom: 18px;
+}
+
+.content-tab {
+  position: relative;
+  border: 0;
+  background: transparent;
+  padding: 11px 16px 13px;
+  border-radius: 10px;
+  color: var(--ink500);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.content-tab:hover {
+  color: var(--ink900);
+  background: var(--g50);
+}
+
+.content-tab.active {
+  color: var(--g800);
+}
+
+.content-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 4px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--g800);
+}
+
+.content-tab:focus-visible {
+  outline: 2px solid var(--g600);
+  outline-offset: 2px;
+}
+
+.content-dirty-hint {
+  margin: 0 0 14px;
+  color: var(--warn);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Two-column split: form on the left, contextual cards on the right. */
+.content-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.content-layout.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.content-main,
+.content-aside {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .content-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.detail-card-note {
+  color: var(--ink500);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* Two columns, as in the approved mock — paired fields (kecamatan/kabupaten,
+   lintang/bujur) read as pairs rather than reflowing into a third column. */
+.content-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+  padding: 18px 20px;
+}
+
+@media (max-width: 720px) {
+  .content-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.content-field-wide {
+  padding: 0 20px 18px;
+}
+
+.content-card-actions {
+  padding: 0 20px 18px;
+}
+
+.content-aside-body {
+  padding: 18px 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.aside-copy {
+  margin: 0;
+  color: var(--ink500);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.field-hint {
+  color: var(--ink500);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.content-form-grid .field input,
+.content-field-wide input,
+.content-form-grid .field textarea,
+.content-field-wide textarea {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  padding: 11px 13px;
+  font-size: 14px;
+  color: var(--ink900);
+  outline: none;
+  font-family: inherit;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.content-form-grid .field textarea,
+.content-field-wide textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.content-form-grid .field input:focus,
+.content-field-wide input:focus,
+.content-form-grid .field textarea:focus,
+.content-field-wide textarea:focus {
+  border-color: var(--g600);
+  box-shadow: 0 0 0 3px rgba(196, 224, 210, 0.7);
+}
+
+/* Photo placeholder: mint fill signals "drop target", not "broken image". */
+.photo-dropzone {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: var(--g100);
+  display: grid;
+  place-items: center;
+  color: var(--g700);
+}
+
+.photo-dropzone .icon {
+  width: 30px;
+  height: 30px;
+}
+
+.full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+.secondary-button.full-width {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Demographic block list in the profile aside. */
+.stat-block-list {
+  display: grid;
+  gap: 4px;
+}
+
+.stat-block-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.stat-block-row:last-child {
+  border-bottom: 0;
+}
+
+.stat-block-row.muted .stat-block-meta b,
+.stat-block-row.muted .stat-block-meta small {
+  color: var(--ink400);
+}
+
+.stat-block-grip {
+  color: var(--ink300);
+  display: grid;
+  place-items: center;
+  cursor: grab;
+}
+
+.stat-block-grip .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.stat-block-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-block-meta b {
+  display: block;
+  font-size: 13px;
+}
+
+.stat-block-meta small {
+  display: block;
+  margin-top: 1px;
+  color: var(--ink500);
+  font-size: 11.5px;
+}
+
+.stat-toggle {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--ink300);
+  position: relative;
+  flex: none;
+}
+
+.stat-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 140ms ease;
+}
+
+.stat-toggle.on {
+  background: var(--g600);
+}
+
+.stat-toggle.on::after {
+  transform: translateX(16px);
+}
+
+.stat-toggle-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.stat-toggle-track {
+  display: block;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--ink300);
+  position: relative;
+  transition: background-color 140ms ease;
+}
+
+.stat-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 140ms ease;
+}
+
+.stat-toggle-button.on .stat-toggle-track {
+  background: var(--g600);
+}
+
+.stat-toggle-button.on .stat-toggle-track::after {
+  transform: translateX(16px);
+}
+
+.stat-toggle-button:focus-visible {
+  outline: 2px solid var(--g600);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+/* Amber advisory card, used when a block is hidden for missing data. */
+.notice-card {
+  display: flex;
+  gap: 10px;
+  border: 1px solid #ecd9a8;
+  border-radius: 12px;
+  background: var(--gold100);
+  padding: 13px 14px;
+  color: #7a5a12;
+}
+
+.notice-card .icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.notice-card b {
+  display: block;
+  font-size: 13px;
+}
+
+.notice-card small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Shared list rows (perangkat, potensi, masjid). */
+.content-list {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px 0;
+}
+
+.content-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.content-list-row b {
+  display: block;
+  font-size: 14px;
+}
+
+.content-list-row small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink500);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.banner-list {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.banner-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.banner-thumb {
+  width: 96px;
+  height: 56px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: var(--g100);
+  flex: 0 0 auto;
+}
+
+.banner-thumb-empty {
+  display: grid;
+  place-items: center;
+  color: var(--g700);
+}
+
+.banner-row-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-row-meta b {
+  display: block;
+  font-size: 14px;
+}
+
+.banner-row-meta small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink500);
+  font-size: 12.5px;
+}
+
+.banner-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ghost-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink700);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.ghost-button:hover:not(:disabled) {
+  border-color: var(--g600);
+  color: var(--g700);
+}
+
+.ghost-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ghost-button.danger:hover:not(:disabled) {
+  border-color: #eec4bd;
+  color: var(--dang);
+}
+
+.counter-row {
+  display: grid;
+  gap: 8px;
+}
+
+.counter-row .secondary-button {
+  justify-self: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-toggle::after,
+  .stat-toggle-track,
+  .stat-toggle-track::after,
+  .content-tab {
+    transition: none;
+  }
+}

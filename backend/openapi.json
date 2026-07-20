@@ -411,6 +411,24 @@
               "null"
             ]
           },
+          "kemukiman": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "area_size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "elevation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "contact_phone": {
             "type": [
               "string",
@@ -465,6 +483,9 @@
           "founded_date",
           "kecamatan",
           "kabupaten",
+          "kemukiman",
+          "area_size",
+          "elevation",
           "contact_phone",
           "email",
           "map_lat",
@@ -499,6 +520,27 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 120
+          },
+          "kemukiman": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120
+          },
+          "area_size": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
+          },
+          "elevation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
           },
           "contact_phone": {
             "type": [
@@ -1949,6 +1991,245 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "AppSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "contact_phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contact_email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contact_address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "letterhead_line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "letterhead_line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "letterhead_line3": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keuchik_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keuchik_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "secretary_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "secretary_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "contact_phone",
+          "contact_email",
+          "contact_address",
+          "letterhead_line1",
+          "letterhead_line2",
+          "letterhead_line3",
+          "keuchik_title",
+          "keuchik_name",
+          "secretary_title",
+          "secretary_name",
+          "updated_at"
+        ]
+      },
+      "UpdateAppSettingsBody": {
+        "type": "object",
+        "properties": {
+          "contact_phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "contact_email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email"
+          },
+          "contact_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          },
+          "letterhead_line1": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "letterhead_line2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "letterhead_line3": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "keuchik_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "keuchik_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "secretary_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "secretary_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          }
+        }
+      },
+      "LetterTypeEnum": {
+        "type": "string",
+        "enum": [
+          "L1",
+          "L2",
+          "L3",
+          "L4",
+          "L5",
+          "L6",
+          "L7",
+          "L8",
+          "L9",
+          "L10"
+        ]
+      },
+      "LetterCounterEntry": {
+        "type": "object",
+        "properties": {
+          "letter_type": {
+            "$ref": "#/components/schemas/LetterTypeEnum"
+          },
+          "last_number": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "letter_type",
+          "last_number"
+        ]
+      },
+      "LetterCountersResponse": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "counters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LetterCounterEntry"
+            }
+          }
+        },
+        "required": [
+          "year",
+          "counters"
+        ]
+      },
+      "LetterCountersQuery": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2200
+          }
+        }
+      },
+      "UpdateLetterCounterBody": {
+        "type": "object",
+        "properties": {
+          "letter_type": {
+            "$ref": "#/components/schemas/LetterTypeEnum"
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2200
+          },
+          "last_number": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "letter_type",
+          "year",
+          "last_number"
         ]
       },
       "UploadMultipartBody": {
@@ -4102,6 +4383,202 @@
           },
           "409": {
             "description": "Selected provider is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/app": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get contact, letterhead, and signatory settings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current application settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update contact, letterhead, and signatory settings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppSettingsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated application settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid application settings payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/letter-counters": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "List letter-number counters for a year",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2200
+            },
+            "required": false,
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Counters for every letter type in the requested year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterCountersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Set the last used number for a letter type and year",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLetterCounterBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Counters after the update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterCountersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid counter payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
             "content": {
               "application/json": {
                 "schema": {
