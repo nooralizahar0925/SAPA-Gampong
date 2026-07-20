@@ -5,6 +5,7 @@ import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
 import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
+import { uploadsRouter } from './modules/uploads/routes';
 
 export function createApp() {
   const app = express();
@@ -13,6 +14,7 @@ export function createApp() {
 
   app.use('/api/health', healthRouter);
   app.use('/api', lettersRouter);
+  app.use('/api/uploads', uploadsRouter);
 
   app.use('/api/auth', authRouter);
 

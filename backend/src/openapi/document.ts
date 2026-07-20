@@ -7,6 +7,7 @@ import { env } from '../config/env';
 import '../modules/auth/routes';
 import '../modules/health/routes';
 import '../modules/letters/routes';
+import '../modules/uploads/routes';
 
 export function buildDocument() {
   const generator = new OpenApiGeneratorV31(registry.definitions);
@@ -25,6 +26,7 @@ export function buildDocument() {
       { name: 'Health', description: 'Status layanan' },
       { name: 'Auth', description: 'Autentikasi admin' },
       { name: 'Letter Types', description: 'Katalog tipe surat dan skema formulir' },
+      { name: 'Uploads', description: 'Unggah dan akses lampiran bertanda tangan' },
     ],
   });
 }

@@ -23,6 +23,10 @@
     {
       "name": "Letter Types",
       "description": "Katalog tipe surat dan skema formulir"
+    },
+    {
+      "name": "Uploads",
+      "description": "Unggah dan akses lampiran bertanda tangan"
     }
   ],
   "components": {
@@ -244,6 +248,58 @@
         "items": {
           "$ref": "#/components/schemas/LetterType"
         }
+      },
+      "UploadMultipartBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "KTP",
+              "KK",
+              "other",
+              "photo",
+              "document"
+            ]
+          },
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": [
+          "kind",
+          "file"
+        ]
+      },
+      "UploadResponse": {
+        "type": "object",
+        "properties": {
+          "file_id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "file_id",
+          "url",
+          "mime",
+          "size"
+        ]
+      },
+      "BinaryFileResponse": {
+        "type": "string",
+        "format": "binary"
       }
     },
     "parameters": {}
@@ -377,6 +433,114 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LetterTypeListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads": {
+      "post": {
+        "tags": [
+          "Uploads"
+        ],
+        "summary": "Unggah lampiran gambar atau PDF",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadMultipartBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File berhasil diunggah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Data upload tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads/{fileId}": {
+      "get": {
+        "tags": [
+          "Uploads"
+        ],
+        "summary": "Ambil file lewat URL bertanda tangan",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": true,
+            "name": "exp",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "sig",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konten file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryFileResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "URL file tidak valid atau kedaluwarsa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
