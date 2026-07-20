@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { requireAdmin } from '../../middleware/auth';
 import { errorResponse } from '../../openapi/components';
 import { defineRoute } from '../../openapi/define-route';
 import { AdminUserPublic, LoginBody, LoginResponse } from './schemas';
@@ -34,8 +33,7 @@ defineRoute(authRouter, {
   fullPath: '/api/auth/me',
   tags: ['Auth'],
   summary: 'Profil admin yang sedang login',
-  security: [{ bearerAuth: [] }],
-  middleware: [requireAdmin],
+  auth: 'admin',
   responses: {
     200: {
       description: 'Data pengguna',

@@ -3,15 +3,14 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
+import { healthRouter } from './modules/health/routes';
 
 export function createApp() {
   const app = express();
 
   app.use(express.json({ limit: '1mb' }));
 
-  app.get('/api/health', (_req, res) => {
-    res.json({ ok: true });
-  });
+  app.use('/api/health', healthRouter);
 
   app.use('/api/auth', authRouter);
 

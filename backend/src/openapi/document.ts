@@ -5,7 +5,7 @@ import { env } from '../config/env';
 // Importing every module that registers routes is what populates the registry.
 // Add a line here whenever a new module with routes is created.
 import '../modules/auth/routes';
-import './health-doc';
+import '../modules/health/routes';
 
 export function buildDocument() {
   const generator = new OpenApiGeneratorV31(registry.definitions);
