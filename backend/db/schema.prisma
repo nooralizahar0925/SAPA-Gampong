@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LetterType {
+  L1
+  L2
+  L3
+  L4
+  L5
+  L6
+  L7
+}
+
+enum RequestStatus {
+  SUBMITTED
+  IN_REVIEW
+  NEEDS_INFO
+  APPROVED
+  GENERATED
+  SENT
+  REJECTED
+}
+
+enum AttachmentKind {
+  KTP
+  KK
+  other
+  photo
+  document
+}
+
+enum FeedbackStatus {
+  new
+  read
+  responded
+}
+
+enum AdminRole {
+  admin
+  approver
+}
+
+enum DemographicBlockType {
+  number
+  split
+  bar
+  pie
+}
+
+model File {
+  id          String   @id @default(cuid())
+  storagePath String
+  mime        String
+  size        Int
+  createdAt   DateTime @default(now())
+
+  requestAttachments  RequestAttachment[]
+  feedbackAttachments FeedbackAttachment[]
+  generatedFor        LetterRequest[]      @relation("GeneratedPdf")
+  bannerSlides        BannerSlide[]
+  villageProfiles     VillageProfile[]
+  officials           Official[]
+  villageStrengths    VillageStrength[]
+  mosques             Mosque[]
+}
+
+model LetterRequest {
+  id             String        @id @default(cuid())
+  referenceCode  String        @unique
+  letterType     LetterType
+  status         RequestStatus @default(SUBMITTED)
+  applicantName  String
+  applicantEmail String
+  applicantPhone String?
+  keperluan      String?
+  subjectData    Json
+  nomorSurat     String?
+  decidedBy      String?
+  decisionReason String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  generatedPdfId String?
+  generatedPdf   File?   @relation("GeneratedPdf", fields: [generatedPdfId], references: [id])
+
+  verificationToken String? @unique
+  pdfHash           String?
+  qrRevoked         Boolean @default(false)
+  verifiedCount     Int     @default(0)
+
+  attachments RequestAttachment[]
+
+  @@index([status])
+  @@index([letterType])
+  @@index([createdAt])
+}
+
+model RequestAttachment {
+  id        String         @id @default(cuid())
+  requestId String
+  request   LetterRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  kind      AttachmentKind
+  fileId    String
+  file      File           @relation(fields: [fileId], references: [id])
+
+  @@index([requestId])
+}
+
+model LetterNumberCounter {
+  letterType LetterType
+  year       Int
+  lastNumber Int        @default(0)
+
+  @@id([letterType, year])
+}
+
+model Feedback {
+  id        String         @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  body      String
+  status    FeedbackStatus @default(new)
+  note      String?
+  createdAt DateTime       @default(now())
+
+  attachments FeedbackAttachment[]
+
+  @@index([status])
+}
+
+model FeedbackAttachment {
+  id         String         @id @default(cuid())
+  feedbackId String
+  feedback   Feedback       @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  kind       AttachmentKind
+  fileId     String
+  file       File           @relation(fields: [fileId], references: [id])
+
+  @@index([feedbackId])
+}
+
+model BannerSlide {
+  id          String    @id @default(cuid())
+  imageFileId String
+  image       File      @relation(fields: [imageFileId], references: [id])
+  linkUrl     String?
+  order       Int       @default(0)
+  active      Boolean   @default(true)
+  startAt     DateTime?
+  endAt       DateTime?
+}
+
+model VillageProfile {
+  id           String   @id @default("singleton")
+  name         String
+  foundedDate  String?
+  kecamatan    String
+  kabupaten    String
+  contactPhone String?
+  email        String?
+  mapLat       Float?
+  mapLng       Float?
+  description  String?
+  photoFileId  String?
+  photo        File?    @relation(fields: [photoFileId], references: [id])
+  updatedAt    DateTime @updatedAt
+}
+
+model VisionMission {
+  id        String   @id @default("singleton")
+  vision    String
+  missions  Json
+  updatedAt DateTime @updatedAt
+}
+
+model Official {
+  id                   String  @id @default(cuid())
+  name                 String
+  role                 String
+  photoFileId          String?
+  photo                File?   @relation(fields: [photoFileId], references: [id])
+  order                Int     @default(0)
+  isLeadershipHighlight Boolean @default(false)
+}
+
+model VillageStrength {
+  id          String  @id @default(cuid())
+  title       String
+  body        String
+  photoFileId String?
+  photo       File?   @relation(fields: [photoFileId], references: [id])
+  order       Int     @default(0)
+}
+
+model Mosque {
+  id          String  @id @default(cuid())
+  name        String
+  address     String
+  landmark    String?
+  photoFileId String?
+  photo       File?   @relation(fields: [photoFileId], references: [id])
+}
+
+model PrayerConfig {
+  id         String   @id @default("singleton")
+  lat        Float
+  lng        Float
+  calcMethod String
+  timezone   String   @default("Asia/Jakarta")
+  updatedAt  DateTime @updatedAt
+}
+
+model DemographicStatBlock {
+  key     String               @id
+  label   String
+  type    DemographicBlockType
+  data    Json
+  order   Int                  @default(0)
+  visible Boolean              @default(true)
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(admin)
+  createdAt    DateTime  @default(now())
+}

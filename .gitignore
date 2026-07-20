@@ -18,6 +18,9 @@ Thumbs.db
 *.pem
 *.key
 
+# Local machine-specific docker overrides (e.g. port remaps)
+docker-compose.override.yml
+
 # ── Node / backend / dashboard ──
 node_modules/
 dist/
