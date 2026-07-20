@@ -3,6 +3,16 @@ import { registry } from '../../openapi/registry';
 import { LETTER_TYPE_CODES } from '../letters/data';
 import { uploadKindValues } from '../../services/storage.service';
 
+export const RequestStatusSchema = z.enum([
+  'SUBMITTED',
+  'IN_REVIEW',
+  'NEEDS_INFO',
+  'APPROVED',
+  'GENERATED',
+  'SENT',
+  'REJECTED',
+]);
+
 export const RequestAttachmentInput = z.object({
   file_id: z.string().min(1),
   kind: z.enum(uploadKindValues),
@@ -39,18 +49,97 @@ export const TrackRequestResponse = registry.register(
   z.object({
     reference_code: z.string(),
     letter_type: z.enum(LETTER_TYPE_CODES),
-    status: z.enum([
-      'SUBMITTED',
-      'IN_REVIEW',
-      'NEEDS_INFO',
-      'APPROVED',
-      'GENERATED',
-      'SENT',
-      'REJECTED',
-    ]),
+    status: RequestStatusSchema,
     status_label: z.string(),
     updated_at: z.string().datetime(),
   }),
 );
 
+export const ListRequestsQuery = z.object({
+  status: RequestStatusSchema.optional(),
+  letter_type: z.enum(LETTER_TYPE_CODES).optional(),
+  q: z.string().trim().min(1).optional(),
+  page: z.coerce.number().int().positive().default(1),
+});
+
+export const RequestQueueItem = registry.register(
+  'RequestQueueItem',
+  z.object({
+    id: z.string(),
+    reference_code: z.string(),
+    letter_type: z.enum(LETTER_TYPE_CODES),
+    applicant_name: z.string(),
+    status: RequestStatusSchema,
+    created_at: z.string().datetime(),
+    email: z.string().email(),
+  }),
+);
+
+export const ListRequestsResponse = registry.register(
+  'ListRequestsResponse',
+  z.object({
+    items: z.array(RequestQueueItem),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+  }),
+);
+
+export const RequestDetailParams = z.object({
+  id: z.string().min(1),
+});
+
+export const RequestDetailAttachment = registry.register(
+  'RequestDetailAttachment',
+  z.object({
+    file_id: z.string(),
+    kind: z.enum(uploadKindValues),
+    mime: z.string(),
+    size: z.number().int().nonnegative(),
+    url: z.string().url(),
+  }),
+);
+
+export const RequestStatusHistoryItem = registry.register(
+  'RequestStatusHistoryItem',
+  z.object({
+    status: RequestStatusSchema,
+    at: z.string().datetime(),
+    by: z.string().optional(),
+    reason: z.string().optional(),
+  }),
+);
+
+export const RequestDetailResponse = registry.register(
+  'RequestDetailResponse',
+  z.object({
+    id: z.string(),
+    reference_code: z.string(),
+    letter_type: z.enum(LETTER_TYPE_CODES),
+    status: RequestStatusSchema,
+    applicant_name: z.string(),
+    applicant_email: z.string().email(),
+    applicant_phone: z.string().nullable(),
+    keperluan: z.string().nullable(),
+    subject_data: z.record(z.unknown()),
+    attachments: z.array(RequestDetailAttachment),
+    status_history: z.array(RequestStatusHistoryItem),
+    nomor_surat: z.string().nullable(),
+    decision_reason: z.string().nullable(),
+    decided_by: z.string().nullable(),
+    created_at: z.string().datetime(),
+    updated_at: z.string().datetime(),
+  }),
+);
+
+export const PatchRequestStatusBody = registry.register(
+  'PatchRequestStatusBody',
+  z.object({
+    action: z.enum(['approve', 'reject', 'in_review', 'needs_info']),
+    reason: z.string().trim().optional(),
+    subject_data: z.record(z.unknown()).optional(),
+    nomor_surat: z.string().trim().min(1).optional(),
+  }),
+);
+
 export type CreateRequestBodyType = z.infer<typeof CreateRequestBody>;
+export type PatchRequestStatusBodyType = z.infer<typeof PatchRequestStatusBody>;

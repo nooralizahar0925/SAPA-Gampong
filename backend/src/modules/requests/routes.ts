@@ -4,10 +4,21 @@ import { defineRoute } from '../../openapi/define-route';
 import {
   CreateRequestBody,
   CreateRequestResponse,
+  ListRequestsQuery,
+  ListRequestsResponse,
+  PatchRequestStatusBody,
+  RequestDetailParams,
+  RequestDetailResponse,
   TrackRequestParams,
   TrackRequestResponse,
 } from './schemas';
-import { createPublicRequest, trackRequest } from './service';
+import {
+  createPublicRequest,
+  getAdminRequestDetail,
+  listAdminRequests,
+  trackRequest,
+  updateRequestStatus,
+} from './service';
 
 export const requestsRouter = Router();
 
@@ -33,6 +44,26 @@ defineRoute(requestsRouter, {
 
 defineRoute(requestsRouter, {
   method: 'get',
+  path: '/',
+  fullPath: '/api/requests',
+  tags: ['Requests'],
+  summary: 'List requests in the admin queue',
+  auth: 'admin',
+  query: ListRequestsQuery,
+  responses: {
+    200: {
+      description: 'Paged request queue',
+      content: { 'application/json': { schema: ListRequestsResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ query, res }) => {
+    res.json(await listAdminRequests(query));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'get',
   path: '/track/:referenceCode',
   fullPath: '/api/requests/track/{referenceCode}',
   tags: ['Requests'],
@@ -47,5 +78,50 @@ defineRoute(requestsRouter, {
   },
   handler: async ({ params, res }) => {
     res.json(await trackRequest(params.referenceCode));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'get',
+  path: '/:id',
+  fullPath: '/api/requests/{id}',
+  tags: ['Requests'],
+  summary: 'Get full admin request detail',
+  auth: 'admin',
+  params: RequestDetailParams,
+  responses: {
+    200: {
+      description: 'Full request detail',
+      content: { 'application/json': { schema: RequestDetailResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Request not found'),
+  },
+  handler: async ({ params, res }) => {
+    res.json(await getAdminRequestDetail(params.id));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'patch',
+  path: '/:id/status',
+  fullPath: '/api/requests/{id}/status',
+  tags: ['Requests'],
+  summary: 'Move a request through the state machine',
+  auth: 'admin',
+  params: RequestDetailParams,
+  body: PatchRequestStatusBody,
+  responses: {
+    200: {
+      description: 'Updated request detail',
+      content: { 'application/json': { schema: RequestDetailResponse } },
+    },
+    400: errorResponse('Invalid status update payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Request not found'),
+    409: errorResponse('Status transition is not allowed'),
+  },
+  handler: async ({ params, body, req, res }) => {
+    res.json(await updateRequestStatus(params.id, body, req.auth!.userId));
   },
 });

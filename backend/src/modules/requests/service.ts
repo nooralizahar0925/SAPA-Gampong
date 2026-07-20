@@ -1,9 +1,12 @@
-import { Prisma, type AttachmentKind, type LetterType, type PrismaClient } from '@prisma/client';
+import { Prisma, type AttachmentKind, type LetterRequest, type LetterType, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import { getLetterDefinition, type LetterField } from '../letters/data';
-import type { CreateRequestBodyType } from './schemas';
+import { signedUrl } from '../../services/storage.service';
+import { assignLetterNumber } from '../letters/number.service';
+import type { CreateRequestBodyType, PatchRequestStatusBodyType } from './schemas';
+import { canTransition, targetStatusFor } from './state-machine';
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'Menunggu diproses',
@@ -83,6 +86,115 @@ export async function trackRequest(referenceCode: string) {
   };
 }
 
+export async function listAdminRequests(input: {
+  status?: LetterRequest['status'];
+  letter_type?: string;
+  q?: string;
+  page: number;
+}) {
+  const pageSize = 20;
+  const where: Prisma.LetterRequestWhereInput = {
+    ...(input.status ? { status: input.status } : {}),
+    ...(input.letter_type ? { letterType: input.letter_type as LetterType } : {}),
+    ...(input.q
+      ? {
+          OR: [
+            { referenceCode: { contains: input.q, mode: 'insensitive' } },
+            { applicantName: { contains: input.q, mode: 'insensitive' } },
+            { applicantEmail: { contains: input.q, mode: 'insensitive' } },
+          ],
+        }
+      : {}),
+  };
+
+  const [total, items] = await Promise.all([
+    prisma.letterRequest.count({ where }),
+    prisma.letterRequest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (input.page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  return {
+    items: items.map((item) => ({
+      id: item.id,
+      reference_code: item.referenceCode,
+      letter_type: item.letterType,
+      applicant_name: item.applicantName,
+      status: item.status,
+      created_at: item.createdAt.toISOString(),
+      email: item.applicantEmail,
+    })),
+    total,
+    page: input.page,
+  };
+}
+
+export async function getAdminRequestDetail(id: string) {
+  const found = await prisma.letterRequest.findUnique({
+    where: { id },
+    include: {
+      attachments: {
+        include: { file: true },
+      },
+    },
+  });
+
+  if (!found) throw ApiError.notFound('Permohonan tidak ditemukan');
+  return serializeRequestDetail(found);
+}
+
+export async function updateRequestStatus(
+  id: string,
+  input: PatchRequestStatusBodyType,
+  adminUserId: string,
+) {
+  if (input.action === 'reject' && !input.reason?.trim()) {
+    throw ApiError.validation('Data yang dikirim tidak valid', {
+      reason: 'Alasan penolakan wajib diisi',
+    });
+  }
+
+  const found = await prisma.letterRequest.findUnique({ where: { id } });
+  if (!found) throw ApiError.notFound('Permohonan tidak ditemukan');
+  if (!canTransition(found.status, input.action)) {
+    throw ApiError.conflict('Perubahan status tidak diizinkan dari status saat ini');
+  }
+
+  const subjectData = input.subject_data
+    ? validateSubjectData(found.letterType, input.subject_data)
+    : (found.subjectData as Record<string, unknown>);
+
+  return prisma.$transaction(async (tx) => {
+    const targetStatus = targetStatusFor(input.action);
+    const year = new Date().getFullYear();
+    const nomorSurat =
+      input.action === 'approve'
+        ? input.nomor_surat?.trim() || found.nomorSurat || (await assignLetterNumber(tx, found.letterType, year))
+        : found.nomorSurat;
+
+    const updated = await tx.letterRequest.update({
+      where: { id },
+      data: {
+        status: targetStatus,
+        subjectData,
+        nomorSurat,
+        decisionReason: input.action === 'reject' || input.action === 'needs_info' ? input.reason?.trim() || null : null,
+        decidedBy: adminUserId,
+      },
+      include: {
+        attachments: {
+          include: { file: true },
+        },
+      },
+    });
+
+    return serializeRequestDetail(updated);
+  });
+}
+
 function buildSubjectSchema(fields: readonly LetterField[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
@@ -91,6 +203,17 @@ function buildSubjectSchema(fields: readonly LetterField[]) {
   }
 
   return z.object(shape).strict();
+}
+
+function validateSubjectData(letterType: LetterType, subjectData: Record<string, unknown>) {
+  const definition = getLetterDefinition(letterType);
+  if (!definition) {
+    throw ApiError.validation('Data yang dikirim tidak valid', {
+      letter_type: 'Jenis surat tidak dikenal',
+    });
+  }
+
+  return buildSubjectSchema(definition.fields).parse(subjectData);
 }
 
 function requiredFieldSchema(field: LetterField) {
@@ -195,4 +318,39 @@ function isReferenceConflict(error: unknown) {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2002'
   );
+}
+
+function serializeRequestDetail(
+  request: LetterRequest & {
+    attachments: Array<{
+      kind: AttachmentKind;
+      fileId: string;
+      file: { id: string; mime: string; size: number };
+    }>;
+  },
+) {
+  return {
+    id: request.id,
+    reference_code: request.referenceCode,
+    letter_type: request.letterType,
+    status: request.status,
+    applicant_name: request.applicantName,
+    applicant_email: request.applicantEmail,
+    applicant_phone: request.applicantPhone,
+    keperluan: request.keperluan,
+    subject_data: request.subjectData,
+    attachments: request.attachments.map((attachment) => ({
+      file_id: attachment.fileId,
+      kind: attachment.kind,
+      mime: attachment.file.mime,
+      size: attachment.file.size,
+      url: signedUrl(attachment.file.id),
+    })),
+    status_history: [],
+    nomor_surat: request.nomorSurat,
+    decision_reason: request.decisionReason,
+    decided_by: request.decidedBy,
+    created_at: request.createdAt.toISOString(),
+    updated_at: request.updatedAt.toISOString(),
+  };
 }

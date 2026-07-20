@@ -395,6 +395,300 @@
           "updated_at"
         ]
       },
+      "RequestQueueItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "applicant_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "letter_type",
+          "applicant_name",
+          "status",
+          "created_at",
+          "email"
+        ]
+      },
+      "ListRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestQueueItem"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ]
+      },
+      "RequestDetailAttachment": {
+        "type": "object",
+        "properties": {
+          "file_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "KTP",
+              "KK",
+              "other",
+              "photo",
+              "document"
+            ]
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "file_id",
+          "kind",
+          "mime",
+          "size",
+          "url"
+        ]
+      },
+      "RequestStatusHistoryItem": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "at"
+        ]
+      },
+      "RequestDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED"
+            ]
+          },
+          "applicant_name": {
+            "type": "string"
+          },
+          "applicant_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "applicant_phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keperluan": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestDetailAttachment"
+            }
+          },
+          "status_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestStatusHistoryItem"
+            }
+          },
+          "nomor_surat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decision_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decided_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "letter_type",
+          "status",
+          "applicant_name",
+          "applicant_email",
+          "applicant_phone",
+          "keperluan",
+          "subject_data",
+          "attachments",
+          "status_history",
+          "nomor_surat",
+          "decision_reason",
+          "decided_by",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PatchRequestStatusBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject",
+              "in_review",
+              "needs_info"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "nomor_surat": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
       "UploadMultipartBody": {
         "type": "object",
         "properties": {
@@ -623,6 +917,97 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "List requests in the admin queue",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUBMITTED",
+                "IN_REVIEW",
+                "NEEDS_INFO",
+                "APPROVED",
+                "GENERATED",
+                "SENT",
+                "REJECTED"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5",
+                "L6",
+                "L7",
+                "L8",
+                "L9",
+                "L10"
+              ]
+            },
+            "required": false,
+            "name": "letter_type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged request queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRequestsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/requests/track/{referenceCode}": {
@@ -655,6 +1040,147 @@
           },
           "404": {
             "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Get full admin request detail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full request detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}/status": {
+      "patch": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Move a request through the state machine",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRequestStatusBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated request detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status update payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Status transition is not allowed",
             "content": {
               "application/json": {
                 "schema": {
