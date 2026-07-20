@@ -1724,6 +1724,79 @@ git commit -m "feat(api): OpenAPI 3.1 document + Scalar dashboard + route drift 
 
 ---
 
+## Tasks 5–7 — added after the whole-branch review (2026-07-20)
+
+The final review of Tasks 1–4 found that this plan stated invariants without naming the artifact that enforces them, and omitted cross-cutting middleware from the foundation phase. The project owner approved three additional tasks. They are sequential — each touches files the previous one changes.
+
+### Task 5: `defineRoute()` — bind validation and documentation to one object
+
+**Problem:** the spec promised each Zod schema is "consumed twice — by the validation middleware and by the registry", but no such middleware exists. Handlers hand-call `Schema.parse()` while a separate `registerPath` block re-states the schema by hand. Nothing binds them, so a route can validate schema A and document schema B; the drift guard compares only `method + path` and would pass.
+
+**Files:**
+- Create: `backend/src/openapi/define-route.ts`
+- Modify: `backend/src/modules/auth/routes.ts` (migrate both routes), `backend/src/openapi/health-doc.ts` (fold into `app.ts` via the helper, or keep and document why not)
+- Test: `backend/tests/define-route.test.ts`
+
+**Interfaces:**
+- Produces `defineRoute(router, { method, path, fullPath, tags, summary, security?, body?, query?, params?, responses, handler })`. It calls `registry.registerPath(...)` from the same schema objects it installs validation for, and mounts the handler on the router. Validation failures throw `ZodError`, which the existing `errorHandler` already maps to the 400 envelope — do not re-implement that.
+- `handler` receives the parsed, typed values, not the raw `req.body`, so a route physically cannot read an unvalidated field.
+
+- [ ] **Step 1:** Write `define-route.test.ts`: a route defined with a body schema (a) rejects a body failing that schema with 400 and per-field detail, and (b) appears in `buildDocument()` with a `requestBody` referencing that same schema. Assert both from one `defineRoute` call — that pairing is the whole point.
+- [ ] **Step 2:** Run — FAIL.
+- [ ] **Step 3:** Implement `define-route.ts`. Keep it small; it is a wrapper, not a framework.
+- [ ] **Step 4:** Migrate `POST /api/auth/login` and `GET /api/auth/me` to it. The generated `openapi.json` must be byte-identical afterward apart from ordering — if it changes, the helper is not faithful.
+- [ ] **Step 5:** Run full suite — PASS. Run `npm run openapi:write`, diff, commit `feat(api): defineRoute binds validation to documentation`.
+
+### Task 6: Cross-cutting HTTP middleware
+
+**Problem:** `helmet`, `cors`, `express-rate-limit` and `pino-http` are named in the stack; none are wired. `pino` is installed and unused, `RATE_LIMITED` is a documented error code with no producer, and `POST /auth/login` is unthrottled.
+
+**Files:**
+- Create: `backend/src/middleware/rate-limit.ts`, `backend/src/lib/logger.ts`
+- Modify: `backend/src/app.ts`, `backend/src/middleware/error.ts` (log through pino, not `console.error`), `backend/src/config/env.ts` (add `CORS_ORIGINS`), `backend/.env.example`
+- Test: `backend/tests/middleware.test.ts`
+
+**Interfaces:**
+- `helmet()` and `cors({ origin: env.CORS_ORIGINS })` — a comma-separated allowlist, not `*`, since admin endpoints are credentialed.
+- `pino-http` with a request id on every log line; `errorHandler` logs 500s through it with the request id, route, and method. Test output must stay pristine — silence the logger when `NODE_ENV === 'test'`.
+- `loginRateLimit` — `express-rate-limit` on `POST /api/auth/login`, returning the envelope with code `RATE_LIMITED` (429), not the library's default body.
+- `app.set('trust proxy', 1)` so rate limiting and client IPs are correct behind Railway's proxy.
+
+- [ ] **Step 1:** Test: exceeding the login limit returns 429 with `error.code === 'RATE_LIMITED'`; a response carries helmet's headers; a disallowed origin is refused.
+- [ ] **Step 2:** Run — FAIL.
+- [ ] **Step 3:** Implement. Register the 429 response on the login route so the drift guard and docs stay accurate.
+- [ ] **Step 4:** Run — PASS.
+- [ ] **Step 5:** Commit `feat(api): helmet, cors, request logging, login rate limit`.
+
+### Task 7: Schema pass — PII at rest, file metadata, enum casing
+
+**Problem:** three schema-shaped decisions that get categorically more expensive once rows exist. Doing them now costs one migration against an empty database.
+
+**Files:**
+- Modify: `backend/db/schema.prisma` + migration, `backend/src/lib/crypto.ts` (new), `API-CONTRACT.md`, `backend/tests/schema.test.ts`
+- Test: `backend/tests/crypto.test.ts`
+
+**7a — PII at rest.** `subjectData` is plain JSONB and a test writes a plaintext NIK into it. Implement envelope encryption: an app-level key from `env.ENCRYPTION_KEY`, a `keyVersion` column on `LetterRequest` so keys can be rotated without a rewrite, and a **blind index** (HMAC of the normalized NIK, stored in an indexed column) so admins can still search by NIK without decrypting every row. `crypto.ts` exposes `encryptJson`/`decryptJson`/`blindIndex`. Use Node's built-in `crypto` with AES-256-GCM — no new dependency.
+
+**7b — File model.** Add `originalName`, `checksum` (SHA-256, which also serves the `pdfHash` integrity story), `uploadedBy`, and `retainUntil` (the spec lists attachment retention as an open question — this is the column that will answer it). Add `@@unique([requestId, kind])` on `RequestAttachment` so a request cannot carry three KTPs. Fix the orphan-on-delete problem: deleting a `LetterRequest` cascades `RequestAttachment` but the `File` FK is `RESTRICT`, leaving orphaned `File` rows — a storage leak and a PII-retention violation. Decide explicitly: either cascade to `File`, or add a sweep that deletes unreferenced files past `retainUntil`.
+
+**7c — Enum casing.** Standardise every Prisma enum on SCREAMING_SNAKE_CASE, matching `RequestStatus`, which already uses it:
+- `AttachmentKind`: `KTP`, `KK`, `OTHER`, `PHOTO`, `DOCUMENT`
+- `FeedbackStatus`: `NEW`, `READ`, `RESPONDED`
+- `AdminRole`: `ADMIN`, `APPROVER`
+- `DemographicBlockType`: `NUMBER`, `SPLIT`, `BAR`, `PIE`
+- `LetterType` unchanged (`L1`…`L10`)
+
+Update `API-CONTRACT.md` to match — it currently documents `role: "admin|approver"` and feedback `status: "new"`. **Do not touch the value enums inside `subject_data`** (`jenis_kelamin`, `agama`, `status_perkawinan`, `dusun`) — those are Indonesian-language data values shown to residents, not protocol enums.
+
+- [ ] **Step 1:** Tests: a round-trip through `encryptJson`/`decryptJson` recovers the original and the stored ciphertext contains no plaintext NIK; two different NIKs produce different blind indexes and the same NIK produces a stable one; the `@@unique([requestId, kind])` constraint rejects a duplicate KTP.
+- [ ] **Step 2:** Run — FAIL.
+- [ ] **Step 3:** Implement `crypto.ts`, amend the schema, migrate, update the contract and the auth code that references `AdminRole` values.
+- [ ] **Step 4:** Run — PASS.
+- [ ] **Step 5:** Commit `feat(api): PII envelope encryption, file metadata, enum casing`.
+
+---
+
 ## Adding routes after this plan
 
 Every later task adds routes the same way. The checklist, once:
