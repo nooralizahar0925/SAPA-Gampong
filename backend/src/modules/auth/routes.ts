@@ -1,38 +1,19 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../middleware/auth';
-import { registry } from '../../openapi/registry';
 import { errorResponse } from '../../openapi/components';
+import { defineRoute } from '../../openapi/define-route';
 import { AdminUserPublic, LoginBody, LoginResponse } from './schemas';
 import { findUserById, signToken, verifyCredentials } from './service';
 
 export const authRouter = Router();
 
-authRouter.post('/login', async (req, res, next) => {
-  try {
-    const { email, password } = LoginBody.parse(req.body);
-    const user = await verifyCredentials(email, password);
-    res.json({ token: signToken({ sub: user.id, role: user.role }), user });
-  } catch (err) {
-    next(err);
-  }
-});
-
-authRouter.get('/me', requireAdmin, async (req, res, next) => {
-  try {
-    res.json(await findUserById(req.auth!.userId));
-  } catch (err) {
-    next(err);
-  }
-});
-
-registry.registerPath({
+defineRoute(authRouter, {
   method: 'post',
-  path: '/api/auth/login',
+  path: '/login',
+  fullPath: '/api/auth/login',
   tags: ['Auth'],
   summary: 'Login admin',
-  request: {
-    body: { content: { 'application/json': { schema: LoginBody } } },
-  },
+  body: LoginBody,
   responses: {
     200: {
       description: 'Login berhasil',
@@ -41,19 +22,28 @@ registry.registerPath({
     400: errorResponse('Data login tidak valid'),
     401: errorResponse('Email atau kata sandi salah'),
   },
+  handler: async ({ body, res }) => {
+    const user = await verifyCredentials(body.email, body.password);
+    res.json({ token: signToken({ sub: user.id, role: user.role }), user });
+  },
 });
 
-registry.registerPath({
+defineRoute(authRouter, {
   method: 'get',
-  path: '/api/auth/me',
+  path: '/me',
+  fullPath: '/api/auth/me',
   tags: ['Auth'],
   summary: 'Profil admin yang sedang login',
   security: [{ bearerAuth: [] }],
+  middleware: [requireAdmin],
   responses: {
     200: {
       description: 'Data pengguna',
       content: { 'application/json': { schema: AdminUserPublic } },
     },
     401: errorResponse('Token tidak valid atau tidak dikirim'),
+  },
+  handler: async ({ req, res }) => {
+    res.json(await findUserById(req.auth!.userId));
   },
 });
