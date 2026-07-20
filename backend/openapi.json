@@ -29,6 +29,10 @@
       "description": "Public request submission and status tracking"
     },
     {
+      "name": "Content",
+      "description": "Public village content with admin-managed writes"
+    },
+    {
       "name": "Settings",
       "description": "Admin-managed application settings and provider selection"
     },
@@ -216,6 +220,842 @@
         "required": [
           "token",
           "user"
+        ]
+      },
+      "ContentIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "BannerSlideResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "image_file_id": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "order": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "start_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "end_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "image_file_id",
+          "image_url",
+          "link_url",
+          "order",
+          "active",
+          "start_at",
+          "end_at"
+        ]
+      },
+      "BannerSlideListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/BannerSlideResponse"
+        }
+      },
+      "CreateBannerSlideBody": {
+        "type": "object",
+        "properties": {
+          "image_file_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "start_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "end_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "image_file_id"
+        ]
+      },
+      "UpdateBannerSlideBody": {
+        "type": "object",
+        "properties": {
+          "image_file_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "start_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "end_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ReorderBannerSlidesBody": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "VillageProfileResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "founded_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kecamatan": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kabupaten": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contact_phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "map_lat": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "map_lng": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "founded_date",
+          "kecamatan",
+          "kabupaten",
+          "contact_phone",
+          "email",
+          "map_lat",
+          "map_lng",
+          "description",
+          "photo_file_id",
+          "photo_url",
+          "updated_at"
+        ]
+      },
+      "UpdateVillageProfileBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "founded_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "kecamatan": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kabupaten": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "contact_phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email"
+          },
+          "map_lat": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": -90,
+            "maximum": 90
+          },
+          "map_lng": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": -180,
+            "maximum": 180
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 5000
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        }
+      },
+      "VisionMissionResponse": {
+        "type": "object",
+        "properties": {
+          "vision": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "missions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "vision",
+          "missions",
+          "updated_at"
+        ]
+      },
+      "UpdateVisionMissionBody": {
+        "type": "object",
+        "properties": {
+          "vision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "missions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          }
+        }
+      },
+      "OfficialResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "order": {
+            "type": "integer"
+          },
+          "is_leadership_highlight": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "photo_file_id",
+          "photo_url",
+          "order",
+          "is_leadership_highlight"
+        ]
+      },
+      "OfficialListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OfficialResponse"
+        }
+      },
+      "CreateOfficialBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "is_leadership_highlight": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "role"
+        ]
+      },
+      "UpdateOfficialBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "is_leadership_highlight": {
+            "type": "boolean"
+          }
+        }
+      },
+      "VillageStrengthResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "order": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "photo_file_id",
+          "photo_url",
+          "order"
+        ]
+      },
+      "VillageStrengthListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/VillageStrengthResponse"
+        }
+      },
+      "CreateVillageStrengthBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ]
+      },
+      "UpdateVillageStrengthBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "MosqueResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "landmark": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "landmark",
+          "photo_file_id",
+          "photo_url"
+        ]
+      },
+      "MosqueListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MosqueResponse"
+        }
+      },
+      "CreateMosqueBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "landmark": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "address"
+        ]
+      },
+      "UpdateMosqueBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "landmark": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "photo_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        }
+      },
+      "PrayerConfigResponse": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lng": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "calc_method": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "calc_method",
+          "timezone",
+          "updated_at"
+        ]
+      },
+      "UpdatePrayerConfigBody": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "calc_method": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      },
+      "DemographicBlockTypeEnum": {
+        "type": "string",
+        "enum": [
+          "number",
+          "split",
+          "bar",
+          "pie"
+        ]
+      },
+      "DemographicBlockResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DemographicBlockTypeEnum"
+          },
+          "data": {},
+          "order": {
+            "type": "integer"
+          },
+          "visible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type",
+          "order",
+          "visible"
+        ]
+      },
+      "DemographicBlockListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DemographicBlockResponse"
+        }
+      },
+      "UpdateDemographicsBody": {
+        "type": "object",
+        "properties": {
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "type": {
+                  "$ref": "#/components/schemas/DemographicBlockTypeEnum"
+                },
+                "data": {},
+                "order": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "visible": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "type"
+              ]
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "blocks"
         ]
       },
       "LetterField": {
@@ -906,6 +1746,69 @@
           "smtp"
         ]
       },
+      "EmailProviderConfigSummary": {
+        "type": "object",
+        "properties": {
+          "from_email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "from_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "api_base_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "domain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "host": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "port": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "secure": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "has_api_key": {
+            "type": "boolean"
+          },
+          "has_app_password": {
+            "type": "boolean"
+          },
+          "has_password": {
+            "type": "boolean"
+          }
+        }
+      },
       "EmailProviderOption": {
         "type": "object",
         "properties": {
@@ -917,12 +1820,16 @@
           },
           "configured": {
             "type": "boolean"
+          },
+          "config_summary": {
+            "$ref": "#/components/schemas/EmailProviderConfigSummary"
           }
         },
         "required": [
           "id",
           "label",
-          "configured"
+          "configured",
+          "config_summary"
         ]
       },
       "EmailProviderSettingsResponse": {
@@ -956,6 +1863,92 @@
         },
         "required": [
           "provider"
+        ]
+      },
+      "UpdateEmailProviderConfigBody": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          },
+          "from_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "from_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "api_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "api_base_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "app_password": {
+            "type": "string",
+            "minLength": 1
+          },
+          "host": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "secure": {
+            "type": "boolean"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "TestEmailProviderBody": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          },
+          "to_email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "provider",
+          "to_email"
+        ]
+      },
+      "SettingsMessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
         ]
       },
       "UploadMultipartBody": {
@@ -1165,6 +2158,1184 @@
           },
           "400": {
             "description": "Reset token is invalid or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/banners": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List banner slides for the mobile home carousel",
+        "responses": {
+          "200": {
+            "description": "Banner slides ordered for display",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerSlideListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a banner slide",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBannerSlideBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created banner slide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerSlideResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid banner payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced image file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/banners/reorder": {
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Persist a new banner display order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderBannerSlidesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Banner slides in their new order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerSlideListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid reorder payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "One or more banner slides were not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/banners/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a banner slide",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBannerSlideBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated banner slide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerSlideResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid banner payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Banner slide was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a banner slide",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Banner slide deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Banner slide was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/profile": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Get the village profile",
+        "responses": {
+          "200": {
+            "description": "Village profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VillageProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update the village profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVillageProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated village profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VillageProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid profile payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced photo file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/vision-mission": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Get the village vision and mission",
+        "responses": {
+          "200": {
+            "description": "Vision and mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisionMissionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update the village vision and mission",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVisionMissionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated vision and mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisionMissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid vision/mission payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/officials": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List village officials",
+        "responses": {
+          "200": {
+            "description": "Village officials in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a village official",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOfficialBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created official",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid official payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced photo file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/officials/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a village official",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOfficialBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated official",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid official payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Official was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a village official",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Official deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Official was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/strengths": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List village strengths",
+        "responses": {
+          "200": {
+            "description": "Village strengths in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VillageStrengthListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a village strength",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVillageStrengthBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created village strength",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VillageStrengthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid strength payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced photo file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/strengths/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a village strength",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVillageStrengthBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated village strength",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VillageStrengthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid strength payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Village strength was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a village strength",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Village strength deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Village strength was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/mosques": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List mosques and meunasah",
+        "responses": {
+          "200": {
+            "description": "Mosques and meunasah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MosqueListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a mosque or meunasah",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMosqueBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created mosque",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MosqueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid mosque payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced photo file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/mosques/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a mosque or meunasah",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMosqueBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated mosque",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MosqueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid mosque payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mosque was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a mosque or meunasah",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Mosque deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mosque was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/prayer-config": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Get prayer-time coordinates for local computation on the mobile app",
+        "responses": {
+          "200": {
+            "description": "Prayer configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrayerConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update prayer-time coordinates and calculation method",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrayerConfigBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated prayer configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrayerConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid prayer configuration payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/demographics": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List demographic stat blocks",
+        "responses": {
+          "200": {
+            "description": "Demographic stat blocks in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemographicBlockListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create or update demographic stat blocks by key",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDemographicsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Demographic stat blocks after the update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemographicBlockListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid demographics payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1793,6 +3964,124 @@
           },
           "400": {
             "description": "Invalid provider payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Selected provider is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/email-provider/config": {
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Save email provider configuration values",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmailProviderConfigBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated email provider settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailProviderSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid provider configuration payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/email-provider/test": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Send a test email using the selected provider",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestEmailProviderBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test email sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test email payload",
             "content": {
               "application/json": {
                 "schema": {

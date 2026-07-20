@@ -229,7 +229,7 @@ Prove L1 end-to-end, then generalize to 7.
 ### Task 16: Content module API (all resources)
 **Files:** `backend/src/modules/content/*`; Test `backend/tests/content.test.ts`
 **Interfaces:** Public GET + admin write for banners, profile, vision-mission, officials, strengths, mosques, prayer-config, demographics (contract Section 5). Demographics = data-driven stat blocks.
-- [ ] Steps: (1) test: `PATCH /content/profile` (admin) then `GET /content/profile` (public) reflects the change; reorder banners persists order; (2) FAIL; (3) implement CRUD + Zod; (4) PASS; (5) commit `feat(api): content management`.
+- [x] Steps: (1) test: `PATCH /content/profile` (admin) then `GET /content/profile` (public) reflects the change; reorder banners persists order; (2) FAIL; (3) implement CRUD + Zod; (4) PASS; (5) commit `feat(api): content management`.
 
 ### Task 17: Content management hub UI (A5)
 **Files:** `dashboard/src/pages/Content.tsx` + sub-forms; Test with MSW

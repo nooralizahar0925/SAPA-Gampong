@@ -5,6 +5,7 @@ import { env } from '../config/env';
 // Importing every module that registers routes is what populates the registry.
 // Add a line here whenever a new module with routes is created.
 import '../modules/auth/routes';
+import '../modules/content/routes';
 import '../modules/health/routes';
 import '../modules/letters/routes';
 import '../modules/requests/routes';
@@ -30,6 +31,7 @@ export function buildDocument() {
       { name: 'Auth', description: 'Admin authentication endpoints' },
       { name: 'Letter Types', description: 'Letter catalog and dynamic form schemas' },
       { name: 'Requests', description: 'Public request submission and status tracking' },
+      { name: 'Content', description: 'Public village content with admin-managed writes' },
       { name: 'Settings', description: 'Admin-managed application settings and provider selection' },
       { name: 'Uploads', description: 'Upload endpoints and signed file access' },
       { name: 'Verify', description: 'Public letter authenticity verification' },

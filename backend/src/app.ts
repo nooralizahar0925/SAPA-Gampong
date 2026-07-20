@@ -4,6 +4,7 @@ import { corsMiddleware } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
+import { contentRouter } from './modules/content/routes';
 import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
 import { requestsRouter } from './modules/requests/routes';
@@ -17,6 +18,7 @@ export function createApp() {
   app.use(corsMiddleware);
   app.use(express.json({ limit: '1mb' }));
 
+  app.use('/api/content', contentRouter);
   app.use('/api/health', healthRouter);
   app.use('/api', lettersRouter);
   app.use('/api/requests', requestsRouter);
