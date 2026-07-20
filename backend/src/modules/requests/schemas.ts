@@ -144,6 +144,16 @@ export const PatchRequestStatusBody = registry.register(
   }),
 );
 
+export const GenerateRequestResponse = registry.register(
+  'GenerateRequestResponse',
+  z.object({
+    pdf_id: z.string(),
+    pdf_url: z.string().url(),
+    verification_token: z.string(),
+    nomor_surat: z.string(),
+  }),
+);
+
 export type CreateRequestBodyType = z.infer<typeof CreateRequestBody>;
 export type PatchRequestStatusBodyType = z.infer<typeof PatchRequestStatusBody>;
 export const RevokeResponse = VerifyRevokeResponse;

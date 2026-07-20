@@ -4,6 +4,7 @@ import { defineRoute } from '../../openapi/define-route';
 import {
   CreateRequestBody,
   CreateRequestResponse,
+  GenerateRequestResponse,
   ListRequestsQuery,
   ListRequestsResponse,
   PatchRequestStatusBody,
@@ -21,6 +22,7 @@ import {
   trackRequest,
   updateRequestStatus,
 } from './service';
+import { generateApprovedRequest } from './generate';
 
 export const requestsRouter = Router();
 
@@ -125,6 +127,28 @@ defineRoute(requestsRouter, {
   },
   handler: async ({ params, body, req, res }) => {
     res.json(await updateRequestStatus(params.id, body, req.auth!.userId));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'post',
+  path: '/:id/generate',
+  fullPath: '/api/requests/{id}/generate',
+  tags: ['Requests'],
+  summary: 'Generate the PDF and verification token for an approved request',
+  auth: 'admin',
+  params: RequestDetailParams,
+  responses: {
+    200: {
+      description: 'Generated PDF and verification details',
+      content: { 'application/json': { schema: GenerateRequestResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Request not found'),
+    409: errorResponse('Request is not ready for PDF generation'),
+  },
+  handler: async ({ params, req, res }) => {
+    res.json(await generateApprovedRequest(params.id, req.auth!.userId));
   },
 });
 

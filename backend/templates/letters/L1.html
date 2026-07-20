@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Times New Roman", serif;
+        color: #111;
+        font-size: 12.5pt;
+        line-height: 1.45;
+      }
+
+      .page {
+        padding: 24mm 18mm 22mm;
+      }
+
+      .title {
+        margin: 24px 0 2px;
+        text-align: center;
+        font-size: 16pt;
+        font-weight: 700;
+        text-decoration: underline;
+        letter-spacing: 0.03em;
+      }
+
+      .subtitle {
+        margin: 0 0 24px;
+        text-align: center;
+        font-size: 12pt;
+      }
+
+      .intro,
+      .closing,
+      .address-intro {
+        text-align: justify;
+      }
+
+      .identity-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 18px;
+      }
+
+      .identity-table td {
+        vertical-align: top;
+        padding: 2px 0;
+      }
+
+      .identity-table td.label {
+        width: 56mm;
+      }
+
+      .identity-table td.separator {
+        width: 8mm;
+      }
+
+      .sign-row {
+        margin-top: 28px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .sign-block {
+        width: 72mm;
+        text-align: center;
+      }
+
+      .sign-place {
+        margin-bottom: 10px;
+      }
+
+      .qr {
+        width: 108px;
+        height: 108px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 6px;
+      }
+
+      .qr-caption {
+        margin: 0 auto 10px;
+        width: 62mm;
+        font-size: 8.5pt;
+        line-height: 1.35;
+      }
+
+      .sign-title {
+        margin-bottom: 64px;
+      }
+
+      .sign-name {
+        font-weight: 700;
+        text-decoration: underline;
+        letter-spacing: 0.04em;
+      }
+
+      .verify-link {
+        margin-top: 8px;
+        font-size: 8pt;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN BERDOMISILI</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya Provinsi Aceh dengan
+        ini menerangkan bahwa:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama</td><td class="separator">:</td><td>{{nama}}</td></tr>
+        <tr><td class="label">Tempat/Tgl Lahir</td><td class="separator">:</td><td>{{ttl}}</td></tr>
+        <tr><td class="label">NIK</td><td class="separator">:</td><td>{{nik}}</td></tr>
+        <tr><td class="label">Jenis Kelamin</td><td class="separator">:</td><td>{{jenisKelamin}}</td></tr>
+        <tr><td class="label">Agama</td><td class="separator">:</td><td>{{agama}}</td></tr>
+        <tr><td class="label">Status Perkawinan</td><td class="separator">:</td><td>{{statusPerkawinan}}</td></tr>
+        <tr><td class="label">Pekerjaan</td><td class="separator">:</td><td>{{pekerjaan}}</td></tr>
+        <tr><td class="label">Alamat</td><td class="separator">:</td><td>{{alamat}}</td></tr>
+      </table>
+
+      <p class="address-intro">
+        Benar yang namanya tersebut di atas berdomisili di Gampong Blang sampai saat ini yang
+        beralamat:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Dusun</td><td class="separator">:</td><td>{{dusun}}</td></tr>
+        <tr><td class="label">Gampong</td><td class="separator">:</td><td>{{gampong}}</td></tr>
+        <tr><td class="label">Kecamatan</td><td class="separator">:</td><td>{{kecamatan}}</td></tr>
+        <tr><td class="label">Kabupaten</td><td class="separator">:</td><td>{{kabupaten}}</td></tr>
+      </table>
+
+      <p class="closing">
+        Demikian surat keterangan domisili ini diberikan untuk dapat dipergunakan sebagaimana
+        mestinya.
+      </p>
+
+      <div class="sign-row">
+        <div class="sign-block">
+          <div class="sign-place">Gampong Blang, {{tanggalTerbit}}</div>
+          {{> qr}}
+          <div class="sign-title">Keuchik Gampong Blang</div>
+          <div class="sign-name">SOFIAN</div>
+          <div class="verify-link">{{verificationUrl}}</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

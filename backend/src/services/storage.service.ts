@@ -39,17 +39,25 @@ export async function storeUpload(input: UploadInput) {
 
   validateSize(processed.buffer.length);
 
-  const storageName = `${randomUUID()}${processed.extension}`;
-  const absolutePath = join(storageRoot, storageName);
-  await mkdir(dirname(absolutePath), { recursive: true });
-  await writeFile(absolutePath, processed.buffer);
+  const file = await persistStoredFile({
+    buffer: processed.buffer,
+    mime: processed.mime,
+    extension: processed.extension,
+  });
 
-  const file = await prisma.file.create({
-    data: {
-      storagePath: storageName,
-      mime: processed.mime,
-      size: processed.buffer.length,
-    },
+  return {
+    file,
+    url: signedUrl(file.id),
+  };
+}
+
+export async function storeGeneratedPdf(buffer: Buffer, originalName = 'letter.pdf') {
+  validateSize(buffer.length);
+
+  const file = await persistStoredFile({
+    buffer,
+    mime: 'application/pdf',
+    extension: normalizeExtension(originalName, '.pdf'),
   });
 
   return {
@@ -151,6 +159,21 @@ async function compressImage(buffer: Buffer, mime: string): Promise<ProcessedUpl
   } catch {
     return { buffer, mime, extension: extensionFromMime(mime) };
   }
+}
+
+async function persistStoredFile(input: { buffer: Buffer; mime: string; extension: string }) {
+  const storageName = `${randomUUID()}${input.extension}`;
+  const absolutePath = join(storageRoot, storageName);
+  await mkdir(dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, input.buffer);
+
+  return prisma.file.create({
+    data: {
+      storagePath: storageName,
+      mime: input.mime,
+      size: input.buffer.length,
+    },
+  });
 }
 
 function normalizeExtension(originalName: string, fallback: string) {

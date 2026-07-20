@@ -772,6 +772,30 @@
           "action"
         ]
       },
+      "GenerateRequestResponse": {
+        "type": "object",
+        "properties": {
+          "pdf_id": {
+            "type": "string"
+          },
+          "pdf_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "verification_token": {
+            "type": "string"
+          },
+          "nomor_surat": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pdf_id",
+          "pdf_url",
+          "verification_token",
+          "nomor_surat"
+        ]
+      },
       "UploadMultipartBody": {
         "type": "object",
         "properties": {
@@ -1264,6 +1288,72 @@
           },
           "409": {
             "description": "Status transition is not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}/generate": {
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Generate the PDF and verification token for an approved request",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated PDF and verification details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request is not ready for PDF generation",
             "content": {
               "application/json": {
                 "schema": {
