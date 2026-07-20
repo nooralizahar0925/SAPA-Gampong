@@ -61,6 +61,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('home-letter-request')), findsOneWidget);
   });
+
+  testWidgets('prayer screen renders fallback schedule and gps action', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await scrollTo(tester, find.byKey(const Key('home-prayer')));
+    await tester.tap(find.byKey(const Key('home-prayer')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jadwal Sholat'), findsOneWidget);
+    expect(find.text('Data contoh Gampong Blang'), findsOneWidget);
+    expect(find.byKey(const Key('prayer-use-gps')), findsOneWidget);
+    expect(find.textContaining('Subuh'), findsWidgets);
+    expect(find.text('04:58 WIB'), findsOneWidget);
+  });
 }
 
 Future<void> scrollTo(WidgetTester tester, Finder target) {

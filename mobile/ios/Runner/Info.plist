@@ -18,6 +18,8 @@
 	<string>sapa_gampong</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi menggunakan lokasi Anda untuk menampilkan jadwal sholat sesuai posisi saat ini.</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
