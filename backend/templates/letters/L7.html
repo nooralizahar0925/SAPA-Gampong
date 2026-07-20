@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN KEMATIAN</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya menerangkan bahwa:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama</td><td class="separator">:</td><td>{{nama}}</td></tr>
+        <tr><td class="label">Tempat/Tgl Lahir</td><td class="separator">:</td><td>{{ttl}}</td></tr>
+        <tr><td class="label">NIK</td><td class="separator">:</td><td>{{nik}}</td></tr>
+        <tr><td class="label">Jenis Kelamin</td><td class="separator">:</td><td>{{jenisKelamin}}</td></tr>
+        <tr><td class="label">Status Perkawinan</td><td class="separator">:</td><td>{{statusPerkawinan}}</td></tr>
+        <tr><td class="label">Agama</td><td class="separator">:</td><td>{{agama}}</td></tr>
+        <tr><td class="label">Pekerjaan</td><td class="separator">:</td><td>{{pekerjaan}}</td></tr>
+        <tr><td class="label">Alamat</td><td class="separator">:</td><td>{{alamat}}</td></tr>
+        <tr><td class="label">Tanggal Meninggal</td><td class="separator">:</td><td>{{tanggalMeninggal}}</td></tr>
+        <tr><td class="label">Pukul</td><td class="separator">:</td><td>{{pukul}}</td></tr>
+        <tr><td class="label">Tempat Meninggal</td><td class="separator">:</td><td>{{tempatMeninggal}}</td></tr>
+        <tr><td class="label">Tempat Dimakamkan</td><td class="separator">:</td><td>{{tempatDimakamkan}}</td></tr>
+      </table>
+
+      <p class="body-paragraph">
+        Almarhum/Almarhumah meninggalkan ahli waris/keluarga sebagai berikut:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Suami/Istri</td><td class="separator">:</td><td>{{suamiIstri}}</td></tr>
+        <tr><td class="label">Jumlah Anak</td><td class="separator">:</td><td>{{anakTotal}}</td></tr>
+        <tr><td class="label">Anak Laki-laki</td><td class="separator">:</td><td>{{anakLaki}}</td></tr>
+        <tr><td class="label">Anak Perempuan</td><td class="separator">:</td><td>{{anakPerempuan}}</td></tr>
+      </table>
+
+      <p class="closing">
+        Demikian surat keterangan kematian ini dibuat untuk dipergunakan sebagaimana mestinya.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>

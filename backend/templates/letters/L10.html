@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT REKOMENDASI</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <table class="meta-table">
+        <tr><td class="label">Lampiran</td><td class="separator">:</td><td>-</td></tr>
+        <tr><td class="label">Perihal</td><td class="separator">:</td><td>Rekomendasi {{perihal}}</td></tr>
+      </table>
+
+      <div class="recipient-block">
+        Kepada Yth.<br />
+        {{tujuanJabatan}}<br />
+        {{tujuanInstansi}}<br />
+        Di Tempat
+      </div>
+
+      <p class="body-paragraph">Dengan hormat,</p>
+      <p class="body-paragraph">
+        Sehubungan dengan surat permohonan nomor {{nomorSuratPermohonan}} tanggal
+        {{tanggalPermohonan}} dari saudara/i {{namaPemohon}}, maka Pemerintah Gampong Blang
+        memberikan rekomendasi untuk keperluan {{perihal}} kepada instansi yang dituju.
+      </p>
+      <p class="body-paragraph">
+        Rekomendasi ini diberikan setelah dilakukan pemeriksaan administrasi dan sepanjang
+        pengetahuan kami permohonan tersebut dapat diproses lebih lanjut sesuai ketentuan yang
+        berlaku.
+      </p>
+      <p class="closing">
+        Demikian surat rekomendasi ini dibuat untuk dipergunakan sebagaimana mestinya. Atas
+        perhatian dan kerja samanya kami ucapkan terima kasih.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>

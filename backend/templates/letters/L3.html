@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN KEHILANGAN</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya menerangkan bahwa:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama</td><td class="separator">:</td><td>{{nama}}</td></tr>
+        <tr><td class="label">Tempat/Tgl Lahir</td><td class="separator">:</td><td>{{ttl}}</td></tr>
+        <tr><td class="label">NIK</td><td class="separator">:</td><td>{{nik}}</td></tr>
+        <tr><td class="label">Jenis Kelamin</td><td class="separator">:</td><td>{{jenisKelamin}}</td></tr>
+        <tr><td class="label">Agama</td><td class="separator">:</td><td>{{agama}}</td></tr>
+        <tr><td class="label">Alamat</td><td class="separator">:</td><td>{{alamat}}</td></tr>
+      </table>
+
+      <p class="body-paragraph">
+        Berdasarkan keterangan yang bersangkutan, benar telah kehilangan barang/dokumen sebagai
+        berikut:
+      </p>
+      <p class="body-paragraph">{{barangHilang}}</p>
+
+      <p class="closing">
+        Surat keterangan ini dibuat untuk menjadi dasar pengurusan lebih lanjut sesuai kebutuhan
+        yang bersangkutan.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>

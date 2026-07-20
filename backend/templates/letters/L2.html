@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN DOMISILI KANTOR</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya menerangkan bahwa
+        kantor/lembaga berikut benar berada dalam wilayah administrasi Gampong Blang:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama Pemohon</td><td class="separator">:</td><td>{{namaPemohon}}</td></tr>
+        <tr><td class="label">Nama Kantor/Lembaga</td><td class="separator">:</td><td>{{namaKantor}}</td></tr>
+        <tr><td class="label">Penanggung Jawab</td><td class="separator">:</td><td>{{penanggungJawab}}</td></tr>
+        <tr><td class="label">Jalan</td><td class="separator">:</td><td>{{alamatJalan}}</td></tr>
+        <tr><td class="label">Desa/Gampong</td><td class="separator">:</td><td>{{alamatDesa}}</td></tr>
+        <tr><td class="label">Kecamatan</td><td class="separator">:</td><td>{{alamatKecamatan}}</td></tr>
+        <tr><td class="label">Kabupaten</td><td class="separator">:</td><td>{{alamatKabupaten}}</td></tr>
+        <tr><td class="label">No. SK Kemenkumham</td><td class="separator">:</td><td>{{skKemenkumham}}</td></tr>
+        <tr><td class="label">No. Akta Notaris</td><td class="separator">:</td><td>{{aktaNotaris}}</td></tr>
+      </table>
+
+      <p class="closing">
+        Demikian surat keterangan domisili kantor ini dibuat dengan sebenarnya untuk
+        dipergunakan sebagaimana mestinya.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>

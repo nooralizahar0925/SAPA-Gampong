@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN USAHA</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya menerangkan bahwa:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama</td><td class="separator">:</td><td>{{nama}}</td></tr>
+        <tr><td class="label">NIK</td><td class="separator">:</td><td>{{nik}}</td></tr>
+        <tr><td class="label">Tempat/Tgl Lahir</td><td class="separator">:</td><td>{{ttl}}</td></tr>
+        <tr><td class="label">Pekerjaan</td><td class="separator">:</td><td>{{pekerjaan}}</td></tr>
+        <tr><td class="label">Jenis Kelamin</td><td class="separator">:</td><td>{{jenisKelamin}}</td></tr>
+        <tr><td class="label">Status Perkawinan</td><td class="separator">:</td><td>{{statusPerkawinan}}</td></tr>
+        <tr><td class="label">Agama</td><td class="separator">:</td><td>{{agama}}</td></tr>
+        <tr><td class="label">Alamat</td><td class="separator">:</td><td>{{alamat}}</td></tr>
+        <tr><td class="label">Jenis Usaha</td><td class="separator">:</td><td>{{jenisUsaha}}</td></tr>
+        <tr><td class="label">Nama Usaha</td><td class="separator">:</td><td>{{namaUsaha}}</td></tr>
+        <tr><td class="label">Tahun Mulai</td><td class="separator">:</td><td>{{tahunMulai}}</td></tr>
+        <tr><td class="label">Lokasi Usaha</td><td class="separator">:</td><td>Dusun {{lokasiDusun}}</td></tr>
+      </table>
+
+      <p class="closing">
+        Dengan ini kami menerangkan bahwa yang bersangkutan benar memiliki dan menjalankan usaha
+        tersebut di atas di wilayah Gampong Blang.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>

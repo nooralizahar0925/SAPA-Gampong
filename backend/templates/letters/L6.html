@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      {{> styles}}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      {{> kop}}
+
+      <div class="title">SURAT KETERANGAN YATIM / PIATU</div>
+      <div class="subtitle">Nomor : {{nomorSurat}}</div>
+
+      <p class="intro">
+        Keuchik Gampong Blang Kecamatan Krueng Sabee Kabupaten Aceh Jaya menerangkan bahwa:
+      </p>
+
+      <table class="identity-table">
+        <tr><td class="label">Nama Anak</td><td class="separator">:</td><td>{{namaAnak}}</td></tr>
+        <tr><td class="label">Tempat/Tgl Lahir</td><td class="separator">:</td><td>{{ttl}}</td></tr>
+        <tr><td class="label">Jenis Kelamin</td><td class="separator">:</td><td>{{jenisKelamin}}</td></tr>
+        <tr><td class="label">Agama</td><td class="separator">:</td><td>{{agama}}</td></tr>
+        <tr><td class="label">Alamat</td><td class="separator">:</td><td>{{alamat}}</td></tr>
+        <tr><td class="label">NIK</td><td class="separator">:</td><td>{{nik}}</td></tr>
+        <tr><td class="label">Status</td><td class="separator">:</td><td>{{statusAnak}}</td></tr>
+        <tr><td class="label">Nama Ayah</td><td class="separator">:</td><td>{{namaAyah}}</td></tr>
+        <tr><td class="label">Nama Ibu</td><td class="separator">:</td><td>{{namaIbu}}</td></tr>
+      </table>
+
+      <p class="closing">
+        Demikian surat keterangan ini diberikan untuk dipergunakan sebagaimana mestinya.
+      </p>
+
+      {{> signature}}
+    </div>
+  </body>
+</html>
