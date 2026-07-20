@@ -104,8 +104,10 @@ export const RequestStatusHistoryItem = registry.register(
   z.object({
     status: RequestStatusSchema,
     at: z.string().datetime(),
+    action: z.string().optional(),
     by: z.string().optional(),
     reason: z.string().optional(),
+    nomor_surat: z.string().optional(),
   }),
 );
 

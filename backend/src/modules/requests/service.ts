@@ -139,6 +139,9 @@ export async function getAdminRequestDetail(id: string) {
       attachments: {
         include: { file: true },
       },
+      histories: {
+        orderBy: { createdAt: 'asc' },
+      },
     },
   });
 
@@ -162,6 +165,11 @@ export async function updateRequestStatus(
   if (!canTransition(found.status, input.action)) {
     throw ApiError.conflict('Perubahan status tidak diizinkan dari status saat ini');
   }
+
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: adminUserId },
+    select: { name: true },
+  });
 
   const subjectData = input.subject_data
     ? validateSubjectData(found.letterType, input.subject_data)
@@ -188,7 +196,38 @@ export async function updateRequestStatus(
         attachments: {
           include: { file: true },
         },
+        histories: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
+    });
+
+    await tx.requestStatusHistory.create({
+      data: {
+        requestId: found.id,
+        fromStatus: found.status,
+        toStatus: targetStatus,
+        action: input.action,
+        reason: input.reason?.trim() || null,
+        actorId: adminUserId,
+        actorName: admin?.name ?? null,
+        subjectData,
+        nomorSurat,
+      },
+    });
+
+    updated.histories.push({
+      id: 'pending-response-history',
+      requestId: found.id,
+      fromStatus: found.status,
+      toStatus: targetStatus,
+      action: input.action,
+      reason: input.reason?.trim() || null,
+      actorId: adminUserId,
+      actorName: admin?.name ?? null,
+      subjectData: null,
+      nomorSurat,
+      createdAt: new Date(),
     });
 
     return serializeRequestDetail(updated);
@@ -327,6 +366,14 @@ function serializeRequestDetail(
       fileId: string;
       file: { id: string; mime: string; size: number };
     }>;
+    histories?: Array<{
+      toStatus: LetterRequest['status'];
+      action: string;
+      reason: string | null;
+      actorName: string | null;
+      nomorSurat: string | null;
+      createdAt: Date;
+    }>;
   },
 ) {
   return {
@@ -346,7 +393,14 @@ function serializeRequestDetail(
       size: attachment.file.size,
       url: signedUrl(attachment.file.id),
     })),
-    status_history: [],
+    status_history: (request.histories ?? []).map((history) => ({
+      status: history.toStatus,
+      at: history.createdAt.toISOString(),
+      action: history.action,
+      by: history.actorName ?? undefined,
+      reason: history.reason ?? undefined,
+      nomor_surat: history.nomorSurat ?? undefined,
+    })),
     nomor_surat: request.nomorSurat,
     decision_reason: request.decisionReason,
     decided_by: request.decidedBy,

@@ -98,9 +98,28 @@ model LetterRequest {
   verifiedCount     Int     @default(0)
 
   attachments RequestAttachment[]
+  histories   RequestStatusHistory[]
 
   @@index([status])
   @@index([letterType])
+  @@index([createdAt])
+}
+
+model RequestStatusHistory {
+  id          String        @id @default(cuid())
+  requestId   String
+  request     LetterRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromStatus  RequestStatus
+  toStatus    RequestStatus
+  action      String
+  reason      String?
+  actorId     String?
+  actorName   String?
+  subjectData Json?
+  nomorSurat  String?
+  createdAt   DateTime      @default(now())
+
+  @@index([requestId])
   @@index([createdAt])
 }
 

@@ -532,10 +532,16 @@
             "type": "string",
             "format": "date-time"
           },
+          "action": {
+            "type": "string"
+          },
           "by": {
             "type": "string"
           },
           "reason": {
+            "type": "string"
+          },
+          "nomor_surat": {
             "type": "string"
           }
         },
