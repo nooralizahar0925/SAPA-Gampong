@@ -974,6 +974,60 @@
           "timezone": {
             "type": "string"
           },
+          "aladhan_method": {
+            "type": "integer"
+          },
+          "fajr_angle": {
+            "type": "number"
+          },
+          "isha_angle": {
+            "type": "number"
+          },
+          "school": {
+            "type": "integer"
+          },
+          "fallback_times": {
+            "type": "object",
+            "properties": {
+              "subuh": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dhuhur": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ashar": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "maghrib": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "isya": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "subuh",
+              "dhuhur",
+              "ashar",
+              "maghrib",
+              "isya"
+            ]
+          },
           "updated_at": {
             "type": [
               "string",
@@ -986,6 +1040,11 @@
           "lng",
           "calc_method",
           "timezone",
+          "aladhan_method",
+          "fajr_angle",
+          "isha_angle",
+          "school",
+          "fallback_times",
           "updated_at"
         ]
       },
@@ -1011,6 +1070,61 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "aladhan_method": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "fajr_angle": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "isha_angle": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "school": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "fallback_subuh": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "fallback_dhuhur": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "fallback_ashar": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "fallback_maghrib": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "fallback_isya": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
           }
         }
       },

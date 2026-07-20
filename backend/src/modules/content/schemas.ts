@@ -234,9 +234,25 @@ export const PrayerConfigResponse = registry.register(
     lng: z.number().nullable(),
     calc_method: z.string().nullable(),
     timezone: z.string(),
+    aladhan_method: z.number().int(),
+    fajr_angle: z.number(),
+    isha_angle: z.number(),
+    school: z.number().int(),
+    fallback_times: z.object({
+      subuh: z.string().nullable(),
+      dhuhur: z.string().nullable(),
+      ashar: z.string().nullable(),
+      maghrib: z.string().nullable(),
+      isya: z.string().nullable(),
+    }),
     updated_at: z.string().nullable(),
   }),
 );
+
+/** "HH:MM" in 24-hour form, matching what the mobile app parses. */
+const TimeOfDay = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Gunakan format jam 24 (contoh 04:58)');
 
 export const UpdatePrayerConfigBody = registry.register(
   'UpdatePrayerConfigBody',
@@ -245,6 +261,15 @@ export const UpdatePrayerConfigBody = registry.register(
     lng: z.number().min(-180).max(180).optional(),
     calc_method: z.string().min(1).max(80).optional(),
     timezone: z.string().min(1).max(80).optional(),
+    aladhan_method: z.number().int().min(0).max(99).optional(),
+    fajr_angle: z.number().min(0).max(30).optional(),
+    isha_angle: z.number().min(0).max(30).optional(),
+    school: z.number().int().min(0).max(1).optional(),
+    fallback_subuh: TimeOfDay.nullish(),
+    fallback_dhuhur: TimeOfDay.nullish(),
+    fallback_ashar: TimeOfDay.nullish(),
+    fallback_maghrib: TimeOfDay.nullish(),
+    fallback_isya: TimeOfDay.nullish(),
   }),
 );
 

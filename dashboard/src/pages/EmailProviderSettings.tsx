@@ -13,6 +13,7 @@ import { getStoredSession } from '../auth/session';
 import { AppIcon } from '../components/AppIcon';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { ProviderStatusCard } from '../components/ProviderStatusCard';
+import { SettingsTabs } from '../components/SettingsTabs';
 
 const TEST_EMAIL_STORAGE_KEY = 'sapa-email-provider-test-targets';
 
@@ -207,11 +208,13 @@ export function EmailProviderSettingsPage() {
     <DashboardFrame
       header={
         <div className="dashboard-topbar-copy">
-          <h1>Pengaturan Email Provider</h1>
+          <h1>Pengaturan</h1>
           <p>Pilih provider email aktif, simpan kredensial di database, lalu kirim email uji langsung dari dashboard.</p>
         </div>
       }
     >
+      <SettingsTabs />
+
       {settingsQuery.isLoading ? <div className="loading-state">Memuat konfigurasi email provider...</div> : null}
 
       {settingsQuery.isError ? (

@@ -198,7 +198,9 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   const session = getStoredSession();
   const headers = new Headers(init?.headers);
 
-  if (!headers.has('Content-Type') && init?.body) {
+  // FormData must keep the browser-generated multipart boundary, so only JSON bodies
+  // get an explicit Content-Type.
+  if (!headers.has('Content-Type') && init?.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -346,6 +348,25 @@ export function sendEmailProviderTestRequest(input: SendEmailProviderTestInput) 
 /* Content management                                                         */
 /* -------------------------------------------------------------------------- */
 
+export type UploadResponse = {
+  file_id: string;
+  url: string;
+  mime: string;
+  size: number;
+};
+
+/**
+ * Uploads via multipart. Content-Type is deliberately left unset so the browser adds
+ * the multipart boundary itself; apiRequest only defaults it to JSON when absent.
+ */
+export function uploadFileRequest(file: File, kind: 'photo' | 'document' = 'photo') {
+  const body = new FormData();
+  body.append('kind', kind);
+  body.append('file', file);
+
+  return apiRequest<UploadResponse>('/uploads', { method: 'POST', body });
+}
+
 export type BannerSlide = {
   id: string;
   image_file_id: string;
@@ -414,6 +435,20 @@ export type PrayerConfig = {
   lng: number | null;
   calc_method: string | null;
   timezone: string;
+  /** Aladhan parameters the mobile app sends when online (method 99 = custom angles). */
+  aladhan_method: number;
+  fajr_angle: number;
+  isha_angle: number;
+  /** 0 = Shafi'i, 1 = Hanafi. */
+  school: number;
+  /** Offline schedule shown when the device has no connection. */
+  fallback_times: {
+    subuh: string | null;
+    dhuhur: string | null;
+    ashar: string | null;
+    maghrib: string | null;
+    isya: string | null;
+  };
   updated_at: string | null;
 };
 
@@ -495,6 +530,7 @@ export function createOfficialRequest(input: {
   name: string;
   role: string;
   order?: number;
+  photo_file_id?: string | null;
   is_leadership_highlight?: boolean;
 }) {
   return apiRequest<Official>('/content/officials', {
@@ -505,7 +541,13 @@ export function createOfficialRequest(input: {
 
 export function updateOfficialRequest(
   id: string,
-  input: { name?: string; role?: string; order?: number; is_leadership_highlight?: boolean },
+  input: {
+    name?: string;
+    role?: string;
+    order?: number;
+    photo_file_id?: string | null;
+    is_leadership_highlight?: boolean;
+  },
 ) {
   return apiRequest<Official>(`/content/officials/${id}`, {
     method: 'PATCH',
@@ -576,6 +618,15 @@ export function updatePrayerConfigRequest(input: {
   lng?: number;
   calc_method?: string;
   timezone?: string;
+  aladhan_method?: number;
+  fajr_angle?: number;
+  isha_angle?: number;
+  school?: number;
+  fallback_subuh?: string | null;
+  fallback_dhuhur?: string | null;
+  fallback_ashar?: string | null;
+  fallback_maghrib?: string | null;
+  fallback_isya?: string | null;
 }) {
   return apiRequest<PrayerConfig>('/content/prayer-config', {
     method: 'PATCH',

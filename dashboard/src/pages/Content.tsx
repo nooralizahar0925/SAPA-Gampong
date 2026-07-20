@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AppIcon } from '../components/AppIcon';
 import { DashboardFrame } from '../components/DashboardFrame';
+import { alertApiError, toastSuccess } from '../lib/alerts';
 import { BannerTab } from '../components/content/BannerTab';
 import { DemographicsTab } from '../components/content/DemographicsTab';
 import { MosqueTab } from '../components/content/MosqueTab';
@@ -53,7 +53,6 @@ export function ContentPage() {
 
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   /**
    * Each tab registers how to persist itself. The header owns the single save action
@@ -74,15 +73,15 @@ export function ContentPage() {
     if (!saveHandler) return;
 
     setSaving(true);
-    setError(null);
 
     try {
       await saveHandler();
       setSavedAt(new Date());
       setDirty(false);
       queryClient.invalidateQueries({ queryKey: ['content'] });
+      toastSuccess('Perubahan tersimpan');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Perubahan gagal disimpan.');
+      alertApiError(err, 'Perubahan gagal disimpan.');
     } finally {
       setSaving(false);
     }
@@ -103,10 +102,6 @@ export function ContentPage() {
             <span className="content-saved-at">
               {savedLabel ? `Terakhir disimpan ${savedLabel}` : 'Belum ada perubahan tersimpan'}
             </span>
-            <button className="secondary-button" type="button">
-              <AppIcon name="image" />
-              Pratinjau
-            </button>
             <button
               className="primary-button"
               type="button"
@@ -133,12 +128,6 @@ export function ContentPage() {
           </button>
         ))}
       </div>
-
-      {error ? (
-        <div className="error-box" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {dirty && !saving ? (
         <p className="content-dirty-hint">Ada perubahan yang belum disimpan.</p>

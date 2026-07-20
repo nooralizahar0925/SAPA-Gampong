@@ -35,6 +35,17 @@ const EMPTY_PRAYER_CONFIG = {
   lng: null,
   calc_method: null,
   timezone: 'Asia/Jakarta',
+  aladhan_method: 99,
+  fajr_angle: 20,
+  isha_angle: 18,
+  school: 0,
+  fallback_times: {
+    subuh: null,
+    dhuhur: null,
+    ashar: null,
+    maghrib: null,
+    isya: null,
+  },
   updated_at: null,
 };
 
@@ -559,6 +570,17 @@ export async function getPrayerConfig() {
     lng: row.lng,
     calc_method: row.calcMethod,
     timezone: row.timezone,
+    aladhan_method: row.aladhanMethod,
+    fajr_angle: row.fajrAngle,
+    isha_angle: row.ishaAngle,
+    school: row.school,
+    fallback_times: {
+      subuh: row.fallbackSubuh,
+      dhuhur: row.fallbackDhuhur,
+      ashar: row.fallbackAshar,
+      maghrib: row.fallbackMaghrib,
+      isya: row.fallbackIsya,
+    },
     updated_at: row.updatedAt.toISOString(),
   };
 }
@@ -568,6 +590,15 @@ export async function updatePrayerConfig(input: {
   lng?: number;
   calc_method?: string;
   timezone?: string;
+  aladhan_method?: number;
+  fajr_angle?: number;
+  isha_angle?: number;
+  school?: number;
+  fallback_subuh?: string | null;
+  fallback_dhuhur?: string | null;
+  fallback_ashar?: string | null;
+  fallback_maghrib?: string | null;
+  fallback_isya?: string | null;
 }) {
   const existing = await prisma.prayerConfig.findUnique({ where: { id: SINGLETON_ID } });
 
@@ -590,6 +621,15 @@ export async function updatePrayerConfig(input: {
         lng: input.lng,
         calcMethod: input.calc_method,
         timezone: input.timezone,
+        aladhanMethod: input.aladhan_method,
+        fajrAngle: input.fajr_angle,
+        ishaAngle: input.isha_angle,
+        school: input.school,
+        fallbackSubuh: input.fallback_subuh,
+        fallbackDhuhur: input.fallback_dhuhur,
+        fallbackAshar: input.fallback_ashar,
+        fallbackMaghrib: input.fallback_maghrib,
+        fallbackIsya: input.fallback_isya,
       }),
     });
   } else {
@@ -599,7 +639,18 @@ export async function updatePrayerConfig(input: {
         lat: input.lat!,
         lng: input.lng!,
         calcMethod: input.calc_method!,
-        ...(isSupplied(input.timezone) ? { timezone: input.timezone } : {}),
+        ...definedOnly({
+          timezone: input.timezone,
+          aladhanMethod: input.aladhan_method,
+          fajrAngle: input.fajr_angle,
+          ishaAngle: input.isha_angle,
+          school: input.school,
+          fallbackSubuh: input.fallback_subuh,
+          fallbackDhuhur: input.fallback_dhuhur,
+          fallbackAshar: input.fallback_ashar,
+          fallbackMaghrib: input.fallback_maghrib,
+          fallbackIsya: input.fallback_isya,
+        }),
       },
     });
   }

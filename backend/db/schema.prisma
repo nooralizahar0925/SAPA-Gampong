@@ -246,6 +246,23 @@ model PrayerConfig {
   lng        Float
   calcMethod String
   timezone   String   @default("Asia/Jakarta")
+
+  // Aladhan parameters the mobile app sends when it is online and using GPS.
+  // method 99 = custom angles, school 0 = Shafi'i (see mobile
+  // lib/data/services/prayer_times_service.dart).
+  aladhanMethod Int    @default(99)
+  fajrAngle     Float  @default(20)
+  ishaAngle     Float  @default(18)
+  school        Int    @default(0)
+
+  // Offline fallback for Gampong Blang: shown when the device has no connection,
+  // replacing the times that were previously hardcoded in the mobile app.
+  fallbackSubuh   String?
+  fallbackDhuhur  String?
+  fallbackAshar   String?
+  fallbackMaghrib String?
+  fallbackIsya    String?
+
   updatedAt  DateTime @updatedAt
 }
 

@@ -2617,3 +2617,569 @@ select.field-input:focus {
     transition: none;
   }
 }
+
+/* Tables, modals, reorderable lists, image pickers (Task 17 rework) */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.detail-card-head {
+  flex-wrap: wrap;
+}
+
+.detail-card-head .secondary-button {
+  margin-left: auto;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 11px 20px;
+  background: var(--g50);
+  color: var(--ink500);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink700);
+}
+
+.data-table tbody tr:hover {
+  background: #fafcfb;
+}
+
+.data-table b {
+  color: var(--ink900);
+  font-size: 14px;
+}
+
+.data-table .col-photo {
+  width: 72px;
+}
+
+.data-table .col-actions {
+  width: 96px;
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.text-muted {
+  color: var(--ink400);
+}
+
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--g100);
+  color: var(--g800);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Avatar: initials stand in when a perangkat has no photo yet. */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--g100);
+  color: var(--g800);
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+}
+
+.avatar-fallback .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Native <dialog>: the browser handles focus trapping and Escape. */
+.sapa-modal {
+  width: min(560px, calc(100vw - 32px));
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink900);
+  box-shadow: 0 24px 60px -24px rgba(10, 42, 30, 0.45);
+}
+
+.sapa-modal::backdrop {
+  background: rgba(10, 42, 30, 0.42);
+}
+
+.sapa-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sapa-modal-head h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sapa-modal-body {
+  padding: 20px;
+}
+
+.sapa-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  background: #fafcfb;
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-form {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .modal-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.modal-form-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.modal-form-fields .field input,
+.modal-form-fields .field textarea {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  padding: 11px 13px;
+  font-size: 14px;
+  color: var(--ink900);
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-form-fields .field input:focus,
+.modal-form-fields .field textarea:focus {
+  border-color: var(--g600);
+  box-shadow: 0 0 0 3px rgba(196, 224, 210, 0.7);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink700);
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--g600);
+}
+
+.field-select {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  padding: 11px 13px;
+  font-size: 14px;
+  color: var(--ink900);
+  outline: none;
+  font-family: inherit;
+}
+
+.field-select:focus {
+  border-color: var(--g600);
+  box-shadow: 0 0 0 3px rgba(196, 224, 210, 0.7);
+}
+
+.field-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink900);
+}
+
+/* Image picker used by the profile header photo and perangkat avatars. */
+.image-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.image-picker-preview {
+  border-radius: 12px;
+  background: var(--g100);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.image-picker-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-picker-placeholder {
+  color: var(--g700);
+  display: grid;
+  place-items: center;
+}
+
+.image-picker-placeholder .icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Drag-to-reorder list (misi). Every drag has an arrow-button equivalent. */
+.reorderable {
+  display: grid;
+  gap: 10px;
+}
+
+.reorderable-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.reorderable-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #fff;
+  transition:
+    border-color 120ms ease,
+    opacity 120ms ease;
+}
+
+.reorderable-row.dragging {
+  opacity: 0.5;
+}
+
+.reorderable-row.drop-target {
+  border-color: var(--g600);
+  box-shadow: 0 0 0 3px rgba(196, 224, 210, 0.55);
+}
+
+.reorderable-grip {
+  color: var(--ink300);
+  cursor: grab;
+  display: grid;
+  place-items: center;
+}
+
+.reorderable-grip .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.reorderable-index {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--g100);
+  color: var(--g800);
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: none;
+}
+
+.reorderable-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  font-size: 14px;
+  color: var(--ink900);
+  background: transparent;
+  padding: 6px 2px;
+}
+
+.reorderable-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.reorderable-actions .ghost-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.reorderable-actions .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.empty-state.compact {
+  padding: 8px 0;
+  margin: 0;
+}
+
+/* SweetAlert2 tuned to the dashboard palette. */
+.sapa-toast {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  border-radius: 12px !important;
+}
+
+.swal2-popup {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  border-radius: 16px;
+}
+
+.swal2-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--ink900) !important;
+}
+
+.swal2-html-container {
+  font-size: 14px !important;
+  color: var(--ink500) !important;
+}
+
+.swal2-styled.swal2-confirm,
+.swal2-styled.swal2-cancel {
+  border-radius: 11px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  padding: 11px 20px !important;
+}
+
+.sapa-error-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  text-align: left;
+  font-size: 13.5px;
+  color: var(--ink700);
+  line-height: 1.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reorderable-row {
+    transition: none;
+  }
+}
+
+/* Demographic table editor + wider table cells */
+
+.cell-input {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  padding: 8px 11px;
+  font-size: 13.5px;
+  color: var(--ink900);
+  outline: none;
+  font-family: inherit;
+}
+
+.cell-input:focus {
+  border-color: var(--g600);
+  box-shadow: 0 0 0 3px rgba(196, 224, 210, 0.7);
+}
+
+.data-table .col-count {
+  width: 180px;
+}
+
+.data-table .col-order {
+  width: 78px;
+}
+
+.order-badge {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--g100);
+  color: var(--g800);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cell-wrap {
+  max-width: 420px;
+  white-space: normal;
+  line-height: 1.6;
+  color: var(--ink500);
+}
+
+/* Pengaturan aplikasi: previews + wide fields */
+
+.content-form-grid .field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.data-table .col-code {
+  width: 84px;
+}
+
+/* Mirrors the printed letter head so the three lines are not abstract. */
+.letterhead-preview {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  background: #fff;
+}
+
+.letterhead-preview p {
+  margin: 0 0 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink700);
+  line-height: 1.5;
+}
+
+.letterhead-preview p.strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink900);
+}
+
+.letterhead-preview p.muted {
+  text-transform: none;
+  font-weight: 500;
+  color: var(--ink400);
+}
+
+.letterhead-rule {
+  display: block;
+  height: 2px;
+  background: var(--ink900);
+  margin: 10px 0 8px;
+  border-radius: 1px;
+}
+
+.letterhead-preview small {
+  display: block;
+  font-size: 11px;
+  color: var(--ink500);
+  line-height: 1.6;
+}
+
+.signature-preview {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.signature-preview small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink500);
+  margin-bottom: 26px;
+}
+
+.signature-preview b {
+  display: block;
+  font-size: 13.5px;
+  text-decoration: underline;
+  color: var(--ink900);
+}
+
+/* Card-head controls (year picker + action) */
+
+.card-head-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card-head-controls .secondary-button {
+  margin-left: 0;
+}
+
+.inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink700);
+  white-space: nowrap;
+}
+
+.field-select.compact {
+  width: auto;
+  height: 38px;
+  padding: 0 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.card-inline-note {
+  margin: 0;
+  padding: 10px 20px 0;
+  color: var(--warn);
+  font-size: 12.5px;
+  font-weight: 600;
+}

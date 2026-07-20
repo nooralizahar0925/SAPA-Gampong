@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getVillageProfileRequest,
   getVisionMissionRequest,
   listDemographicsRequest,
+  updateDemographicsRequest,
   updateVillageProfileRequest,
   updateVisionMissionRequest,
+  type DemographicBlock,
 } from '../../api/client';
+import { alertApiError, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
+import { ImagePicker } from './ImagePicker';
+import { ReorderableList } from './ReorderableList';
 import { useMarkDirty, useRegisterSave } from './save-context';
 
 type ProfileForm = {
@@ -23,7 +28,7 @@ type ProfileForm = {
   map_lat: string;
   map_lng: string;
   vision: string;
-  missions: string;
+  missions: string[];
 };
 
 const EMPTY: ProfileForm = {
@@ -39,7 +44,7 @@ const EMPTY: ProfileForm = {
   map_lat: '',
   map_lng: '',
   vision: '',
-  missions: '',
+  missions: [],
 };
 
 const DESCRIPTION_LIMIT = 600;
@@ -54,6 +59,7 @@ function optionalNumber(value: string): number | null {
 export function ProfileTab() {
   const [form, setForm] = useState<ProfileForm>(EMPTY);
   const markDirty = useMarkDirty();
+  const queryClient = useQueryClient();
 
   const profileQuery = useQuery({
     queryKey: ['content', 'profile'],
@@ -68,6 +74,31 @@ export function ProfileTab() {
   const demographicsQuery = useQuery({
     queryKey: ['content', 'demographics'],
     queryFn: listDemographicsRequest,
+  });
+
+  /**
+   * A switch is an immediate action, not pending form state, so it persists on click
+   * rather than waiting for the header's save button.
+   */
+  const toggleVisibility = useMutation({
+    mutationFn: (block: DemographicBlock) =>
+      updateDemographicsRequest([
+        {
+          key: block.key,
+          label: block.label,
+          type: block.type,
+          data: block.data,
+          order: block.order,
+          visible: !block.visible,
+        },
+      ]),
+    onSuccess: async (_data, block) => {
+      await queryClient.invalidateQueries({ queryKey: ['content', 'demographics'] });
+      toastSuccess(
+        block.visible ? `${block.label} disembunyikan` : `${block.label} ditampilkan`,
+      );
+    },
+    onError: (error) => alertApiError(error, 'Status blok gagal diubah.'),
   });
 
   useEffect(() => {
@@ -94,15 +125,22 @@ export function ProfileTab() {
     setForm((prev) => ({
       ...prev,
       vision: visionQuery.data.vision ?? '',
-      missions: visionQuery.data.missions.join('\n'),
+      missions: visionQuery.data.missions,
     }));
   }, [visionQuery.data]);
 
   useRegisterSave(async () => {
+    // Required columns are omitted rather than sent blank: the API rejects empty
+    // strings for name/kecamatan/kabupaten, and an untouched field should not be
+    // part of the PATCH at all.
+    const required = {
+      ...(form.name.trim() ? { name: form.name.trim() } : {}),
+      ...(form.kecamatan.trim() ? { kecamatan: form.kecamatan.trim() } : {}),
+      ...(form.kabupaten.trim() ? { kabupaten: form.kabupaten.trim() } : {}),
+    };
+
     await updateVillageProfileRequest({
-      name: form.name,
-      kecamatan: form.kecamatan,
-      kabupaten: form.kabupaten,
+      ...required,
       kemukiman: form.kemukiman || null,
       area_size: form.area_size || null,
       elevation: form.elevation || null,
@@ -113,12 +151,11 @@ export function ProfileTab() {
       map_lng: optionalNumber(form.map_lng),
     });
 
+    const missions = form.missions.filter((line) => line.trim().length > 0);
+
     await updateVisionMissionRequest({
-      vision: form.vision,
-      missions: form.missions
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean),
+      ...(form.vision.trim() ? { vision: form.vision.trim() } : {}),
+      missions,
     });
   }, [form]);
 
@@ -224,9 +261,20 @@ export function ProfileTab() {
           </div>
 
           <div className="field content-field-wide">
-            <label htmlFor="profile-missions">Misi</label>
-            <textarea id="profile-missions" rows={5} {...field('missions')} />
-            <small className="field-hint">Satu baris untuk setiap misi.</small>
+            <span className="field-label">Misi</span>
+            <ReorderableList
+              items={form.missions}
+              onChange={(missions) => {
+                markDirty();
+                setForm((prev) => ({ ...prev, missions }));
+              }}
+              placeholder="Tulis satu misi gampong"
+              addLabel="Tambah misi"
+              itemNoun="misi"
+            />
+            <small className="field-hint">
+              Seret untuk mengubah urutan. Urutan ini dipakai pada layar Profil Desa.
+            </small>
           </div>
         </section>
       </div>
@@ -238,13 +286,17 @@ export function ProfileTab() {
           </div>
 
           <div className="content-aside-body">
-            <div className="photo-dropzone">
-              <AppIcon name="image" />
-            </div>
-            <button className="secondary-button full-width" type="button">
-              <AppIcon name="edit" />
-              Ganti Foto
-            </button>
+            <ImagePicker
+              imageUrl={profileQuery.data?.photo_url ?? null}
+              aspect="16 / 9"
+              buttonLabel={profileQuery.data?.photo_url ? 'Ganti Foto' : 'Unggah Foto'}
+              inputId="profile-photo"
+              onUploaded={async (fileId) => {
+                await updateVillageProfileRequest({ photo_file_id: fileId });
+                await queryClient.invalidateQueries({ queryKey: ['content', 'profile'] });
+                toastSuccess('Foto header diperbarui');
+              }}
+            />
             <small className="field-hint">
               Disarankan rasio 16:9, minimal 1280×720 px, maksimal 2 MB.
             </small>
@@ -273,11 +325,16 @@ export function ProfileTab() {
                       <b>{block.label}</b>
                       <small>{summarize(block.data)}</small>
                     </div>
-                    <span
-                      className={`stat-toggle${block.visible ? ' on' : ''}`}
-                      role="img"
-                      aria-label={block.visible ? 'Ditampilkan' : 'Disembunyikan'}
-                    />
+                    <button
+                      className={`stat-toggle-button${block.visible ? ' on' : ''}`}
+                      type="button"
+                      aria-pressed={block.visible}
+                      aria-label={`Tampilkan ${block.label} di aplikasi warga`}
+                      disabled={toggleVisibility.isPending}
+                      onClick={() => toggleVisibility.mutate(block)}
+                    >
+                      <span className="stat-toggle-track" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -313,5 +370,5 @@ function summarize(data: unknown): string {
   if (entries.length === 0) return 'data belum tersedia';
   if (entries.length === 1) return String(entries[0][1]);
 
-  return entries.map(([key, value]) => `${value} ${key}`).join(' · ');
+  return entries.map(([key, value]) => `${value} ${key.replace(/_/g, ' ')}`).join(' · ');
 }

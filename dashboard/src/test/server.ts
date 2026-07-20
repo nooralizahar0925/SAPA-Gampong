@@ -398,8 +398,20 @@ function initialContentState(): {
       lng: 95.6,
       calc_method: 'Kemenag',
       timezone: 'Asia/Jakarta',
+      aladhan_method: 99,
+      fajr_angle: 20,
+      isha_angle: 18,
+      school: 0,
+      fallback_times: {
+        subuh: '04:58',
+        dhuhur: '12:31',
+        ashar: '15:52',
+        maghrib: '18:38',
+        isya: '19:49',
+      },
       updated_at: '2026-07-20T10:00:00.000Z',
     },
+    // Mirrors db/seed-content.ts: two fixed-shape blocks plus open-ended ones.
     demographics: [
       {
         key: 'total_penduduk',
@@ -413,8 +425,16 @@ function initialContentState(): {
         key: 'jenis_kelamin',
         label: 'Jenis Kelamin',
         type: 'split',
-        data: { male: 620, female: 620 },
+        data: { laki_laki: 620, perempuan: 620 },
         order: 1,
+        visible: true,
+      },
+      {
+        key: 'tingkat_pendidikan',
+        label: 'Tingkat Pendidikan',
+        type: 'bar',
+        data: { sd: 412, sma: 498 },
+        order: 2,
         visible: true,
       },
     ],
@@ -431,9 +451,18 @@ function initialContentState(): {
       secretary_name: 'AFZALUL ZIKRI, S.P',
       updated_at: '2026-07-20T10:00:00.000Z',
     },
+    // The API returns all ten types, reporting 0 for the ones never used.
     letterCounters: [
       { letter_type: 'L1', last_number: 12 },
       { letter_type: 'L2', last_number: 0 },
+      { letter_type: 'L3', last_number: 0 },
+      { letter_type: 'L4', last_number: 5 },
+      { letter_type: 'L5', last_number: 0 },
+      { letter_type: 'L6', last_number: 0 },
+      { letter_type: 'L7', last_number: 0 },
+      { letter_type: 'L8', last_number: 0 },
+      { letter_type: 'L9', last_number: 0 },
+      { letter_type: 'L10', last_number: 0 },
     ],
   };
 }
@@ -826,6 +855,14 @@ export const server = setupServer(
     contentState.officials = [...contentState.officials, created];
     return HttpResponse.json(created, { status: 201 });
   }),
+  http.patch('http://localhost:8080/api/content/officials/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const index = contentState.officials.findIndex((o) => o.id === params.id);
+    if (index < 0) return new HttpResponse(null, { status: 404 });
+
+    contentState.officials[index] = { ...contentState.officials[index], ...body };
+    return HttpResponse.json(contentState.officials[index]);
+  }),
   http.delete('http://localhost:8080/api/content/officials/:id', ({ params }) => {
     contentState.officials = contentState.officials.filter((o) => o.id !== params.id);
     return new HttpResponse(null, { status: 204 });
@@ -846,6 +883,14 @@ export const server = setupServer(
     };
     contentState.strengths = [...contentState.strengths, created];
     return HttpResponse.json(created, { status: 201 });
+  }),
+  http.patch('http://localhost:8080/api/content/strengths/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const index = contentState.strengths.findIndex((s) => s.id === params.id);
+    if (index < 0) return new HttpResponse(null, { status: 404 });
+
+    contentState.strengths[index] = { ...contentState.strengths[index], ...body };
+    return HttpResponse.json(contentState.strengths[index]);
   }),
   http.delete('http://localhost:8080/api/content/strengths/:id', ({ params }) => {
     contentState.strengths = contentState.strengths.filter((s) => s.id !== params.id);
@@ -868,9 +913,43 @@ export const server = setupServer(
     contentState.mosques = [...contentState.mosques, created];
     return HttpResponse.json(created, { status: 201 });
   }),
+  http.patch('http://localhost:8080/api/content/mosques/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const index = contentState.mosques.findIndex((m) => m.id === params.id);
+    if (index < 0) return new HttpResponse(null, { status: 404 });
+
+    contentState.mosques[index] = { ...contentState.mosques[index], ...body };
+    return HttpResponse.json(contentState.mosques[index]);
+  }),
   http.delete('http://localhost:8080/api/content/mosques/:id', ({ params }) => {
     contentState.mosques = contentState.mosques.filter((m) => m.id !== params.id);
     return new HttpResponse(null, { status: 204 });
+  }),
+  http.post('http://localhost:8080/api/uploads', () =>
+    HttpResponse.json(
+      {
+        file_id: 'file-uploaded',
+        url: 'http://localhost:8080/api/uploads/file-uploaded',
+        mime: 'image/webp',
+        size: 2048,
+      },
+      { status: 201 },
+    ),
+  ),
+  http.post('http://localhost:8080/api/content/banners', async ({ request }) => {
+    const body = (await request.json()) as { image_file_id: string; order?: number };
+    const created = {
+      id: `banner-${contentState.banners.length + 1}`,
+      image_file_id: body.image_file_id,
+      image_url: `http://localhost:8080/api/uploads/${body.image_file_id}`,
+      link_url: null,
+      order: body.order ?? contentState.banners.length,
+      active: true,
+      start_at: null,
+      end_at: null,
+    };
+    contentState.banners = [...contentState.banners, created];
+    return HttpResponse.json(created, { status: 201 });
   }),
 
   http.get('http://localhost:8080/api/content/prayer-config', () =>
@@ -878,7 +957,21 @@ export const server = setupServer(
   ),
   http.patch('http://localhost:8080/api/content/prayer-config', async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
-    contentState.prayerConfig = { ...contentState.prayerConfig, ...body };
+
+    // The API takes flat fallback_* keys but returns them nested, like the real backend.
+    const fallback = { ...contentState.prayerConfig.fallback_times };
+    for (const slot of ['subuh', 'dhuhur', 'ashar', 'maghrib', 'isya'] as const) {
+      const key = `fallback_${slot}`;
+      if (key in body) fallback[slot] = body[key] as string | null;
+      delete body[key];
+    }
+
+    contentState.prayerConfig = {
+      ...contentState.prayerConfig,
+      ...body,
+      fallback_times: fallback,
+    };
+
     return HttpResponse.json(contentState.prayerConfig);
   }),
 
@@ -913,7 +1006,14 @@ export const server = setupServer(
 
   http.get('http://localhost:8080/api/settings/letter-counters', ({ request }) => {
     const year = Number(new URL(request.url).searchParams.get('year')) || 2026;
-    return HttpResponse.json({ year, counters: contentState.letterCounters });
+
+    // Counters are per year: only the seeded year has usage, like the real backend.
+    const counters =
+      year === 2026
+        ? contentState.letterCounters
+        : contentState.letterCounters.map((c) => ({ ...c, last_number: 0 }));
+
+    return HttpResponse.json({ year, counters });
   }),
   http.patch('http://localhost:8080/api/settings/letter-counters', async ({ request }) => {
     const body = (await request.json()) as {

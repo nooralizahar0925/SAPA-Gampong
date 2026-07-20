@@ -5,19 +5,85 @@ import {
   updateDemographicsRequest,
   type DemographicBlock,
 } from '../../api/client';
+import { AppIcon } from '../AppIcon';
 import { useMarkDirty, useRegisterSave } from './save-context';
 
-type DraftBlock = DemographicBlock & { draft: Record<string, number> };
+/**
+ * Two blocks have a fixed shape the citizen app relies on — a single headcount and the
+ * male/female split — so they render as plain inputs and their labels are not editable.
+ * Every other block is open-ended (brief section 9) and is edited as a table of
+ * label/value rows that can be added, renamed, or removed.
+ */
+const FIXED_BLOCK_KEYS = new Set(['jumlah_penduduk', 'jenis_kelamin', 'total_penduduk']);
+
+type Entry = { id: number; label: string; value: string };
+
+type DraftBlock = Omit<DemographicBlock, 'data'> & { entries: Entry[] };
+
+let entrySeq = 0;
+
+/** "laki_laki" -> "Laki Laki" for display; the stored key keeps its original form. */
+function humanize(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/** "SD/Sederajat" -> "sd_sederajat", so the stored JSON keeps snake_case keys. */
+function toKey(label: string): string {
+  return (
+    label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'tanpa_nama'
+  );
+}
 
 function toDraft(block: DemographicBlock): DraftBlock {
   const data = (block.data ?? {}) as Record<string, unknown>;
-  const draft: Record<string, number> = {};
 
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === 'number') draft[key] = value;
+  const entries: Entry[] = Object.entries(data)
+    .filter(([, value]) => typeof value === 'number')
+    .map(([key, value]) => ({ id: entrySeq++, label: humanize(key), value: String(value) }));
+
+  const { data: _data, ...rest } = block;
+  return { ...rest, entries };
+}
+
+/**
+ * Rebuilds `data`. Fixed blocks keep their original keys so the citizen app keeps
+ * finding `value` / `laki_laki` / `perempuan`; open blocks derive keys from labels.
+ */
+function toData(block: DraftBlock, original: DemographicBlock | undefined): Record<string, number> {
+  if (FIXED_BLOCK_KEYS.has(block.key)) {
+    const originalKeys = Object.keys((original?.data ?? {}) as Record<string, unknown>);
+    const data: Record<string, number> = {};
+
+    block.entries.forEach((entry, index) => {
+      const key = originalKeys[index] ?? toKey(entry.label);
+      data[key] = Number(entry.value) || 0;
+    });
+
+    return data;
   }
 
-  return { ...block, draft };
+  const data: Record<string, number> = {};
+
+  for (const entry of block.entries) {
+    if (!entry.label.trim()) continue;
+
+    let key = toKey(entry.label);
+    let suffix = 2;
+    while (key in data) key = `${toKey(entry.label)}_${suffix++}`;
+
+    data[key] = Number(entry.value) || 0;
+  }
+
+  return data;
 }
 
 export function DemographicsTab() {
@@ -40,32 +106,30 @@ export function DemographicsTab() {
           key: block.key,
           label: block.label,
           type: block.type,
-          data: block.draft,
+          data: toData(
+            block,
+            query.data?.find((b) => b.key === block.key),
+          ),
           order: block.order,
+          // Visibility is owned by the Profil & Visi Misi tab; preserve it here.
           visible: block.visible,
         })),
       ),
-    [blocks],
+    [blocks, query.data],
   );
 
-  function setField(blockKey: string, fieldKey: string, value: string) {
+  function updateBlock(blockKey: string, patch: (block: DraftBlock) => DraftBlock) {
     markDirty();
-    setBlocks((prev) =>
-      prev.map((block) =>
-        block.key === blockKey
-          ? { ...block, draft: { ...block.draft, [fieldKey]: Number(value) } }
-          : block,
-      ),
-    );
+    setBlocks((prev) => prev.map((block) => (block.key === blockKey ? patch(block) : block)));
   }
 
-  function toggleVisible(blockKey: string) {
-    markDirty();
-    setBlocks((prev) =>
-      prev.map((block) =>
-        block.key === blockKey ? { ...block, visible: !block.visible } : block,
+  function setEntry(blockKey: string, id: number, field: 'label' | 'value', next: string) {
+    updateBlock(blockKey, (block) => ({
+      ...block,
+      entries: block.entries.map((entry) =>
+        entry.id === id ? { ...entry, [field]: next } : entry,
       ),
-    );
+    }));
   }
 
   return (
@@ -73,42 +137,117 @@ export function DemographicsTab() {
       <div className="content-main">
         {query.isLoading ? <div className="loading-state">Memuat data demografi...</div> : null}
 
-        {blocks.map((block) => (
-          <section className="detail-card" key={block.key}>
-            <div className="detail-card-head">
-              <h2>{block.label}</h2>
-              <button
-                className={`stat-toggle-button${block.visible ? ' on' : ''}`}
-                type="button"
-                onClick={() => toggleVisible(block.key)}
-                aria-pressed={block.visible}
-                aria-label={`Tampilkan ${block.label} di aplikasi warga`}
-              >
-                <span className="stat-toggle-track" />
-              </button>
-            </div>
+        {blocks.map((block) =>
+          FIXED_BLOCK_KEYS.has(block.key) ? (
+            <section className="detail-card" key={block.key}>
+              <div className="detail-card-head">
+                <h2>{block.label}</h2>
+              </div>
 
-            <div className="content-form-grid">
-              {Object.entries(block.draft).length === 0 ? (
-                <p className="empty-state">Blok ini belum memiliki data angka.</p>
-              ) : (
-                Object.entries(block.draft).map(([fieldKey, value]) => (
-                  <div className="field" key={fieldKey}>
-                    <label htmlFor={`block-${block.key}-${fieldKey}`}>
-                      {fieldKey === 'value' ? block.label : `${block.label} · ${fieldKey}`}
+              <div className="content-form-grid">
+                {block.entries.map((entry) => (
+                  <div className="field" key={entry.id}>
+                    <label htmlFor={`entry-value-${block.key}-${entry.id}`}>
+                      {entry.label === 'Value' ? block.label : entry.label}
                     </label>
                     <input
-                      id={`block-${block.key}-${fieldKey}`}
+                      id={`entry-value-${block.key}-${entry.id}`}
                       type="number"
-                      value={value}
-                      onChange={(event) => setField(block.key, fieldKey, event.target.value)}
+                      value={entry.value}
+                      onChange={(event) =>
+                        setEntry(block.key, entry.id, 'value', event.target.value)
+                      }
                     />
                   </div>
-                ))
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="detail-card" key={block.key}>
+              <div className="detail-card-head">
+                <h2>{block.label}</h2>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  aria-label={`Tambah baris pada ${block.label}`}
+                  onClick={() =>
+                    updateBlock(block.key, (b) => ({
+                      ...b,
+                      entries: [...b.entries, { id: entrySeq++, label: '', value: '0' }],
+                    }))
+                  }
+                >
+                  Tambah baris
+                </button>
+              </div>
+
+              {block.entries.length === 0 ? (
+                <p className="empty-state">
+                  Blok ini belum memiliki rincian. Tambahkan baris pertama di atas.
+                </p>
+              ) : (
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Label</th>
+                        <th scope="col" className="col-count">
+                          Jumlah
+                        </th>
+                        <th scope="col" className="col-actions">
+                          <span className="visually-hidden">Aksi</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {block.entries.map((entry, index) => (
+                        <tr key={entry.id}>
+                          <td>
+                            <input
+                              className="cell-input"
+                              value={entry.label}
+                              placeholder="Misalnya SD/Sederajat"
+                              aria-label={`${block.label} · Label ${index + 1}`}
+                              onChange={(event) =>
+                                setEntry(block.key, entry.id, 'label', event.target.value)
+                              }
+                            />
+                          </td>
+                          <td className="col-count">
+                            <input
+                              className="cell-input"
+                              type="number"
+                              value={entry.value}
+                              aria-label={`${block.label} · Jumlah ${index + 1}`}
+                              onChange={(event) =>
+                                setEntry(block.key, entry.id, 'value', event.target.value)
+                              }
+                            />
+                          </td>
+                          <td className="col-actions">
+                            <button
+                              className="ghost-button danger"
+                              type="button"
+                              aria-label={`Hapus ${entry.label || `baris ${index + 1}`}`}
+                              onClick={() =>
+                                updateBlock(block.key, (b) => ({
+                                  ...b,
+                                  entries: b.entries.filter((e) => e.id !== entry.id),
+                                }))
+                              }
+                            >
+                              <AppIcon name="x" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </div>
-          </section>
-        ))}
+            </section>
+          ),
+        )}
       </div>
     </div>
   );

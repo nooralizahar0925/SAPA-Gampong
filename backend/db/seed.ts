@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/lib/prisma';
+import { seedContent } from './seed-content';
 
 const DEV_DEFAULT_EMAIL = 'admin@gampongblang.id';
 const DEV_DEFAULT_PASSWORD = 'admin123';
@@ -38,6 +39,7 @@ export async function seedAdmin() {
 
 if (require.main === module) {
   seedAdmin()
+    .then(() => seedContent())
     .then(() => prisma.$disconnect())
     .catch(async (err) => {
       console.error(err);
