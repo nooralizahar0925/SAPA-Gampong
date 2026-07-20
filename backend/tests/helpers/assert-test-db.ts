@@ -18,8 +18,9 @@ export function assertTestDatabase(databaseUrl: string | undefined): void {
     const parsed = new URL(databaseUrl);
     dbName = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
   } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
     throw new Error(
-      `DATABASE_URL is not a valid URL, so its database name could not be determined: ${databaseUrl}`,
+      `DATABASE_URL is not a valid URL, so its database name could not be determined: ${databaseUrl} (${reason})`,
     );
   }
 

@@ -1,20 +1,13 @@
 import { z } from 'zod';
 import { registry } from './registry';
+import { ERROR_CODES } from '../lib/errors';
 
 export const ErrorEnvelope = registry.register(
   'ErrorEnvelope',
   z
     .object({
       error: z.object({
-        code: z.enum([
-          'VALIDATION_ERROR',
-          'UNAUTHORIZED',
-          'FORBIDDEN',
-          'NOT_FOUND',
-          'CONFLICT',
-          'RATE_LIMITED',
-          'SERVER_ERROR',
-        ]),
+        code: z.enum(ERROR_CODES),
         message: z.string(),
         fields: z.record(z.string()).optional(),
       }),

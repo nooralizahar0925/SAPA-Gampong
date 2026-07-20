@@ -39,14 +39,23 @@ describe('OpenAPI document', () => {
   });
 
   it('matches the committed openapi.json artifact', () => {
-    const generated = buildDocument();
+    // `servers` is derived from env.PUBLIC_BASE_URL, which legitimately differs
+    // per developer/deployment. This test cares about the API surface (paths,
+    // schemas, security, etc.), not deployment config, so `servers` is excluded
+    // from both sides of the comparison. The live /api/openapi.json response
+    // still returns buildDocument() with the real servers from env, unaffected.
+    const generated = JSON.parse(JSON.stringify(buildDocument())) as Record<string, unknown>;
     const committedRaw = readFileSync(join(__dirname, '..', 'openapi.json'), 'utf-8');
-    const committed = JSON.parse(committedRaw);
+    const committed = JSON.parse(committedRaw) as Record<string, unknown>;
+
+    delete generated.servers;
+    delete committed.servers;
 
     expect(
       committed,
-      'backend/openapi.json is stale relative to buildDocument(). Run `npm run openapi:write` and commit the result.',
-    ).toEqual(JSON.parse(JSON.stringify(generated)));
+      'backend/openapi.json is stale relative to buildDocument() (ignoring `servers`, which is ' +
+        'environment-dependent). Run `npm run openapi:write` and commit the result.',
+    ).toEqual(generated);
   });
 });
 

@@ -1,11 +1,15 @@
-export type ErrorCode =
-  | 'VALIDATION_ERROR'
-  | 'UNAUTHORIZED'
-  | 'FORBIDDEN'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'RATE_LIMITED'
-  | 'SERVER_ERROR';
+export const ERROR_CODES = [
+  'VALIDATION_ERROR',
+  'UNAUTHORIZED',
+  'FORBIDDEN',
+  'NOT_FOUND',
+  'CONFLICT',
+  'RATE_LIMITED',
+  'PAYLOAD_TOO_LARGE',
+  'SERVER_ERROR',
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
@@ -14,6 +18,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   RATE_LIMITED: 429,
+  PAYLOAD_TOO_LARGE: 413,
   SERVER_ERROR: 500,
 };
 

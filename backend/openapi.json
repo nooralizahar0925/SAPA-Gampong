@@ -45,6 +45,7 @@
                   "NOT_FOUND",
                   "CONFLICT",
                   "RATE_LIMITED",
+                  "PAYLOAD_TOO_LARGE",
                   "SERVER_ERROR"
                 ]
               },
@@ -89,7 +90,7 @@
           "password": {
             "type": "string",
             "minLength": 1,
-            "example": "admin123"
+            "example": "kata-sandi-anda"
           }
         },
         "required": [

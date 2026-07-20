@@ -18,4 +18,27 @@ describe('error envelope', () => {
       error: { code: 'NOT_FOUND', message: 'Endpoint tidak ditemukan' },
     });
   });
+
+  it('returns VALIDATION_ERROR in the envelope shape for malformed JSON', async () => {
+    const res = await request(createApp())
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{ this is not valid json');
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: { code: 'VALIDATION_ERROR', message: 'Data yang dikirim tidak valid' },
+    });
+  });
+
+  it('returns PAYLOAD_TOO_LARGE in the envelope shape for a body over the 1mb limit', async () => {
+    const oversizeBody = { padding: 'x'.repeat(2 * 1024 * 1024) };
+    const res = await request(createApp())
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify(oversizeBody));
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'Data yang dikirim terlalu besar' },
+    });
+  });
 });

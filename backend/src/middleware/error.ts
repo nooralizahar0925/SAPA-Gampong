@@ -29,8 +29,39 @@ export function errorHandler(
     return;
   }
 
+  // Express's built-in body parser (body-parser) throws plain errors carrying a
+  // numeric `status`/`statusCode` for malformed or oversize request bodies —
+  // these are client errors and must not fall through to the 500 branch below.
+  const httpStatus = getHttpStatus(err);
+  if (httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500) {
+    if (httpStatus === 413) {
+      res.status(httpStatus).json({
+        error: { code: 'PAYLOAD_TOO_LARGE', message: 'Data yang dikirim terlalu besar' },
+      });
+      return;
+    }
+    res.status(httpStatus).json({
+      error: { code: 'VALIDATION_ERROR', message: 'Data yang dikirim tidak valid' },
+    });
+    return;
+  }
+
   if (env.NODE_ENV !== 'test') console.error(err);
   res.status(500).json({
     error: { code: 'SERVER_ERROR', message: 'Terjadi kesalahan pada server' },
   });
+}
+
+/**
+ * body-parser (used internally by express.json()) throws plain Error objects
+ * with a `status` (or, on older versions, `statusCode`) property rather than
+ * our own ApiError/ZodError types — e.g. SyntaxError{status:400} for malformed
+ * JSON and PayloadTooLargeError{status:413} for oversize bodies. Extract that
+ * status defensively, without assuming any particular error class.
+ */
+function getHttpStatus(err: unknown): number | undefined {
+  if (typeof err !== 'object' || err === null) return undefined;
+  const candidate = err as { status?: unknown; statusCode?: unknown };
+  const status = candidate.status ?? candidate.statusCode;
+  return typeof status === 'number' ? status : undefined;
 }

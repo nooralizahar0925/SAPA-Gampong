@@ -5,7 +5,7 @@ export const LoginBody = registry.register(
   'LoginBody',
   z.object({
     email: z.string().email('Format email tidak valid').openapi({ example: 'admin@gampongblang.id' }),
-    password: z.string().min(1, 'Kata sandi wajib diisi').openapi({ example: 'admin123' }),
+    password: z.string().min(1, 'Kata sandi wajib diisi').openapi({ example: 'kata-sandi-anda' }),
   }),
 );
 
