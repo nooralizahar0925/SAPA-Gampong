@@ -208,7 +208,7 @@ Prove L1 end-to-end, then generalize to 7.
 ### Task 15: Letter generation & send (A4)
 **Files:** `pages/Generate.tsx`, `components/PdfPreview.tsx`; Test with MSW
 - On Approve -> call generate, preview PDF (embed `pdf_url`), allow regenerate, then Send (email). Show verification token/URL. Optional signature-image overlay toggle (brief Section 11.3).
-- [ ] Steps: (1) test: clicking Generate then Send transitions the shown status GENERATED->SENT (mocked); (2) FAIL; (3) implement preview + actions; (4) PASS; (5) commit `feat(web): generate & send`.
+- [x] Steps: (1) test: clicking Generate then Send transitions the shown status GENERATED->SENT (mocked); (2) FAIL; (3) implement preview + actions; (4) PASS; (5) commit `feat(web): generate & send`.
 
 ### Task 15A: Email provider settings UI
 **Files:** `dashboard/src/pages/EmailProviderSettings.tsx`, `dashboard/src/components/ProviderStatusCard.tsx`, `dashboard/src/api/client.ts`; Test with MSW

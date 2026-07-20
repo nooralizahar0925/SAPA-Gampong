@@ -282,7 +282,7 @@ export function QueuePage() {
                         <button
                           className={`table-action ${ACTION_TONES[item.status]}`}
                           type="button"
-                          onClick={() => navigate(`/requests/${item.id}`)}
+                          onClick={() => navigate(getRequestDestination(item))}
                         >
                           {ACTION_LABELS[item.status]}
                         </button>
@@ -328,7 +328,7 @@ export function QueuePage() {
                   <button
                     className={`table-action mobile ${ACTION_TONES[item.status]}`}
                     type="button"
-                    onClick={() => navigate(`/requests/${item.id}`)}
+                    onClick={() => navigate(getRequestDestination(item))}
                   >
                     {ACTION_LABELS[item.status]}
                   </button>
@@ -376,4 +376,12 @@ function formatDateTime(value: string) {
       hour12: false,
     }).format(date).replace('.', ':') + ' WIB',
   };
+}
+
+function getRequestDestination(item: RequestQueueItem) {
+  if (item.status === 'APPROVED' || item.status === 'GENERATED' || item.status === 'SENT') {
+    return `/requests/${item.id}/generate`;
+  }
+
+  return `/requests/${item.id}`;
 }

@@ -1,6 +1,7 @@
 import { clearStoredSession, getStoredSession } from '../auth/session';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+export const PUBLIC_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export type ErrorEnvelope = {
   error: {
@@ -97,10 +98,25 @@ export type RequestDetailResponse = {
   attachments: RequestDetailAttachment[];
   status_history: RequestStatusHistoryItem[];
   nomor_surat: string | null;
+  generated_pdf_id?: string | null;
+  generated_pdf_url?: string | null;
+  verification_token?: string | null;
+  verification_url?: string | null;
   decision_reason: string | null;
   decided_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type GenerateRequestResponse = {
+  pdf_id: string;
+  pdf_url: string;
+  verification_token: string;
+  nomor_surat: string;
+};
+
+export type SendRequestResponse = {
+  status: 'SENT';
 };
 
 export type PatchRequestStatusInput = {
@@ -232,5 +248,17 @@ export function updateRequestStatusRequest(id: string, input: PatchRequestStatus
   return apiRequest<RequestDetailResponse>(`/requests/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify(input),
+  });
+}
+
+export function generateRequestLetterRequest(id: string) {
+  return apiRequest<GenerateRequestResponse>(`/requests/${id}/generate`, {
+    method: 'POST',
+  });
+}
+
+export function sendRequestLetterRequest(id: string) {
+  return apiRequest<SendRequestResponse>(`/requests/${id}/send`, {
+    method: 'POST',
   });
 }

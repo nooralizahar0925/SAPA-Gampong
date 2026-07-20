@@ -765,6 +765,32 @@
               "null"
             ]
           },
+          "generated_pdf_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generated_pdf_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "verification_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verification_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
           "decision_reason": {
             "type": [
               "string",

@@ -115,4 +115,62 @@ describe('POST /api/requests/:id/generate', () => {
     },
     20_000,
   );
+
+  it('allows regenerating a PDF while keeping the same verification token and status', async () => {
+    const created = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: `GB-${currentYear}-001001`,
+        letterType: 'L1',
+        status: 'GENERATED',
+        applicantName: 'Budi',
+        applicantEmail: 'budi@mail.com',
+        subjectData: {
+          nama: 'Budi',
+          ttl_tempat: 'Calang',
+          ttl_tanggal: '1999-10-22',
+          nik: '1607010101010001',
+          jenis_kelamin: 'Laki-laki',
+          agama: 'Islam',
+          status_perkawinan: 'Belum Kawin',
+          pekerjaan: 'Pelajar',
+          alamat: 'Dusun Kuini',
+          dusun: 'Kuini',
+          gampong: 'Blang',
+          kecamatan: 'Krueng Sabee',
+          kabupaten: 'Aceh Jaya',
+        },
+        nomorSurat: `400.12.2.1/9/${currentYear}`,
+        verificationToken: '1234567890abcdef1234567890abcdef',
+      },
+    });
+
+    const token = await login();
+    const generated = await request(app)
+      .post(`/api/requests/${created.id}/generate`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(generated.status).toBe(200);
+    expect(generated.body.verification_token).toBe('1234567890abcdef1234567890abcdef');
+    expect(generated.body.nomor_surat).toBe(`400.12.2.1/9/${currentYear}`);
+
+    const reloaded = await testPrisma.letterRequest.findUnique({
+      where: { id: created.id },
+      include: {
+        histories: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    expect(reloaded?.status).toBe('GENERATED');
+    expect(reloaded?.verificationToken).toBe('1234567890abcdef1234567890abcdef');
+    expect(reloaded?.generatedPdfId).toBe(generated.body.pdf_id);
+    expect(reloaded?.histories.at(-1)).toMatchObject({
+      fromStatus: 'GENERATED',
+      toStatus: 'GENERATED',
+      action: 'regenerate',
+      actorName: 'Admin Gampong',
+      nomorSurat: `400.12.2.1/9/${currentYear}`,
+    });
+  }, 20_000);
 });

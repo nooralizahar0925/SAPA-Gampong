@@ -2,6 +2,7 @@ import { Prisma, type AttachmentKind, type LetterRequest, type LetterType, type 
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
+import { env } from '../../config/env';
 import { getLetterDefinition, type LetterField } from '../letters/data';
 import { signedUrl } from '../../services/storage.service';
 import { assignLetterNumber } from '../letters/number.service';
@@ -418,6 +419,10 @@ function serializeRequestDetail(
       nomor_surat: history.nomorSurat ?? undefined,
     })),
     nomor_surat: request.nomorSurat,
+    generated_pdf_id: request.generatedPdfId,
+    generated_pdf_url: request.generatedPdfId ? signedUrl(request.generatedPdfId) : null,
+    verification_token: request.verificationToken,
+    verification_url: request.verificationToken ? `${env.PUBLIC_BASE_URL}/verify/${request.verificationToken}` : null,
     decision_reason: request.decisionReason,
     decided_by: request.decidedBy,
     created_at: request.createdAt.toISOString(),

@@ -114,7 +114,11 @@ Response `201`:
 Query: `?status=SUBMITTED&letter_type=L1&q=budi&page=1`. Returns paged list `{ items:[...], total, page }` with summary fields (reference_code, letter_type, applicant_name, status, created_at, email).
 
 ### `GET /requests/:id` (admin) — full detail
-Full `subject_data`, attachments (signed URLs), status history, nomor_surat, decision info.
+Full `subject_data`, attachments (signed URLs), status history, nomor_surat, decision info. When a PDF has already been generated, this response also includes:
+- `generated_pdf_id`
+- `generated_pdf_url`
+- `verification_token`
+- `verification_url`
 
 ### `PATCH /requests/:id/status` (admin) — move the state machine
 ```json
@@ -122,8 +126,8 @@ Full `subject_data`, attachments (signed URLs), status history, nomor_surat, dec
 ```
 Rules: `reject` requires `reason`; `approve` may set/confirm `nomor_surat` (else auto-assigned from `letter_number_counter`). Returns updated request.
 
-### `POST /requests/:id/generate` (admin) — produce PDF + QR (brief §13.1)
-Merges verified `subject_data` into the letter template, assigns `nomor_surat` if missing, creates opaque `verification_token`, embeds the QR, stores PDF. Sets status `GENERATED`.
+### `POST /requests/:id/generate` (admin) — produce or regenerate PDF + QR (brief §13.1)
+Merges verified `subject_data` into the letter template, assigns `nomor_surat` if missing, creates opaque `verification_token`, embeds the QR, stores PDF. Allowed when the request is already `APPROVED` or has previously been `GENERATED`. The request remains/ends in status `GENERATED`.
 ```json
 { "pdf_id": "f_...", "pdf_url": "https://.../signed", "verification_token": "vt_9f3...", "nomor_surat": "400.12.2.1/123/2026" }
 ```

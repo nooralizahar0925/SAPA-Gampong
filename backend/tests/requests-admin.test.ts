@@ -82,10 +82,13 @@ describe('admin request management', () => {
       data: {
         referenceCode: 'GB-2026-000123',
         letterType: 'L1',
-        status: 'SUBMITTED',
+        status: 'GENERATED',
         applicantName: 'Budi',
         applicantEmail: 'budi@mail.com',
         subjectData: { nama: 'Budi', nik: '1607010101010001' },
+        nomorSurat: '400.12.2.1/5/2026',
+        verificationToken: 'abcdef1234567890abcdef1234567890',
+        generatedPdfId: file.id,
         attachments: {
           create: [{ kind: 'KTP', fileId: file.id }],
         },
@@ -108,6 +111,10 @@ describe('admin request management', () => {
       mime: 'image/png',
     });
     expect(res.body.attachments[0].url).toContain(`/api/uploads/${file.id}?`);
+    expect(res.body.generated_pdf_id).toBe(file.id);
+    expect(res.body.generated_pdf_url).toContain(`/api/uploads/${file.id}?`);
+    expect(res.body.verification_token).toBe('abcdef1234567890abcdef1234567890');
+    expect(res.body.verification_url).toContain('/verify/abcdef1234567890abcdef1234567890');
     expect(res.body.status_history).toEqual([]);
   });
 

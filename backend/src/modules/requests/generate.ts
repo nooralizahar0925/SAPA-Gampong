@@ -23,8 +23,8 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
   });
 
   if (!found) throw ApiError.notFound('Permohonan tidak ditemukan');
-  if (found.status !== 'APPROVED') {
-    throw ApiError.conflict('Surat hanya dapat digenerate dari status APPROVED');
+  if (found.status !== 'APPROVED' && found.status !== 'GENERATED') {
+    throw ApiError.conflict('Surat hanya dapat digenerate dari status APPROVED atau GENERATED');
   }
 
   const admin = await prisma.adminUser.findUnique({
@@ -47,8 +47,8 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
     });
 
     if (!current) throw ApiError.notFound('Permohonan tidak ditemukan');
-    if (current.status !== 'APPROVED') {
-      throw ApiError.conflict('Surat hanya dapat digenerate dari status APPROVED');
+    if (current.status !== 'APPROVED' && current.status !== 'GENERATED') {
+      throw ApiError.conflict('Surat hanya dapat digenerate dari status APPROVED atau GENERATED');
     }
 
     const nomorSurat =
@@ -88,6 +88,7 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
   const pdfHash = createHash('sha256').update(pdfBuffer).digest('hex');
 
   await prisma.$transaction(async (tx) => {
+    const previousStatus = found.status;
     await tx.letterRequest.update({
       where: { id: prepared.id },
       data: {
@@ -100,9 +101,9 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
     await tx.requestStatusHistory.create({
       data: {
         requestId: prepared.id,
-        fromStatus: 'APPROVED',
+        fromStatus: previousStatus,
         toStatus: 'GENERATED',
-        action: 'generate',
+        action: previousStatus === 'GENERATED' ? 'regenerate' : 'generate',
         actorId: adminUserId,
         actorName: admin?.name ?? null,
         nomorSurat: prepared.nomorSurat,

@@ -216,6 +216,26 @@ export function RequestDetailPage() {
               <h2>Keputusan</h2>
             </div>
             <div className="detail-card-body">
+              {detail.status === 'APPROVED' || detail.status === 'GENERATED' || detail.status === 'SENT' ? (
+                <div className="info-box detail-stage-box" role="status">
+                  <strong>Tahap penerbitan surat siap dibuka</strong>
+                  <p>
+                    Lanjutkan ke halaman generate untuk membuat PDF resmi, meninjau QR verifikasi, dan mengirim surat ke email pemohon.
+                  </p>
+                  <button
+                    className="table-action gold"
+                    type="button"
+                    onClick={() => navigate(`/requests/${id}/generate`)}
+                  >
+                    {detail.status === 'APPROVED'
+                      ? 'Lanjut ke Generate PDF'
+                      : detail.status === 'GENERATED'
+                        ? 'Buka Pratinjau Surat'
+                        : 'Lihat Surat Terkirim'}
+                  </button>
+                </div>
+              ) : null}
+
               {detail.status === 'SUBMITTED' ? (
                 <div className="detail-inline-actions">
                   <button

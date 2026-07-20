@@ -125,7 +125,68 @@ const requestDetail = {
   decided_by: 'admin-1',
   created_at: '2026-07-18T02:41:00.000Z',
   updated_at: '2026-07-19T01:15:00.000Z',
-} as const;
+};
+
+const approvedRequestDetail = {
+  id: 'req-3',
+  reference_code: 'BLG-3M8B7',
+  letter_type: 'L5',
+  status: 'APPROVED',
+  applicant_name: 'Ibrahim HS',
+  applicant_email: 'ibrahim.hs@gmail.com',
+  applicant_phone: '+62 852 1111 2222',
+  keperluan: 'Pengajuan Kredit Usaha',
+  subject_data: {
+    nama: 'Ibrahim HS',
+    nik: '1706221001990004',
+    nama_usaha: 'Warung Kopi Pesisir',
+    alamat_usaha: 'Jl. Ujong Pasi, Gampong Blang',
+  },
+  attachments: [
+    {
+      file_id: 'file-3',
+      kind: 'KTP',
+      mime: 'image/jpeg',
+      size: 840000,
+      url: 'https://example.test/files/file-3',
+    },
+  ],
+  status_history: [
+    {
+      status: 'SUBMITTED',
+      at: '2026-07-19T03:05:00.000Z',
+      action: 'submit',
+      by: 'Pemohon',
+    },
+    {
+      status: 'IN_REVIEW',
+      at: '2026-07-19T08:10:00.000Z',
+      action: 'in_review',
+      by: 'Admin Gampong',
+    },
+    {
+      status: 'APPROVED',
+      at: '2026-07-20T08:25:00.000Z',
+      action: 'approve',
+      by: 'Admin Gampong',
+      nomor_surat: '400.1.4.3/011/2026',
+    },
+  ],
+  nomor_surat: '400.1.4.3/011/2026',
+  generated_pdf_id: null,
+  generated_pdf_url: null,
+  verification_token: null,
+  verification_url: null,
+  decision_reason: null,
+  decided_by: 'admin-1',
+  created_at: '2026-07-19T03:05:00.000Z',
+  updated_at: '2026-07-20T08:25:00.000Z',
+};
+
+const requestDetailsById: Record<string, typeof requestDetail | typeof approvedRequestDetail> = {
+  'req-1': requestDetail,
+  'req-3': approvedRequestDetail,
+};
 
 export const server = setupServer(
   http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
@@ -176,7 +237,9 @@ export const server = setupServer(
     });
   }),
   http.get('http://localhost:8080/api/requests/:id', ({ params }) => {
-    if (params.id !== 'req-1') {
+    const detail = requestDetailsById[String(params.id)];
+
+    if (!detail) {
       return HttpResponse.json(
         {
           error: {
@@ -188,7 +251,7 @@ export const server = setupServer(
       );
     }
 
-    return HttpResponse.json(requestDetail);
+    return HttpResponse.json(detail);
   }),
   http.patch('http://localhost:8080/api/requests/:id/status', async ({ params, request }) => {
     const body = (await request.json()) as {
@@ -237,6 +300,43 @@ export const server = setupServer(
           nomor_surat: body.nomor_surat ?? requestDetail.nomor_surat,
         },
       ],
+    });
+  }),
+  http.post('http://localhost:8080/api/requests/:id/generate', ({ params }) => {
+    if (params.id !== 'req-3') {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'CONFLICT',
+            message: 'Permohonan belum siap digenerate',
+          },
+        },
+        { status: 409 },
+      );
+    }
+
+    return HttpResponse.json({
+      pdf_id: 'pdf-req-3',
+      pdf_url: 'https://example.test/files/pdf-req-3.pdf',
+      verification_token: 'verify-token-req-3',
+      nomor_surat: '400.1.4.3/011/2026',
+    });
+  }),
+  http.post('http://localhost:8080/api/requests/:id/send', ({ params }) => {
+    if (params.id !== 'req-3') {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'CONFLICT',
+            message: 'PDF surat belum siap dikirim',
+          },
+        },
+        { status: 409 },
+      );
+    }
+
+    return HttpResponse.json({
+      status: 'SENT',
     });
   }),
   http.post('http://localhost:8080/api/auth/forgot-password', async ({ request }) => {

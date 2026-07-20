@@ -4,6 +4,7 @@ import { isAuthenticated } from './auth/session';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { LoginPage } from './pages/Login';
 import { QueuePage } from './pages/Queue';
+import { GeneratePage } from './pages/Generate';
 import { RequestDetailPage } from './pages/RequestDetail';
 import { ResetPasswordPage } from './pages/ResetPassword';
 
@@ -20,6 +21,7 @@ export function AppRoutes() {
       <Route element={<AuthGuard />}>
         <Route path="/requests" element={<QueuePage />} />
         <Route path="/requests/:id" element={<RequestDetailPage />} />
+        <Route path="/requests/:id/generate" element={<GeneratePage />} />
       </Route>
     </Routes>
   );
