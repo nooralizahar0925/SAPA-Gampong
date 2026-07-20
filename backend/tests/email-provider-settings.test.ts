@@ -214,7 +214,7 @@ describe('email provider settings', () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.message).toContain('smtp');
+    expect(res.body.message).toContain('SMTP');
     expect(sendMail).toHaveBeenCalledTimes(1);
     expect(sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -223,5 +223,40 @@ describe('email provider settings', () => {
         subject: expect.stringContaining('[Test]'),
       }),
     );
+  });
+
+  it('returns the provider error message when a test email send fails', async () => {
+    const sendMail = vi.fn(async () => {
+      throw new Error('MailerSend email request failed with status 401. {"message":"Unauthenticated."}');
+    });
+    setEmailTransportForTests({ sendMail });
+
+    await testPrisma.appConfig.create({
+      data: {
+        id: 'singleton',
+        activeEmailProvider: 'mailersend',
+      },
+    });
+    setEmailProviderConfigsForTests({
+      mailersend: {
+        fromEmail: 'letters@gampongblang.id',
+        fromName: 'Dashboard Admin',
+        apiKey: 'mailersend-key',
+      },
+    });
+
+    const token = await login();
+    const res = await request(app)
+      .post('/api/settings/email-provider/test')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        provider: 'mailersend',
+        to_email: 'operator@gampongblang.id',
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe('SERVER_ERROR');
+    expect(res.body.error.message).toContain('MailerSend test email failed');
+    expect(res.body.error.message).toContain('Unauthenticated');
   });
 });

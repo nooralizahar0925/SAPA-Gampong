@@ -50,24 +50,44 @@ export async function sendEmailProviderTestEmail(provider: EmailProvider, toEmai
     throw ApiError.conflict(`Email provider ${provider} is not configured yet.`);
   }
 
-  await EmailService.sendWithProvider(provider, {
-    to: toEmail,
-    subject: `[Test] ${getEmailProviderLabel(provider)} configuration`,
-    html: `
-      <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#173527;">
-        <h2 style="margin:0 0 16px;">Test email delivered successfully</h2>
-        <p style="margin:0 0 12px;">
-          This message confirms that the <strong>${getEmailProviderLabel(provider)}</strong> provider
-          can send email from the administration system.
-        </p>
-        <p style="margin:0;">
-          Sent on July 20, 2026 from the dashboard email provider settings screen.
-        </p>
-      </div>
-    `.trim(),
-  });
+  try {
+    await EmailService.sendWithProvider(provider, {
+      to: toEmail,
+      subject: `[Test] ${getEmailProviderLabel(provider)} configuration`,
+      html: `
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#173527;">
+          <h2 style="margin:0 0 16px;">Test email delivered successfully</h2>
+          <p style="margin:0 0 12px;">
+            This message confirms that the <strong>${getEmailProviderLabel(provider)}</strong> provider
+            can send email from the administration system.
+          </p>
+          <p style="margin:0;">
+            Sent on July 20, 2026 from the dashboard email provider settings screen.
+          </p>
+        </div>
+      `.trim(),
+    });
+  } catch (error) {
+    throw new ApiError(
+      'SERVER_ERROR',
+      `${getEmailProviderLabel(provider)} test email failed: ${formatProviderSendError(error)}`,
+    );
+  }
 
   return {
     message: `Test email sent via ${getEmailProviderLabel(provider)} to ${toEmail}.`,
   };
+}
+
+function formatProviderSendError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return 'The email provider returned an unknown error.';
+  }
+
+  const message = error.message.trim();
+  if (!message) {
+    return 'The email provider returned an empty error message.';
+  }
+
+  return message;
 }

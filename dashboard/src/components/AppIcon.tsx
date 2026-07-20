@@ -6,6 +6,8 @@ export type IconName =
   | 'calendar'
   | 'chart'
   | 'check'
+  | 'chevronDown'
+  | 'chevronUp'
   | 'clock'
   | 'edit'
   | 'file'
@@ -84,6 +86,10 @@ function iconPath(name: IconName): ReactNode {
       );
     case 'check':
       return <path d="m5 12 4 4 10-10" />;
+    case 'chevronDown':
+      return <path d="m6 9 6 6 6-6" />;
+    case 'chevronUp':
+      return <path d="m6 15 6-6 6 6" />;
     case 'clock':
       return (
         <>

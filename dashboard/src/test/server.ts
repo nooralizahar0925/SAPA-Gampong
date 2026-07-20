@@ -193,12 +193,101 @@ let emailProviderSettings: EmailProviderSettingsResponse = {
   active_provider: 'mailersend',
   default_provider: 'mailersend',
   providers: [
-    { id: 'mailersend', label: 'MailerSend', configured: true },
-    { id: 'mailgun', label: 'Mailgun', configured: true },
-    { id: 'gmail', label: 'Gmail Workspace', configured: false },
-    { id: 'smtp', label: 'SMTP Khusus', configured: true },
+    {
+      id: 'mailersend',
+      label: 'MailerSend',
+      configured: true,
+      config_summary: {
+        from_email: 'letters@gampongblang.id',
+        from_name: 'Administrasi Gampong Blang',
+        has_api_key: true,
+      },
+    },
+    {
+      id: 'mailgun',
+      label: 'Mailgun',
+      configured: false,
+      config_summary: {
+        from_email: null,
+        from_name: null,
+        domain: null,
+        api_base_url: null,
+        has_api_key: false,
+      },
+    },
+    {
+      id: 'gmail',
+      label: 'Gmail',
+      configured: false,
+      config_summary: {
+        from_email: null,
+        username: null,
+        has_app_password: false,
+      },
+    },
+    {
+      id: 'smtp',
+      label: 'SMTP',
+      configured: false,
+      config_summary: {
+        from_email: null,
+        host: null,
+        port: null,
+        secure: null,
+        username: null,
+        has_password: false,
+      },
+    },
   ],
 };
+
+function isProviderConfigured(provider: EmailProviderSettingsResponse['providers'][number]) {
+  switch (provider.id) {
+    case 'mailersend':
+      return Boolean(provider.config_summary.from_email && provider.config_summary.has_api_key);
+    case 'mailgun':
+      return Boolean(
+        provider.config_summary.from_email &&
+          provider.config_summary.domain &&
+          provider.config_summary.has_api_key,
+      );
+    case 'gmail':
+      return Boolean(
+        provider.config_summary.from_email &&
+          provider.config_summary.username &&
+          provider.config_summary.has_app_password,
+      );
+    case 'smtp':
+      return Boolean(provider.config_summary.from_email && provider.config_summary.host && provider.config_summary.port);
+  }
+}
+
+function updateProviderSummary(
+  providerId: 'mailersend' | 'mailgun' | 'gmail' | 'smtp',
+  patch: Record<string, unknown>,
+) {
+  emailProviderSettings = {
+    ...emailProviderSettings,
+    providers: emailProviderSettings.providers.map((provider) => {
+      if (provider.id !== providerId) {
+        return provider;
+      }
+
+      const nextProvider = {
+        ...provider,
+        config_summary: {
+          ...provider.config_summary,
+          ...patch,
+        },
+      };
+
+      return {
+        ...nextProvider,
+        configured: isProviderConfigured(nextProvider),
+      };
+    }),
+  };
+}
 
 export const server = setupServer(
   http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
@@ -389,6 +478,110 @@ export const server = setupServer(
     };
 
     return HttpResponse.json(emailProviderSettings);
+  }),
+  http.patch('http://localhost:8080/api/settings/email-provider/config', async ({ request }) => {
+    const body = (await request.json()) as {
+      provider?: 'mailersend' | 'mailgun' | 'gmail' | 'smtp';
+      from_email?: string;
+      from_name?: string;
+      api_key?: string;
+      domain?: string;
+      api_base_url?: string;
+      username?: string;
+      app_password?: string;
+      host?: string;
+      port?: number;
+      secure?: boolean;
+      password?: string;
+    };
+
+    if (!body.provider) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Provider email tidak valid',
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    switch (body.provider) {
+      case 'mailersend':
+        updateProviderSummary(body.provider, {
+          from_email: body.from_email ?? null,
+          from_name: body.from_name ?? null,
+          has_api_key: Boolean(body.api_key),
+        });
+        break;
+      case 'mailgun':
+        updateProviderSummary(body.provider, {
+          from_email: body.from_email ?? null,
+          from_name: body.from_name ?? null,
+          domain: body.domain ?? null,
+          api_base_url: body.api_base_url ?? null,
+          has_api_key: Boolean(body.api_key),
+        });
+        break;
+      case 'gmail':
+        updateProviderSummary(body.provider, {
+          from_email: body.from_email ?? null,
+          from_name: body.from_name ?? null,
+          username: body.username ?? null,
+          has_app_password: Boolean(body.app_password),
+        });
+        break;
+      case 'smtp':
+        updateProviderSummary(body.provider, {
+          from_email: body.from_email ?? null,
+          from_name: body.from_name ?? null,
+          host: body.host ?? null,
+          port: body.port ?? null,
+          secure: typeof body.secure === 'boolean' ? body.secure : null,
+          username: body.username ?? null,
+          has_password: Boolean(body.password),
+        });
+        break;
+    }
+
+    return HttpResponse.json(emailProviderSettings);
+  }),
+  http.post('http://localhost:8080/api/settings/email-provider/test', async ({ request }) => {
+    const body = (await request.json()) as {
+      provider?: 'mailersend' | 'mailgun' | 'gmail' | 'smtp';
+      to_email?: string;
+    };
+
+    const selected = emailProviderSettings.providers.find((provider) => provider.id === body.provider);
+
+    if (!selected || !body.to_email) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Data email uji tidak valid',
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!selected.configured) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'CONFLICT',
+            message: `Provider email ${selected.id} belum dikonfigurasi`,
+          },
+        },
+        { status: 409 },
+      );
+    }
+
+    return HttpResponse.json({
+      message: `Test email sent via ${selected.label} to ${body.to_email}.`,
+    });
   }),
   http.post('http://localhost:8080/api/auth/forgot-password', async ({ request }) => {
     const body = (await request.json()) as { email?: string };

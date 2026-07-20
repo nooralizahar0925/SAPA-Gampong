@@ -212,15 +212,17 @@ Prove L1 end-to-end, then generalize to 7.
 
 ### Task 15A: Email provider settings UI
 **Files:** `dashboard/src/pages/EmailProviderSettings.tsx`, `dashboard/src/components/ProviderStatusCard.tsx`, `dashboard/src/api/client.ts`; Test with MSW
-- Purpose: give admins a dedicated dashboard screen to view and switch the active backend email provider without exposing secrets to the browser.
-- Depends on backend provider settings endpoints being available first. The dashboard only reads provider metadata/readiness and updates the selected provider.
+- Purpose: give admins a dedicated dashboard screen to view, configure, test, and switch the active backend email provider without exposing secrets to the browser.
+- Depends on backend provider settings endpoints being available first. The dashboard reads provider metadata/readiness, saves non-secret config fields plus secret updates back to the backend, and can trigger a test email send.
 - Scope:
   - Show the current active provider.
   - Show 4 provider options: `mailersend`, `mailgun`, `gmail`, `smtp`.
   - Show readiness/status per provider (configured/not configured) from the backend.
+  - Save provider-specific configuration dynamically to the database through the backend settings API.
+  - Allow sending a test email from each provider card after configuration is saved.
   - Allow changing the active provider.
   - Optionally link to email preview examples, but never expose API keys, SMTP passwords, or secret tokens.
-- [x] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail|smtp`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
+- [x] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail|smtp`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) expand it with database-backed provider config forms plus a test-email action; (6) PASS; (7) commit `feat(web): email provider settings`.
 
 ---
 

@@ -121,16 +121,51 @@ export type SendRequestResponse = {
 
 export type EmailProviderId = 'mailersend' | 'mailgun' | 'gmail' | 'smtp';
 
+export type EmailProviderConfigSummary = {
+  from_email?: string | null;
+  from_name?: string | null;
+  api_base_url?: string | null;
+  domain?: string | null;
+  username?: string | null;
+  host?: string | null;
+  port?: number | null;
+  secure?: boolean | null;
+  has_api_key?: boolean;
+  has_app_password?: boolean;
+  has_password?: boolean;
+};
+
 export type EmailProviderOption = {
   id: EmailProviderId;
   label: string;
   configured: boolean;
+  config_summary: EmailProviderConfigSummary;
 };
 
 export type EmailProviderSettingsResponse = {
   active_provider: EmailProviderId;
   default_provider: EmailProviderId;
   providers: EmailProviderOption[];
+};
+
+export type UpdateEmailProviderConfigInput = {
+  provider: EmailProviderId;
+  from_email?: string;
+  from_name?: string;
+  api_key?: string;
+  domain?: string;
+  api_base_url?: string;
+  username?: string;
+  app_password?: string;
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  password?: string;
+};
+
+export type SendEmailProviderTestInput = {
+  provider: EmailProviderId;
+  to_email: string;
 };
 
 export type PatchRequestStatusInput = {
@@ -285,5 +320,19 @@ export function updateEmailProviderSettingsRequest(provider: EmailProviderId) {
   return apiRequest<EmailProviderSettingsResponse>('/settings/email-provider', {
     method: 'PATCH',
     body: JSON.stringify({ provider }),
+  });
+}
+
+export function updateEmailProviderConfigRequest(input: UpdateEmailProviderConfigInput) {
+  return apiRequest<EmailProviderSettingsResponse>('/settings/email-provider/config', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function sendEmailProviderTestRequest(input: SendEmailProviderTestInput) {
+  return apiRequest<MessageResponse>('/settings/email-provider/test', {
+    method: 'POST',
+    body: JSON.stringify(input),
   });
 }
