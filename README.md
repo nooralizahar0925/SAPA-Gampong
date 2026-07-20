@@ -33,13 +33,13 @@ Both clients talk to **one backend / one PostgreSQL database**. The backend (`ba
 
 ## Source of truth for requirements
 
-The authoritative spec is `../Brief/Aplikasi-Desa-Dev-Brief.md` (v1.1). Section references in the plans (e.g. "§6", "§13.1") point there. The 7 official letter `.docx` templates in `../Brief/` are the canonical letter layouts for the PDF generator.
+The authoritative spec is `../Brief/Aplikasi-Desa-Dev-Brief.md` (v1.1). Section references in the plans (e.g. "§6", "§13.1") point there. The 10 official letter `.docx` templates in `../Brief/` are the canonical letter layouts for the PDF generator. Note that the brief's §6 catalogue documents only 7 of them; `API-CONTRACT.md` carries the reconciled list of 10.
 
 ## Recommended build order (prove the core loop first)
 
 1. **Backend skeleton** + data model + admin auth (`backend/` Phase 0–1).
 2. **Letter request end-to-end for ONE type (L1)**: mobile form → submit → backend queue → admin approve → PDF **with verification QR** → email → public `/verify` page. (`backend/` Phase 2 + `mobile/` Phase 1.)
-3. Generalize to all 7 letter types.
+3. Generalize to all 10 letter types.
 4. Content management + resident read screens (profile, demographics, banner).
 5. Prayer schedule + azan alarm.
 6. Feedback + notifications.

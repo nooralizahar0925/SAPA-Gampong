@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the resident-facing mobile app (Android & iOS) that lets warga request the 7 official letters, track status, read village info (profil, demografi, jadwal sholat), and submit feedback — all in Bahasa Indonesia.
+**Goal:** Build the resident-facing mobile app (Android & iOS) that lets warga request the 10 official letters, track status, read village info (profil, demografi, jadwal sholat), and submit feedback — all in Bahasa Indonesia.
 
-**Architecture:** Feature-first Flutter app. Presentation (widgets) → Riverpod controllers → repositories → Dio API client against the backend in `../Website`. Models are immutable (freezed). The letter form is **schema-driven**: it renders from the `GET /letter-types` response so the 7 forms are data, not hard-coded screens. Read-content is cached (Hive) for offline viewing. Prayer times are computed **on-device** from village coordinates.
+**Architecture:** Feature-first Flutter app. Presentation (widgets) → Riverpod controllers → repositories → Dio API client against the backend in `../Website`. Models are immutable (freezed). The letter form is **schema-driven**: it renders from the `GET /letter-types` response so the 10 forms are data, not hard-coded screens. Read-content is cached (Hive) for offline viewing. Prayer times are computed **on-device** from village coordinates.
 
 **Tech Stack:** Flutter 3.24+ / Dart 3, `flutter_riverpod` (state), `go_router` (navigation), `dio` (HTTP), `freezed` + `json_serializable` (models), `hive`/`hive_flutter` (cache), `flutter_secure_storage`, `image_picker` + `file_picker` + `flutter_image_compress` (attachments), `fl_chart` (demografi), `adhan` (prayer times), `flutter_local_notifications` (azan alarm), `firebase_messaging` (push, optional), `intl` (id_ID), `cached_network_image`.
 
@@ -143,7 +143,7 @@ This is the reason the app exists (brief §5). Prove the whole loop for **L1** f
 - Produces: `LetterRepository{ Future<List<LetterType>> letterTypes(); Future<CreatedRequest> submit(LetterRequestDraft); Future<TrackStatus> track(String refCode); }`; `CreatedRequest{id,referenceCode,status}`; `TrackStatus{referenceCode,letterType,status,statusLabel,updatedAt}`. `UploadService.upload(File, kind) → Attachment`.
 - Consumes: `DioClient` (Task 2), models (Task 3).
 
-- [ ] **Step 1:** Write test: mock `GET /letter-types` → repo returns 7 types; mock `POST /requests` → `submit` returns `referenceCode=="GB-2026-000123"`.
+- [ ] **Step 1:** Write test: mock `GET /letter-types` → repo returns 10 types; mock `POST /requests` → `submit` returns `referenceCode=="GB-2026-000123"`.
 - [ ] **Step 2:** Run — FAIL.
 - [ ] **Step 3:** Implement repository calls per `../API-CONTRACT.md` §1,§3; `UploadService` posts multipart to `/uploads`.
 - [ ] **Step 4:** Run — PASS.

@@ -16,8 +16,25 @@ The HTTP contract shared by the **Mobile app** (consumer) and **Admin dashboard*
 ```
 Codes: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `RATE_LIMITED` (429), `SERVER_ERROR` (500).
 
-**Letter type enum:** `L1`..`L7` (see brief §6):
-`L1` Berdomisili · `L2` Domisili Kantor · `L3` Kehilangan · `L4` Miskin (SKTM) · `L5` Usaha · `L6` Yatim/Piatu · `L7` Kematian.
+**Letter type enum:** `L1`..`L10` — one per `.docx` template in `Brief/`.
+
+| Code | Letter | Nomor prefix | Signatory | Subject = applicant |
+|---|---|---|---|---|
+| `L1` | Surat Keterangan Berdomisili | `400.12.2.1` | Keuchik | Yes |
+| `L2` | Surat Keterangan Domisili Kantor | `400.10.4.4` | Keuchik | No (an office/business) |
+| `L3` | Surat Keterangan Kehilangan | `400.10.2.2` | Keuchik | Yes (reporter) |
+| `L4` | Surat Keterangan Miskin (SKTM) | `400.10.4.4` | Keuchik | Yes |
+| `L5` | Surat Keterangan Usaha | `400.1.4.3` | Keuchik | Yes |
+| `L6` | Surat Keterangan Yatim/Piatu | `400.12.2.1` | Keuchik | No (a child) |
+| `L7` | Surat Keterangan Kematian | `400.12.2.1` | Keuchik | No (the deceased) |
+| `L8` | Surat Keterangan Berkelakuan Baik | `400.10.2.2` | Keuchik | Yes |
+| `L9` | Surat Keterangan Belum Menikah | `400.12.2.1` | **Sekretaris Gampong, a.n. Keuchik** | Yes |
+| `L10` | Surat Rekomendasi | `400.10.2.2` | Keuchik | Yes (see note) |
+
+Brief §6 specifies only `L1`–`L7`; `L8`–`L10` were derived from their `.docx` templates on 2026-07-20 after the template count was reconciled (10 files, not 7). Two consequences for implementers:
+
+- **The signatory is per-type, not global.** `L9` is signed by the Sekretaris Gampong *on behalf of* the Keuchik. Brief §6.0 assumed one signatory for every letter; the letter chrome and the QR signature block must read the signatory from the letter type.
+- **`L10` is not a "surat keterangan".** It is an outgoing recommendation letter with a full kop surat, a `Nomor`/`Lampiran`/`Perihal` header block, an external addressee, and a narrative body referencing an incoming request — it has no identity table. Its field set is `nama_pemohon`, `nomor_surat_permohonan`, `tanggal_permohonan`, `perihal`, `tujuan_jabatan`, `tujuan_instansi`. The mobile form engine must not assume every type shares the identity block.
 
 **Request status enum** (brief §5.4):
 `SUBMITTED → IN_REVIEW → (NEEDS_INFO) → APPROVED → GENERATED → SENT` and `REJECTED`. `SENT` and `REJECTED` are terminal.
@@ -33,7 +50,7 @@ Codes: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_F
 ## 1. Letter types (public)
 
 ### `GET /letter-types`
-Returns the 7 types and their **form schema** so the mobile form engine can render dynamically.
+Returns the 10 types and their **form schema** so the mobile form engine can render dynamically.
 ```json
 [
   {

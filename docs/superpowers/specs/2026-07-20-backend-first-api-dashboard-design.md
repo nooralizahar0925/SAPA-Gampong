@@ -100,7 +100,7 @@ Idempotent; refuses to run against a non-empty production database.
 | 0 | GitHub remote + push; backend bootstrap; Docker Postgres + Mailpit; Prisma data model | new + 1, 2 |
 | 1 | Admin auth + seed admin | 3 |
 | 2 | **OpenAPI registry + Scalar `/api/docs` + drift test** | new |
-| 3 | Core letter loop: letter-types, uploads, create/track, queue + state machine, nomor surat, QR + `/verify` page, PDF generation, email, all 7 templates | 4–12 |
+| 3 | Core letter loop: letter-types, uploads, create/track, queue + state machine, nomor surat, QR + `/verify` page, PDF generation, email, all 10 templates | 4–12 |
 | 4 | Content APIs, feedback, notifications | 16, 18, 19 |
 | 5 | Demo seed, security & privacy pass, Docker, CI | 20, 21 + new |
 | 6 | Admin dashboard (React) | 13, 14, 15, 17 |

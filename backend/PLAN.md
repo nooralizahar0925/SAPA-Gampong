@@ -14,7 +14,9 @@
 - **Human approval required:** no letter PDF is generated or sent without an explicit admin `approve` (brief §5.1).
 - **Authenticity QR = Path A** (self-hosted verification, brief §13.1): opaque random `verification_token`, public `/verify/:token` reading from the DB, revocation supported. Design the signing step so a future **Path B (BSrE)** swap is drop-in.
 - **PII protection** (brief §16.2): KTP/KK and NIK encrypted at rest; attachments served only via signed, expiring URLs to authenticated admins; demographics endpoints expose **aggregate only**.
-- **Letters render in Indonesian** with the exact official terminology from the 7 `.docx` templates in `../../Brief/`.
+- **Letters render in Indonesian** with the exact official terminology from the **10** `.docx` templates in `../../Brief/`. Brief §6 specifies only L1–L7; L8 (Berkelakuan Baik), L9 (Belum Menikah), L10 (Rekomendasi) are defined in `../API-CONTRACT.md`, derived from their templates.
+- **The signatory is per letter type.** L9 is signed by the Sekretaris Gampong a.n. the Keuchik; all others by the Keuchik. Brief §6.0's single-signatory assumption is superseded.
+- **L10 does not share the identity-block shape** of the other nine — it is an outgoing recommendation letter with an addressee and a narrative body. Do not build the form engine or PDF templates assuming a universal subject-identity block.
 - **Nomor surat** assigned at generation from `letter_number_counter` per type per year (brief §6.0); never by the resident.
 - **Requirements source of truth:** `../../Brief/Aplikasi-Desa-Dev-Brief.md`. Data model = brief §14.
 
@@ -47,7 +49,7 @@ SAPA-Gampong/                       # repo root (backend/ and dashboard/ are sib
         pdf.service.ts            # Playwright html→pdf
         email.service.ts          # Nodemailer
         storage.service.ts        # put/get + signed urls
-    templates/letters/            # one HTML template per type: L1.html … L7.html (+ partials/kop.html, qr.html)
+    templates/letters/            # one HTML template per type: L1.html … L10.html (+ partials/kop.html, qr.html)
     tests/                        # vitest + supertest (integration), unit tests per service
     Dockerfile
   dashboard/
@@ -107,9 +109,9 @@ SAPA-Gampong/                       # repo root (backend/ and dashboard/ are sib
 
 Prove L1 end-to-end, then generalize to 7.
 
-### Task 4: Letter-types schema endpoint (the 7 forms as data)
+### Task 4: Letter-types schema endpoint (the 10 forms as data)
 **Files:** `backend/src/modules/letters/letter-types.ts` (static schema from brief §6), route in `letters` module; Test `backend/tests/letter-types.test.ts`
-**Interfaces:** `GET /api/letter-types` → array shaped per `../API-CONTRACT.md` §1. Encodes fields, `required_attachments`, `subject_is_applicant` for L1–L7.
+**Interfaces:** `GET /api/letter-types` → array shaped per `../API-CONTRACT.md` §1. Encodes fields, `required_attachments`, `subject_is_applicant`, and `signatory` for L1–L10.
 - [ ] **Step 1:** Test: response has 7 items; L1 has a `nik`-type field and `required_attachments` includes `KTP`.
 - [ ] **Step 2:** Run — FAIL.
 - [ ] **Step 3:** Encode all 7 field lists (brief §6) as typed constants + serializer.
@@ -179,14 +181,14 @@ Prove L1 end-to-end, then generalize to 7.
 - [ ] **Step 4:** Run — PASS.
 - [ ] **Step 5:** Commit `feat(api): email delivery + notifications`.
 
-### Task 12: Generalize to all 7 letter templates
+### Task 12: Generalize to all 10 letter templates
 **Files:** `backend/templates/letters/L2..L7.html`; extend `letter-types.ts`; Test `backend/tests/generate-all.test.ts`
 **Interfaces:** Each type generates a faithful PDF from its `.docx` in `../../Brief/`. Handles subject≠applicant types (L3 reporter, L6 child, L7 deceased + ahli waris — brief §6).
-- [ ] **Step 1:** Test: parametrized over L1–L7 — an APPROVED request of each type generates a PDF and a verifying token; L7 includes death details + survivors.
+- [ ] **Step 1:** Test: parametrized over L1–L10 — an APPROVED request of each type generates a PDF and a verifying token; L7 includes death details + survivors.
 - [ ] **Step 2:** Run — FAIL.
 - [ ] **Step 3:** Author L2–L7 HTML templates against the `.docx` layouts.
 - [ ] **Step 4:** Run — PASS.
-- [ ] **Step 5:** Commit `feat(api): all 7 letter templates`.
+- [ ] **Step 5:** Commit `feat(api): all 10 letter templates`.
 
 ---
 
