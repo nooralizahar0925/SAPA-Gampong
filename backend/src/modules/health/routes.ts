@@ -9,10 +9,10 @@ defineRoute(healthRouter, {
   path: '/',
   fullPath: '/api/health',
   tags: ['Health'],
-  summary: 'Cek status layanan',
+  summary: 'Service health check',
   responses: {
     200: {
-      description: 'Layanan berjalan normal',
+      description: 'Service is running normally',
       content: { 'application/json': { schema: z.object({ ok: z.literal(true) }) } },
     },
   },

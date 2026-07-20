@@ -26,7 +26,7 @@ registry.registerPath({
   method: 'post',
   path: '/api/uploads',
   tags: ['Uploads'],
-  summary: 'Unggah lampiran gambar atau PDF',
+  summary: 'Upload an image or PDF attachment',
   request: {
     body: {
       content: {
@@ -38,10 +38,10 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: 'File berhasil diunggah',
+      description: 'File uploaded successfully',
       content: { 'application/json': { schema: UploadResponseSchema } },
     },
-    400: errorResponse('Data upload tidak valid'),
+    400: errorResponse('Invalid upload payload'),
   },
 });
 
@@ -77,20 +77,20 @@ defineRoute(uploadsRouter, {
   path: '/:fileId',
   fullPath: '/api/uploads/{fileId}',
   tags: ['Uploads'],
-  summary: 'Ambil file lewat URL bertanda tangan',
+  summary: 'Fetch a file through a signed URL',
   params: SignedUploadParams,
   query: SignedUploadQuery,
   responses: {
     200: {
-      description: 'Konten file',
+      description: 'File content',
       content: {
         'application/octet-stream': {
           schema: BinaryFileResponseSchema,
         },
       },
     },
-    403: errorResponse('URL file tidak valid atau kedaluwarsa'),
-    404: errorResponse('File tidak ditemukan'),
+    403: errorResponse('Signed file URL is invalid or expired'),
+    404: errorResponse('File not found'),
   },
   handler: async ({ params, query, res }) => {
     assertSignedUrl(params.fileId, query.exp, query.sig);

@@ -11,15 +11,15 @@ defineRoute(authRouter, {
   path: '/login',
   fullPath: '/api/auth/login',
   tags: ['Auth'],
-  summary: 'Login admin',
+  summary: 'Admin login',
   body: LoginBody,
   responses: {
     200: {
-      description: 'Login berhasil',
+      description: 'Login succeeded',
       content: { 'application/json': { schema: LoginResponse } },
     },
-    400: errorResponse('Data login tidak valid'),
-    401: errorResponse('Email atau kata sandi salah'),
+    400: errorResponse('Invalid login payload'),
+    401: errorResponse('Incorrect email or password'),
   },
   handler: async ({ body, res }) => {
     const user = await verifyCredentials(body.email, body.password);
@@ -32,14 +32,14 @@ defineRoute(authRouter, {
   path: '/me',
   fullPath: '/api/auth/me',
   tags: ['Auth'],
-  summary: 'Profil admin yang sedang login',
+  summary: 'Current admin profile',
   auth: 'admin',
   responses: {
     200: {
-      description: 'Data pengguna',
+      description: 'Current user',
       content: { 'application/json': { schema: AdminUserPublic } },
     },
-    401: errorResponse('Token tidak valid atau tidak dikirim'),
+    401: errorResponse('Token is invalid or missing'),
   },
   handler: async ({ req, res }) => {
     res.json(await findUserById(req.auth!.userId));

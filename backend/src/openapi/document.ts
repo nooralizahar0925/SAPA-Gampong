@@ -7,6 +7,7 @@ import { env } from '../config/env';
 import '../modules/auth/routes';
 import '../modules/health/routes';
 import '../modules/letters/routes';
+import '../modules/requests/routes';
 import '../modules/uploads/routes';
 
 export function buildDocument() {
@@ -18,15 +19,16 @@ export function buildDocument() {
       title: 'SAPA Gampong API',
       version: '0.1.0',
       description:
-        'API layanan Gampong Blang: pengajuan surat, verifikasi keaslian, konten desa, dan pelaporan warga. ' +
-        'Login lewat POST /api/auth/login, salin `token`, lalu tekan tombol Authorize untuk mencoba endpoint admin.',
+        'API for Gampong Blang services: letter requests, authenticity verification, village content, and citizen feedback. ' +
+        'Log in via POST /api/auth/login, copy the returned token, then use Authorize to try protected admin endpoints.',
     },
-    servers: [{ url: env.PUBLIC_BASE_URL, description: 'Server aktif' }],
+    servers: [{ url: env.PUBLIC_BASE_URL, description: 'Active server' }],
     tags: [
-      { name: 'Health', description: 'Status layanan' },
-      { name: 'Auth', description: 'Autentikasi admin' },
-      { name: 'Letter Types', description: 'Katalog tipe surat dan skema formulir' },
-      { name: 'Uploads', description: 'Unggah dan akses lampiran bertanda tangan' },
+      { name: 'Health', description: 'Service status endpoints' },
+      { name: 'Auth', description: 'Admin authentication endpoints' },
+      { name: 'Letter Types', description: 'Letter catalog and dynamic form schemas' },
+      { name: 'Requests', description: 'Public request submission and status tracking' },
+      { name: 'Uploads', description: 'Upload endpoints and signed file access' },
     ],
   });
 }

@@ -13,7 +13,7 @@ export const ErrorEnvelope = registry.register(
       }),
     })
     .openapi({
-      description: 'Bentuk baku seluruh respons error.',
+      description: 'Standard envelope used by every non-2xx error response.',
       example: {
         error: {
           code: 'VALIDATION_ERROR',

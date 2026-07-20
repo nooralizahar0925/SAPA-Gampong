@@ -379,3 +379,12 @@ export const LETTER_DEFINITIONS: readonly LetterDefinition[] = [
     ],
   },
 ];
+
+export const LETTER_TYPE_CODES = LETTER_DEFINITIONS.map((item) => item.code) as [
+  LetterDefinition['code'],
+  ...LetterDefinition['code'][],
+];
+
+export function getLetterDefinition(code: string) {
+  return LETTER_DEFINITIONS.find((item) => item.code === code);
+}

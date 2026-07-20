@@ -10,10 +10,10 @@ defineRoute(lettersRouter, {
   path: '/letter-types',
   fullPath: '/api/letter-types',
   tags: ['Letter Types'],
-  summary: 'Daftar tipe surat dan skema formulir dinamis',
+  summary: 'Available letter types and dynamic form schema',
   responses: {
     200: {
-      description: 'Daftar tipe surat',
+      description: 'List of letter types',
       content: { 'application/json': { schema: LetterTypeListResponse } },
     },
   },
