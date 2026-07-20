@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sapa
+      POSTGRES_PASSWORD: sapa
+      POSTGRES_DB: sapa
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sapa']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025'   # SMTP
+      - '8025:8025'   # web inbox
+
+volumes:
+  db_data:
