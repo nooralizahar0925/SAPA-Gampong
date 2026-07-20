@@ -198,12 +198,12 @@ Prove L1 end-to-end, then generalize to 7.
 
 ### Task 13: Dashboard scaffold + login + auth guard (A1)
 **Files:** `dashboard/*` (Vite+TS), `dashboard/src/api/client.ts`, `pages/Login.tsx`; Test `dashboard/src/__tests__/login.test.tsx` (RTL + MSW)
-- [ ] Steps: (1) test: submitting valid creds stores token + redirects to queue (MSW mocks `/auth/login`); (2) FAIL; (3) implement API client (error envelope + bearer), login form, React Router guard; (4) PASS; (5) commit `feat(web): dashboard scaffold + login`.
+- [x] Steps: (1) test: submitting valid creds stores token + redirects to queue (MSW mocks `/auth/login`); (2) FAIL; (3) implement API client (error envelope + bearer), login form, React Router guard; (4) PASS; (5) commit `feat(web): dashboard scaffold + login`.
 
 ### Task 14: Request queue (A2) + detail/review (A3)
 **Files:** `pages/Queue.tsx`, `pages/RequestDetail.tsx`, `components/StatusBadge.tsx`, `AttachmentViewer.tsx`; Test with MSW
 - Queue: list + filter by status/type + search + new-`SUBMITTED` badge. Detail: full read-only fields + attachment viewer + Approve/Reject(reason)/Needs-info + editable-normalize with audit + assign nomor surat.
-- [ ] Steps: (1) test: queue renders rows from mocked `/requests`; approve calls `PATCH /requests/:id/status`; (2) FAIL; (3) implement; (4) PASS; (5) commit `feat(web): queue + review`.
+- [x] Steps: (1) test: queue renders rows from mocked `/requests`; approve calls `PATCH /requests/:id/status`; (2) FAIL; (3) implement; (4) PASS; (5) commit `feat(web): queue + review`.
 
 ### Task 15: Letter generation & send (A4)
 **Files:** `pages/Generate.tsx`, `components/PdfPreview.tsx`; Test with MSW
@@ -216,11 +216,11 @@ Prove L1 end-to-end, then generalize to 7.
 - Depends on backend provider settings endpoints being available first. The dashboard only reads provider metadata/readiness and updates the selected provider.
 - Scope:
   - Show the current active provider.
-  - Show 3 provider options: `mailersend`, `mailgun`, `gmail`.
+  - Show 4 provider options: `mailersend`, `mailgun`, `gmail`, `smtp`.
   - Show readiness/status per provider (configured/not configured) from the backend.
   - Allow changing the active provider.
   - Optionally link to email preview examples, but never expose API keys, SMTP passwords, or secret tokens.
-- [ ] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
+- [ ] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail|smtp`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
 
 ---
 

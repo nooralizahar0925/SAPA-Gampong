@@ -22,6 +22,94 @@ export type LoginResponse = {
   user: AdminUser;
 };
 
+export type LetterTypeCode = 'L1' | 'L2' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9' | 'L10';
+
+export type RequestStatus =
+  | 'SUBMITTED'
+  | 'IN_REVIEW'
+  | 'NEEDS_INFO'
+  | 'APPROVED'
+  | 'GENERATED'
+  | 'SENT'
+  | 'REJECTED';
+
+export type LetterFieldDefinition = {
+  key: string;
+  label: string;
+  type: 'text' | 'textarea' | 'date' | 'time' | 'year' | 'number' | 'nik' | 'phone' | 'email' | 'enum';
+  required: boolean;
+  options?: string[];
+};
+
+export type LetterTypeDefinition = {
+  code: LetterTypeCode;
+  name: string;
+  description: string;
+  subject_is_applicant: boolean;
+  signatory: string;
+  required_attachments: string[];
+  fields: LetterFieldDefinition[];
+};
+
+export type RequestQueueItem = {
+  id: string;
+  reference_code: string;
+  letter_type: LetterTypeCode;
+  applicant_name: string;
+  status: RequestStatus;
+  created_at: string;
+  email: string;
+};
+
+export type ListRequestsResponse = {
+  items: RequestQueueItem[];
+  total: number;
+  page: number;
+};
+
+export type RequestDetailAttachment = {
+  file_id: string;
+  kind: string;
+  mime: string;
+  size: number;
+  url: string;
+};
+
+export type RequestStatusHistoryItem = {
+  status: RequestStatus;
+  at: string;
+  action?: string;
+  by?: string;
+  reason?: string;
+  nomor_surat?: string;
+};
+
+export type RequestDetailResponse = {
+  id: string;
+  reference_code: string;
+  letter_type: LetterTypeCode;
+  status: RequestStatus;
+  applicant_name: string;
+  applicant_email: string;
+  applicant_phone: string | null;
+  keperluan: string | null;
+  subject_data: Record<string, unknown>;
+  attachments: RequestDetailAttachment[];
+  status_history: RequestStatusHistoryItem[];
+  nomor_surat: string | null;
+  decision_reason: string | null;
+  decided_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PatchRequestStatusInput = {
+  action: 'approve' | 'reject' | 'in_review' | 'needs_info';
+  reason?: string;
+  subject_data?: Record<string, unknown>;
+  nomor_surat?: string;
+};
+
 export type MessageResponse = {
   message: string;
   reset_url?: string;
@@ -112,6 +200,37 @@ export function forgotPasswordRequest(input: { email: string }) {
 export function resetPasswordRequest(input: { token: string; password: string }) {
   return apiRequest<MessageResponse>('/auth/reset-password', {
     method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function listLetterTypesRequest() {
+  return apiRequest<LetterTypeDefinition[]>('/letter-types');
+}
+
+export function listRequestsRequest(input: {
+  status?: RequestStatus;
+  letter_type?: LetterTypeCode;
+  q?: string;
+  page?: number;
+}) {
+  const params = new URLSearchParams();
+  if (input.status) params.set('status', input.status);
+  if (input.letter_type) params.set('letter_type', input.letter_type);
+  if (input.q?.trim()) params.set('q', input.q.trim());
+  if (input.page && input.page > 1) params.set('page', String(input.page));
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : '';
+  return apiRequest<ListRequestsResponse>(`/requests${suffix}`);
+}
+
+export function getRequestDetailRequest(id: string) {
+  return apiRequest<RequestDetailResponse>(`/requests/${id}`);
+}
+
+export function updateRequestStatusRequest(id: string, input: PatchRequestStatusInput) {
+  return apiRequest<RequestDetailResponse>(`/requests/${id}/status`, {
+    method: 'PATCH',
     body: JSON.stringify(input),
   });
 }
