@@ -150,6 +150,12 @@ Emails the QR-bearing PDF to `applicant_email`; sets status `SENT`; triggers res
 ```
 Unknown/revoked token → `{ "valid": false }` (HTTP 200, page shows "Surat tidak valid"). Rate-limited. Increments `verified_count`.
 
+### `POST /requests/:id/revoke` (admin)
+Revokes a request's `verification_token` so future scans return `{ "valid": false }`.
+```json
+{ "revoked": true }
+```
+
 ---
 
 ## 5. Content (public GET, admin write)

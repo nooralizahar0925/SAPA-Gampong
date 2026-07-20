@@ -7,6 +7,7 @@ import { signedUrl } from '../../services/storage.service';
 import { assignLetterNumber } from '../letters/number.service';
 import type { CreateRequestBodyType, PatchRequestStatusBodyType } from './schemas';
 import { canTransition, targetStatusFor } from './state-machine';
+import { revokeVerification } from '../verify/service';
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'Menunggu diproses',
@@ -233,6 +234,8 @@ export async function updateRequestStatus(
     return serializeRequestDetail(updated);
   });
 }
+
+export { revokeVerification };
 
 function buildSubjectSchema(fields: readonly LetterField[]) {
   const shape: Record<string, z.ZodTypeAny> = {};

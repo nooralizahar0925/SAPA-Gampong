@@ -31,6 +31,10 @@
     {
       "name": "Uploads",
       "description": "Upload endpoints and signed file access"
+    },
+    {
+      "name": "Verify",
+      "description": "Public letter authenticity verification"
     }
   ],
   "components": {
@@ -252,6 +256,79 @@
         "items": {
           "$ref": "#/components/schemas/LetterType"
         }
+      },
+      "VerifyResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            },
+            "required": [
+              "valid"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "nomor_surat": {
+                "type": "string"
+              },
+              "jenis_surat": {
+                "type": "string"
+              },
+              "tanggal_terbit": {
+                "type": "string"
+              },
+              "penandatangan": {
+                "type": "string"
+              },
+              "perihal": {
+                "type": "string"
+              },
+              "revoked": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            },
+            "required": [
+              "valid",
+              "nomor_surat",
+              "jenis_surat",
+              "tanggal_terbit",
+              "penandatangan",
+              "perihal",
+              "revoked"
+            ]
+          }
+        ]
+      },
+      "RevokeResponse": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "revoked"
+        ]
       },
       "CreateRequestBody": {
         "type": "object",
@@ -1198,6 +1275,62 @@
         }
       }
     },
+    "/api/requests/{id}/revoke": {
+      "post": {
+        "tags": [
+          "Verify"
+        ],
+        "summary": "Revoke a verification token for a request",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification token revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/uploads": {
       "post": {
         "tags": [
@@ -1295,6 +1428,52 @@
           },
           "404": {
             "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/verify/{token}": {
+      "get": {
+        "tags": [
+          "Verify"
+        ],
+        "summary": "Verify a letter token and return public authenticity details",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result as HTML or JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResponse"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many verification attempts",
             "content": {
               "application/json": {
                 "schema": {

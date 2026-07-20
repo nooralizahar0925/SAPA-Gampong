@@ -7,6 +7,7 @@ import {
   ListRequestsQuery,
   ListRequestsResponse,
   PatchRequestStatusBody,
+  RevokeResponse,
   RequestDetailParams,
   RequestDetailResponse,
   TrackRequestParams,
@@ -16,6 +17,7 @@ import {
   createPublicRequest,
   getAdminRequestDetail,
   listAdminRequests,
+  revokeVerification,
   trackRequest,
   updateRequestStatus,
 } from './service';
@@ -123,5 +125,26 @@ defineRoute(requestsRouter, {
   },
   handler: async ({ params, body, req, res }) => {
     res.json(await updateRequestStatus(params.id, body, req.auth!.userId));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'post',
+  path: '/:id/revoke',
+  fullPath: '/api/requests/{id}/revoke',
+  tags: ['Verify'],
+  summary: 'Revoke a verification token for a request',
+  auth: 'admin',
+  params: RequestDetailParams,
+  responses: {
+    200: {
+      description: 'Verification token revoked',
+      content: { 'application/json': { schema: RevokeResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Request not found'),
+  },
+  handler: async ({ params, res }) => {
+    res.json(await revokeVerification(params.id));
   },
 });

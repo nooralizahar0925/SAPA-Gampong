@@ -7,6 +7,7 @@ import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
 import { requestsRouter } from './modules/requests/routes';
 import { uploadsRouter } from './modules/uploads/routes';
+import { verifyRouter } from './modules/verify/routes';
 
 export function createApp() {
   const app = express();
@@ -17,6 +18,7 @@ export function createApp() {
   app.use('/api', lettersRouter);
   app.use('/api/requests', requestsRouter);
   app.use('/api/uploads', uploadsRouter);
+  app.use('/verify', verifyRouter);
 
   app.use('/api/auth', authRouter);
 

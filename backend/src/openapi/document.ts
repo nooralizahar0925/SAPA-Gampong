@@ -9,6 +9,7 @@ import '../modules/health/routes';
 import '../modules/letters/routes';
 import '../modules/requests/routes';
 import '../modules/uploads/routes';
+import '../modules/verify/routes';
 
 export function buildDocument() {
   const generator = new OpenApiGeneratorV31(registry.definitions);
@@ -29,6 +30,7 @@ export function buildDocument() {
       { name: 'Letter Types', description: 'Letter catalog and dynamic form schemas' },
       { name: 'Requests', description: 'Public request submission and status tracking' },
       { name: 'Uploads', description: 'Upload endpoints and signed file access' },
+      { name: 'Verify', description: 'Public letter authenticity verification' },
     ],
   });
 }

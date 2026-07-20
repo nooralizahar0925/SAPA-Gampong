@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { registry } from '../../openapi/registry';
 import { LETTER_TYPE_CODES } from '../letters/data';
 import { uploadKindValues } from '../../services/storage.service';
+import { RevokeResponse as VerifyRevokeResponse } from '../verify/schemas';
 
 export const RequestStatusSchema = z.enum([
   'SUBMITTED',
@@ -145,3 +146,4 @@ export const PatchRequestStatusBody = registry.register(
 
 export type CreateRequestBodyType = z.infer<typeof CreateRequestBody>;
 export type PatchRequestStatusBodyType = z.infer<typeof PatchRequestStatusBody>;
+export const RevokeResponse = VerifyRevokeResponse;
