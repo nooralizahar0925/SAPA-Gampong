@@ -1,5 +1,7 @@
 import express from 'express';
+import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/error';
+import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
 
 export function createApp() {
@@ -12,6 +14,10 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRouter);
+
+  if (env.DOCS_ENABLED || env.NODE_ENV !== 'production') {
+    app.use('/api', docsRouter);
+  }
 
   app.use(notFoundHandler);
   app.use(errorHandler);
