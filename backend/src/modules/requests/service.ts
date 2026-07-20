@@ -8,6 +8,7 @@ import { assignLetterNumber } from '../letters/number.service';
 import type { CreateRequestBodyType, PatchRequestStatusBodyType } from './schemas';
 import { canTransition, targetStatusFor } from './state-machine';
 import { revokeVerification } from '../verify/service';
+import { notifyRequestRejected } from '../notifications/service';
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'Menunggu diproses',
@@ -176,7 +177,7 @@ export async function updateRequestStatus(
     ? validateSubjectData(found.letterType, input.subject_data)
     : (found.subjectData as Record<string, unknown>);
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const targetStatus = targetStatusFor(input.action);
     const year = new Date().getFullYear();
     const nomorSurat =
@@ -233,6 +234,20 @@ export async function updateRequestStatus(
 
     return serializeRequestDetail(updated);
   });
+
+  if (input.action === 'reject' && input.reason?.trim()) {
+    void notifyRequestRejected({
+      applicantEmail: found.applicantEmail,
+      applicantName: found.applicantName,
+      referenceCode: found.referenceCode,
+      letterType: found.letterType,
+      reason: input.reason.trim(),
+    }).catch((error: unknown) => {
+      if (process.env.NODE_ENV !== 'test') console.error(error);
+    });
+  }
+
+  return result;
 }
 
 export { revokeVerification };

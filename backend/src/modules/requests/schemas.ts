@@ -154,6 +154,13 @@ export const GenerateRequestResponse = registry.register(
   }),
 );
 
+export const SendRequestResponse = registry.register(
+  'SendRequestResponse',
+  z.object({
+    status: z.literal('SENT'),
+  }),
+);
+
 export type CreateRequestBodyType = z.infer<typeof CreateRequestBody>;
 export type PatchRequestStatusBodyType = z.infer<typeof PatchRequestStatusBody>;
 export const RevokeResponse = VerifyRevokeResponse;

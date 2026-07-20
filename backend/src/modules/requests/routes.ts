@@ -11,6 +11,7 @@ import {
   RevokeResponse,
   RequestDetailParams,
   RequestDetailResponse,
+  SendRequestResponse,
   TrackRequestParams,
   TrackRequestResponse,
 } from './schemas';
@@ -23,6 +24,7 @@ import {
   updateRequestStatus,
 } from './service';
 import { generateApprovedRequest } from './generate';
+import { sendGeneratedRequest } from './send';
 
 export const requestsRouter = Router();
 
@@ -170,5 +172,27 @@ defineRoute(requestsRouter, {
   },
   handler: async ({ params, res }) => {
     res.json(await revokeVerification(params.id));
+  },
+});
+
+defineRoute(requestsRouter, {
+  method: 'post',
+  path: '/:id/send',
+  fullPath: '/api/requests/{id}/send',
+  tags: ['Requests'],
+  summary: 'Email the generated PDF to the applicant',
+  auth: 'admin',
+  params: RequestDetailParams,
+  responses: {
+    200: {
+      description: 'Letter emailed successfully',
+      content: { 'application/json': { schema: SendRequestResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Request not found'),
+    409: errorResponse('Request is not ready for email delivery'),
+  },
+  handler: async ({ params, req, res }) => {
+    res.json(await sendGeneratedRequest(params.id, req.auth!.userId));
   },
 });
