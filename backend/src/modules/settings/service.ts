@@ -2,9 +2,13 @@ import type { EmailProvider } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import {
+  EmailService,
   getDefaultEmailProvider,
   getEmailProviderCatalog,
+  getEmailProviderLabel,
   isEmailProviderConfigured,
+  saveEmailProviderConfig,
+  type UpdateEmailProviderConfigInput,
 } from '../../services/email.service';
 
 const APP_CONFIG_ID = 'singleton';
@@ -18,13 +22,13 @@ export async function getEmailProviderSettings() {
   return {
     active_provider: config?.activeEmailProvider ?? getDefaultEmailProvider(),
     default_provider: getDefaultEmailProvider(),
-    providers: getEmailProviderCatalog(),
+    providers: await getEmailProviderCatalog(),
   };
 }
 
 export async function updateEmailProvider(provider: EmailProvider) {
-  if (!isEmailProviderConfigured(provider)) {
-    throw ApiError.conflict(`Provider email ${provider} belum dikonfigurasi`);
+  if (!(await isEmailProviderConfigured(provider))) {
+    throw ApiError.conflict(`Email provider ${provider} is not configured yet.`);
   }
 
   await prisma.appConfig.upsert({
@@ -34,4 +38,36 @@ export async function updateEmailProvider(provider: EmailProvider) {
   });
 
   return getEmailProviderSettings();
+}
+
+export async function updateEmailProviderConfig(input: UpdateEmailProviderConfigInput) {
+  await saveEmailProviderConfig(input);
+  return getEmailProviderSettings();
+}
+
+export async function sendEmailProviderTestEmail(provider: EmailProvider, toEmail: string) {
+  if (!(await isEmailProviderConfigured(provider))) {
+    throw ApiError.conflict(`Email provider ${provider} is not configured yet.`);
+  }
+
+  await EmailService.sendWithProvider(provider, {
+    to: toEmail,
+    subject: `[Test] ${getEmailProviderLabel(provider)} configuration`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#173527;">
+        <h2 style="margin:0 0 16px;">Test email delivered successfully</h2>
+        <p style="margin:0 0 12px;">
+          This message confirms that the <strong>${getEmailProviderLabel(provider)}</strong> provider
+          can send email from the administration system.
+        </p>
+        <p style="margin:0;">
+          Sent on July 20, 2026 from the dashboard email provider settings screen.
+        </p>
+      </div>
+    `.trim(),
+  });
+
+  return {
+    message: `Test email sent via ${getEmailProviderLabel(provider)} to ${toEmail}.`,
+  };
 }

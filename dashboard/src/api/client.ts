@@ -119,6 +119,20 @@ export type SendRequestResponse = {
   status: 'SENT';
 };
 
+export type EmailProviderId = 'mailersend' | 'mailgun' | 'gmail' | 'smtp';
+
+export type EmailProviderOption = {
+  id: EmailProviderId;
+  label: string;
+  configured: boolean;
+};
+
+export type EmailProviderSettingsResponse = {
+  active_provider: EmailProviderId;
+  default_provider: EmailProviderId;
+  providers: EmailProviderOption[];
+};
+
 export type PatchRequestStatusInput = {
   action: 'approve' | 'reject' | 'in_review' | 'needs_info';
   reason?: string;
@@ -260,5 +274,16 @@ export function generateRequestLetterRequest(id: string) {
 export function sendRequestLetterRequest(id: string) {
   return apiRequest<SendRequestResponse>(`/requests/${id}/send`, {
     method: 'POST',
+  });
+}
+
+export function getEmailProviderSettingsRequest() {
+  return apiRequest<EmailProviderSettingsResponse>('/settings/email-provider');
+}
+
+export function updateEmailProviderSettingsRequest(provider: EmailProviderId) {
+  return apiRequest<EmailProviderSettingsResponse>('/settings/email-provider', {
+    method: 'PATCH',
+    body: JSON.stringify({ provider }),
   });
 }

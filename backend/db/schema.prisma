@@ -269,5 +269,6 @@ model AdminUser {
 model AppConfig {
   id                  String        @id @default("singleton")
   activeEmailProvider EmailProvider @default(mailersend)
+  emailProviderConfigs Json?
   updatedAt           DateTime      @updatedAt
 }

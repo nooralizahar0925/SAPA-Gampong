@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import crestLogo from '../assets/logo.webp';
 import { clearStoredSession, getStoredSession } from '../auth/session';
 import { AppIcon, type IconName } from './AppIcon';
@@ -13,7 +13,8 @@ type NavItem = {
   label: string;
   icon: IconName;
   count?: number;
-  active?: boolean;
+  to?: string;
+  matchPrefix?: string;
 };
 
 type NavSection = {
@@ -25,7 +26,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Operasional',
     items: [
-      { label: 'Permohonan Surat', icon: 'inbox', count: 6, active: true },
+      { label: 'Permohonan Surat', icon: 'inbox', count: 6, to: '/requests', matchPrefix: '/requests' },
       { label: 'Arsip Surat', icon: 'archive' },
       { label: 'Kotak Pelaporan', icon: 'megaphone', count: 3 },
     ],
@@ -43,7 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Sistem',
     items: [
-      { label: 'Pengaturan', icon: 'settings' },
+      { label: 'Pengaturan Email', icon: 'settings', to: '/settings/email-provider', matchPrefix: '/settings' },
       { label: 'Akun Pengguna', icon: 'users' },
     ],
   },
@@ -52,6 +53,7 @@ const NAV_SECTIONS: NavSection[] = [
 export function DashboardFrame({ header, children }: DashboardFrameProps) {
   const session = getStoredSession();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function signOut() {
@@ -78,19 +80,32 @@ export function DashboardFrame({ header, children }: DashboardFrameProps) {
         {NAV_SECTIONS.map((section) => (
           <div key={section.title}>
             <div className="dashboard-group">{section.title}</div>
-            {section.items.map((item) => (
-              <button
-                key={item.label}
-                className={`dashboard-link${item.active ? ' active' : ''}`}
-                type="button"
-              >
-                <AppIcon name={item.icon} />
-                <span>{item.label}</span>
-                {typeof item.count === 'number' ? (
-                  <span className="dashboard-link-count">{item.count}</span>
-                ) : null}
-              </button>
-            ))}
+            {section.items.map((item) => {
+              const isActive = item.matchPrefix
+                ? location.pathname.startsWith(item.matchPrefix)
+                : item.to
+                  ? location.pathname === item.to
+                  : false;
+
+              return (
+                <button
+                  key={item.label}
+                  className={`dashboard-link${isActive ? ' active' : ''}${item.to ? '' : ' disabled'}`}
+                  type="button"
+                  onClick={() => {
+                    if (!item.to) return;
+                    setSidebarOpen(false);
+                    navigate(item.to);
+                  }}
+                >
+                  <AppIcon name={item.icon} />
+                  <span>{item.label}</span>
+                  {typeof item.count === 'number' ? (
+                    <span className="dashboard-link-count">{item.count}</span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
         ))}
 

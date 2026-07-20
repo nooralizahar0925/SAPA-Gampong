@@ -30,9 +30,19 @@ export type IconName =
   | 'warning'
   | 'x';
 
-export function AppIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {
+export function AppIcon({ name, className, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="icon" {...props}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+      className={className ? `icon ${className}` : 'icon'}
+    >
       {iconPath(name)}
     </svg>
   );

@@ -1,5 +1,6 @@
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import type { EmailProviderSettingsResponse } from '../api/client';
 
 const letterTypes = [
   {
@@ -188,6 +189,17 @@ const requestDetailsById: Record<string, typeof requestDetail | typeof approvedR
   'req-3': approvedRequestDetail,
 };
 
+let emailProviderSettings: EmailProviderSettingsResponse = {
+  active_provider: 'mailersend',
+  default_provider: 'mailersend',
+  providers: [
+    { id: 'mailersend', label: 'MailerSend', configured: true },
+    { id: 'mailgun', label: 'Mailgun', configured: true },
+    { id: 'gmail', label: 'Gmail Workspace', configured: false },
+    { id: 'smtp', label: 'SMTP Khusus', configured: true },
+  ],
+};
+
 export const server = setupServer(
   http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
     const body = (await request.json()) as { email?: string; password?: string };
@@ -338,6 +350,45 @@ export const server = setupServer(
     return HttpResponse.json({
       status: 'SENT',
     });
+  }),
+  http.get('http://localhost:8080/api/settings/email-provider', () => HttpResponse.json(emailProviderSettings)),
+  http.patch('http://localhost:8080/api/settings/email-provider', async ({ request }) => {
+    const body = (await request.json()) as { provider?: 'mailersend' | 'mailgun' | 'gmail' | 'smtp' };
+    const selected = emailProviderSettings.providers.find((provider) => provider.id === body.provider);
+
+    if (!selected) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Provider email tidak valid',
+            fields: {
+              provider: 'Provider email tidak dikenal',
+            },
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!selected.configured) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'CONFLICT',
+            message: `Provider email ${selected.id} belum dikonfigurasi`,
+          },
+        },
+        { status: 409 },
+      );
+    }
+
+    emailProviderSettings = {
+      ...emailProviderSettings,
+      active_provider: selected.id,
+    };
+
+    return HttpResponse.json(emailProviderSettings);
   }),
   http.post('http://localhost:8080/api/auth/forgot-password', async ({ request }) => {
     const body = (await request.json()) as { email?: string };

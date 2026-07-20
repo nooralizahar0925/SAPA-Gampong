@@ -220,7 +220,7 @@ Prove L1 end-to-end, then generalize to 7.
   - Show readiness/status per provider (configured/not configured) from the backend.
   - Allow changing the active provider.
   - Optionally link to email preview examples, but never expose API keys, SMTP passwords, or secret tokens.
-- [ ] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail|smtp`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
+- [x] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail|smtp`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
 
 ---
 

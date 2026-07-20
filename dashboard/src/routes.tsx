@@ -3,6 +3,7 @@ import { AuthGuard } from './components/AuthGuard';
 import { isAuthenticated } from './auth/session';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { LoginPage } from './pages/Login';
+import { EmailProviderSettingsPage } from './pages/EmailProviderSettings';
 import { QueuePage } from './pages/Queue';
 import { GeneratePage } from './pages/Generate';
 import { RequestDetailPage } from './pages/RequestDetail';
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route path="/requests" element={<QueuePage />} />
         <Route path="/requests/:id" element={<RequestDetailPage />} />
         <Route path="/requests/:id/generate" element={<GeneratePage />} />
+        <Route path="/settings/email-provider" element={<EmailProviderSettingsPage />} />
       </Route>
     </Routes>
   );

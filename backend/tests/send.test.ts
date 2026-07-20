@@ -55,6 +55,13 @@ describe('request email delivery', () => {
   it('sends a generated PDF to the applicant email and marks the request as SENT', async () => {
     const sendMail = vi.fn(async () => ({ messageId: 'msg-1' }));
     setEmailTransportForTests({ sendMail });
+    setEmailProviderConfigsForTests({
+      mailersend: {
+        fromEmail: 'no-reply@gampongblang.id',
+        fromName: 'Administrasi Gampong Blang',
+        apiKey: 'mailersend-test-key',
+      },
+    });
 
     const pdfFile = await createStoredPdf('tests/generated-letter.pdf');
     const created = await testPrisma.letterRequest.create({
@@ -120,6 +127,13 @@ describe('request email delivery', () => {
   it('rejects sending when the request is not in GENERATED status', async () => {
     const sendMail = vi.fn(async () => ({ messageId: 'msg-2' }));
     setEmailTransportForTests({ sendMail });
+    setEmailProviderConfigsForTests({
+      mailersend: {
+        fromEmail: 'no-reply@gampongblang.id',
+        fromName: 'Administrasi Gampong Blang',
+        apiKey: 'mailersend-test-key',
+      },
+    });
 
     const created = await testPrisma.letterRequest.create({
       data: {
@@ -146,6 +160,13 @@ describe('request email delivery', () => {
   it('fires a rejection email hook when an admin rejects a request', async () => {
     const sendMail = vi.fn(async () => ({ messageId: 'msg-3' }));
     setEmailTransportForTests({ sendMail });
+    setEmailProviderConfigsForTests({
+      mailersend: {
+        fromEmail: 'no-reply@gampongblang.id',
+        fromName: 'Administrasi Gampong Blang',
+        apiKey: 'mailersend-test-key',
+      },
+    });
 
     const created = await testPrisma.letterRequest.create({
       data: {
