@@ -54,6 +54,23 @@ SEED_ADMIN_PASSWORD=admin123
 
 The Docker Compose service names are `db` (PostgreSQL 16, database `sapa`, user/password `sapa`) and `mailpit`. There is no `postgres` service and no `appdesa` database — those names are stale leftovers from an earlier draft of this file.
 
+## Email providers
+The backend supports 4 outbound email providers:
+- `mailersend`
+- `mailgun`
+- `gmail`
+- `smtp`
+
+`EMAIL_PROVIDER_DEFAULT=mailersend` is the fallback when no admin override has been saved yet. Admins can inspect and switch the active provider through `GET /api/settings/email-provider` and `PATCH /api/settings/email-provider`.
+
+Provider readiness rules:
+- `mailersend` requires `MAILERSEND_API_KEY` and `MAILERSEND_FROM_EMAIL`.
+- `mailgun` requires `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, and `MAILGUN_FROM_EMAIL`.
+- `gmail` requires `GMAIL_USER`, `GMAIL_APP_PASSWORD`, and a sender email (`GMAIL_FROM_EMAIL`, or it falls back to `GMAIL_USER`).
+- `smtp` requires `SMTP_HOST`, `SMTP_PORT`, and a sender email (`SMTP_FROM_EMAIL`, or it falls back to `SMTP_USER`).
+
+See `backend/.env.example` for the full provider variable list.
+
 ## Seed admin credentials
 `npm run db:seed` creates (or updates) one admin user:
 - In development/test, it uses `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` from the environment if set, otherwise falls back to the dev defaults above (`admin@gampongblang.id` / `admin123`).
@@ -70,7 +87,7 @@ npm run openapi:write
 ```
 
 ## Mailpit (local email inbox)
-Outgoing email in dev is caught by Mailpit, not sent anywhere real:
+If you select `smtp` as the active provider and point `SMTP_HOST` / `SMTP_PORT` at Mailpit, outgoing email in dev is caught locally instead of being sent to a real mailbox:
 - SMTP: `localhost:1025`
 - Web inbox: `http://localhost:8025`
 

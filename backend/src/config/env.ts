@@ -7,6 +7,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(8),
   PUBLIC_BASE_URL: z.string().url().default('http://localhost:8080'),
+  EMAIL_PROVIDER_DEFAULT: z.enum(['mailersend', 'mailgun', 'gmail', 'smtp']).default('mailersend'),
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().int().positive().optional(),
   SMTP_SECURE: z
@@ -17,6 +18,18 @@ const EnvSchema = z.object({
   SMTP_PASS: z.string().min(1).optional(),
   SMTP_FROM_EMAIL: z.string().email().optional(),
   SMTP_FROM_NAME: z.string().min(1).optional(),
+  MAILERSEND_API_KEY: z.string().min(1).optional(),
+  MAILERSEND_FROM_EMAIL: z.string().email().optional(),
+  MAILERSEND_FROM_NAME: z.string().min(1).optional(),
+  MAILGUN_API_KEY: z.string().min(1).optional(),
+  MAILGUN_DOMAIN: z.string().min(1).optional(),
+  MAILGUN_BASE_URL: z.string().url().default('https://api.mailgun.net'),
+  MAILGUN_FROM_EMAIL: z.string().email().optional(),
+  MAILGUN_FROM_NAME: z.string().min(1).optional(),
+  GMAIL_USER: z.string().email().optional(),
+  GMAIL_APP_PASSWORD: z.string().min(1).optional(),
+  GMAIL_FROM_EMAIL: z.string().email().optional(),
+  GMAIL_FROM_NAME: z.string().min(1).optional(),
   DOCS_ENABLED: z
     .enum(['true', 'false'])
     .default('false')

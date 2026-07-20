@@ -6,6 +6,7 @@ import { authRouter } from './modules/auth/routes';
 import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
 import { requestsRouter } from './modules/requests/routes';
+import { settingsRouter } from './modules/settings/routes';
 import { uploadsRouter } from './modules/uploads/routes';
 import { verifyRouter } from './modules/verify/routes';
 
@@ -17,6 +18,7 @@ export function createApp() {
   app.use('/api/health', healthRouter);
   app.use('/api', lettersRouter);
   app.use('/api/requests', requestsRouter);
+  app.use('/api/settings', settingsRouter);
   app.use('/api/uploads', uploadsRouter);
   app.use('/verify', verifyRouter);
 

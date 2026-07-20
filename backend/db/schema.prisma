@@ -49,6 +49,13 @@ enum AdminRole {
   approver
 }
 
+enum EmailProvider {
+  mailersend
+  mailgun
+  gmail
+  smtp
+}
+
 enum DemographicBlockType {
   number
   split
@@ -255,4 +262,10 @@ model AdminUser {
   passwordHash String
   role         AdminRole @default(admin)
   createdAt    DateTime  @default(now())
+}
+
+model AppConfig {
+  id                  String        @id @default("singleton")
+  activeEmailProvider EmailProvider @default(mailersend)
+  updatedAt           DateTime      @updatedAt
 }

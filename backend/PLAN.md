@@ -210,6 +210,18 @@ Prove L1 end-to-end, then generalize to 7.
 - On Approve -> call generate, preview PDF (embed `pdf_url`), allow regenerate, then Send (email). Show verification token/URL. Optional signature-image overlay toggle (brief Section 11.3).
 - [ ] Steps: (1) test: clicking Generate then Send transitions the shown status GENERATED->SENT (mocked); (2) FAIL; (3) implement preview + actions; (4) PASS; (5) commit `feat(web): generate & send`.
 
+### Task 15A: Email provider settings UI
+**Files:** `dashboard/src/pages/EmailProviderSettings.tsx`, `dashboard/src/components/ProviderStatusCard.tsx`, `dashboard/src/api/client.ts`; Test with MSW
+- Purpose: give admins a dedicated dashboard screen to view and switch the active backend email provider without exposing secrets to the browser.
+- Depends on backend provider settings endpoints being available first. The dashboard only reads provider metadata/readiness and updates the selected provider.
+- Scope:
+  - Show the current active provider.
+  - Show 3 provider options: `mailersend`, `mailgun`, `gmail`.
+  - Show readiness/status per provider (configured/not configured) from the backend.
+  - Allow changing the active provider.
+  - Optionally link to email preview examples, but never expose API keys, SMTP passwords, or secret tokens.
+- [ ] Steps: (1) test: settings page loads current provider from mocked API and saves a provider switch to `mailersend|mailgun|gmail`; (2) FAIL; (3) implement a dedicated settings page + route + provider selector UI; (4) PASS; (5) commit `feat(web): email provider settings`.
+
 ---
 
 ## Phase 4 - Content management + public content APIs (Timeline: Weeks 6-7)

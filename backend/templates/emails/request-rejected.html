@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pemberitahuan Hasil Verifikasi Permohonan</title>
+  </head>
+  <body style="margin:0; padding:0; background:#f4f1ea; font-family: Georgia, 'Times New Roman', serif; color:#1f2937;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">{{preview_text}}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f1ea; padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:720px; background:#ffffff; border:1px solid #eadfcb; border-radius:20px; overflow:hidden; box-shadow:0 16px 40px rgba(67, 44, 12, 0.08);">
+            <tr>
+              <td style="padding:0; background:linear-gradient(135deg, {{accent_color}} 0%, #5f3d0f 100%);">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="padding:28px 32px 22px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td style="width:84px; vertical-align:top;">
+                            <img src="__LOGO_DATA_URL__" alt="Logo Pemerintah" width="68" height="68" style="display:block; width:68px; height:68px; border-radius:14px; background:#ffffff; padding:6px;" />
+                          </td>
+                          <td style="vertical-align:top; color:#ffffff;">
+                            <div style="display:inline-block; padding:6px 10px; border:1px solid rgba(255,255,255,0.28); border-radius:999px; font-size:11px; letter-spacing:0.08em; font-family: Arial, sans-serif;">{{badge_label}}</div>
+                            <div style="margin-top:14px; font-size:28px; line-height:1.2; font-weight:700;">{{heading}}</div>
+                            <div style="margin-top:8px; font-size:14px; line-height:1.6; color:rgba(255,255,255,0.88); font-family: Arial, sans-serif;">
+                              Pemerintah Gampong Blang<br />
+                              Kecamatan Krueng Sabee, Kabupaten Aceh Jaya
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:32px 32px 12px;">
+                <p style="margin:0 0 18px; font-size:18px; line-height:1.7;">Yth. <strong>{{applicant_name}}</strong>,</p>
+                <p style="margin:0 0 22px; font-size:16px; line-height:1.8; font-family: Arial, sans-serif; color:#334155;">
+                  {{intro_body}}
+                </p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px; border:1px solid #efdfc5; border-radius:16px; background:{{accent_soft}};">
+                  <tr>
+                    <td style="padding:22px 24px;">
+                      <div style="font-size:13px; letter-spacing:0.08em; color:#6b7280; font-family: Arial, sans-serif; margin-bottom:10px;">{{summary_title}}</div>
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-family: Arial, sans-serif; color:#1f2937;">
+                        <tr>
+                          <td style="padding:8px 0; width:38%; font-size:14px; color:#475569;">Jenis surat</td>
+                          <td style="padding:8px 0; font-size:14px; font-weight:700;">{{letter_name}}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:8px 0; width:38%; font-size:14px; color:#475569;">Kode permohonan</td>
+                          <td style="padding:8px 0; font-size:14px; font-weight:700;">{{reference_code}}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:8px 0; width:38%; font-size:14px; color:#475569;">Status</td>
+                          <td style="padding:8px 0;">
+                            <span style="display:inline-block; padding:7px 12px; border-radius:999px; background:{{status_soft}}; color:{{status_text}}; font-size:13px; font-weight:700;">{{status_label}}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="margin:0 0 22px; padding:18px 20px; border-left:4px solid {{accent_color}}; background:#fffaf2; border-radius:0 12px 12px 0; font-family: Arial, sans-serif; color:#334155; font-size:15px; line-height:1.75;">
+                  <strong>Catatan verifikasi:</strong><br />
+                  {{rejection_reason}}
+                </div>
+
+                <div style="margin:0 0 22px; padding:18px 20px; border-left:4px solid {{accent_color}}; background:#fdf9f3; border-radius:0 12px 12px 0; font-family: Arial, sans-serif; color:#334155; font-size:15px; line-height:1.75;">
+                  {{action_note}}
+                </div>
+
+                <p style="margin:0 0 22px; font-size:15px; line-height:1.8; font-family: Arial, sans-serif; color:#334155;">
+                  {{closing_note}}
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 32px 32px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-top:1px solid #eadfcb; padding-top:20px;">
+                  <tr>
+                    <td style="padding-top:20px; font-family: Arial, sans-serif; color:#334155;">
+                      <div style="font-size:15px; line-height:1.8;">Hormat kami,</div>
+                      <div style="margin-top:10px; font-size:18px; font-weight:700; color:#111827;">{{footer_title}}</div>
+                      <div style="margin-top:8px; font-size:13px; line-height:1.7; color:#6b7280;">{{footer_text}}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -236,14 +236,12 @@ export async function updateRequestStatus(
   });
 
   if (input.action === 'reject' && input.reason?.trim()) {
-    void notifyRequestRejected({
+    await notifyRequestRejected({
       applicantEmail: found.applicantEmail,
       applicantName: found.applicantName,
       referenceCode: found.referenceCode,
       letterType: found.letterType,
       reason: input.reason.trim(),
-    }).catch((error: unknown) => {
-      if (process.env.NODE_ENV !== 'test') console.error(error);
     });
   }
 

@@ -29,6 +29,10 @@
       "description": "Public request submission and status tracking"
     },
     {
+      "name": "Settings",
+      "description": "Admin-managed application settings and provider selection"
+    },
+    {
       "name": "Uploads",
       "description": "Upload endpoints and signed file access"
     },
@@ -810,6 +814,67 @@
           "status"
         ]
       },
+      "EmailProviderEnum": {
+        "type": "string",
+        "enum": [
+          "mailersend",
+          "mailgun",
+          "gmail",
+          "smtp"
+        ]
+      },
+      "EmailProviderOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          },
+          "label": {
+            "type": "string"
+          },
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "configured"
+        ]
+      },
+      "EmailProviderSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "active_provider": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          },
+          "default_provider": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailProviderOption"
+            }
+          }
+        },
+        "required": [
+          "active_provider",
+          "default_provider",
+          "providers"
+        ]
+      },
+      "UpdateEmailProviderBody": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/EmailProviderEnum"
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
       "UploadMultipartBody": {
         "type": "object",
         "properties": {
@@ -1490,6 +1555,103 @@
           },
           "409": {
             "description": "Request is not ready for email delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/email-provider": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get the current email provider selection and provider readiness",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current email provider settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailProviderSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update the active email provider",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmailProviderBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated email provider settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailProviderSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid provider payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Selected provider is not configured",
             "content": {
               "application/json": {
                 "schema": {

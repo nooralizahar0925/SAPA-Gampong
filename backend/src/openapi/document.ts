@@ -8,6 +8,7 @@ import '../modules/auth/routes';
 import '../modules/health/routes';
 import '../modules/letters/routes';
 import '../modules/requests/routes';
+import '../modules/settings/routes';
 import '../modules/uploads/routes';
 import '../modules/verify/routes';
 
@@ -29,6 +30,7 @@ export function buildDocument() {
       { name: 'Auth', description: 'Admin authentication endpoints' },
       { name: 'Letter Types', description: 'Letter catalog and dynamic form schemas' },
       { name: 'Requests', description: 'Public request submission and status tracking' },
+      { name: 'Settings', description: 'Admin-managed application settings and provider selection' },
       { name: 'Uploads', description: 'Upload endpoints and signed file access' },
       { name: 'Verify', description: 'Public letter authenticity verification' },
     ],

@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
-import { setEmailTransportForTests } from '../src/services/email.service';
+import { setEmailProviderConfigsForTests, setEmailTransportForTests } from '../src/services/email.service';
 import { storageRoot } from '../src/services/storage.service';
 import { testPrisma, truncateAll } from './helpers/db';
 
@@ -24,6 +24,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   setEmailTransportForTests(null);
+  setEmailProviderConfigsForTests(null);
 });
 
 async function login() {

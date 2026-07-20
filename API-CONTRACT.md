@@ -197,6 +197,38 @@ List inbox; mark `read|responded`, add internal note.
 
 ---
 
+## 8. Email provider settings (admin)
+
+### `GET /settings/email-provider`
+Returns the active backend email provider, the backend default provider, and the readiness of each supported provider. Secrets are never exposed.
+
+```json
+{
+  "active_provider": "mailersend",
+  "default_provider": "mailersend",
+  "providers": [
+    { "id": "mailersend", "label": "MailerSend", "configured": true },
+    { "id": "mailgun", "label": "Mailgun", "configured": false },
+    { "id": "gmail", "label": "Gmail", "configured": false },
+    { "id": "smtp", "label": "SMTP", "configured": true }
+  ]
+}
+```
+
+### `PATCH /settings/email-provider`
+Selects which backend email provider should be used for request delivery and notification email.
+
+```json
+{ "provider": "mailersend" }
+```
+
+Rules:
+- `provider` must be one of `mailersend | mailgun | gmail | smtp`.
+- The selected provider must already be configured on the backend. Otherwise the API returns `409 CONFLICT`.
+- The response payload matches `GET /settings/email-provider`.
+
+---
+
 ## Notes for both teams
 - Reference codes are user-facing (`GB-<year>-<seq>`); `id`s are opaque internal ids.
 - `verification_token` is random/opaque — never sequential (brief §13.1.2).
