@@ -194,6 +194,34 @@ List inbox; mark `read|responded`, add internal note.
 
 ### `POST /auth/login` → `{ "token": "<jwt>", "user": { "name":"…","role":"admin|approver" } }`
 ### `GET /auth/me` (admin) → current user
+### `POST /auth/forgot-password`
+```json
+{ "email": "admin@gampongblang.id" }
+```
+Always returns `200` to avoid leaking whether an email exists:
+```json
+{ "message": "Jika email terdaftar, tautan reset kata sandi telah dikirim." }
+```
+
+In local development, the backend may also include an optional preview link when no real email transport is configured yet:
+```json
+{
+  "message": "Jika email terdaftar, tautan reset kata sandi telah dikirim.",
+  "reset_url": "http://localhost:5173/reset-password?token=..."
+}
+```
+
+### `POST /auth/reset-password`
+```json
+{ "token": "opaque-reset-token", "password": "AdminBaru123" }
+```
+Response:
+```json
+{ "message": "Kata sandi berhasil diperbarui. Silakan login kembali." }
+```
+Rules:
+- `password` minimum 8 characters.
+- Invalid or expired tokens return `400 VALIDATION_ERROR` with `fields.token`.
 
 ---
 

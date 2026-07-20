@@ -45,6 +45,8 @@ PORT=8080
 DATABASE_URL=postgresql://sapa:sapa@localhost:5432/sapa
 JWT_SECRET=change-me-in-production
 PUBLIC_BASE_URL=http://localhost:8080     # used to build the `servers` entry in the OpenAPI document
+DASHBOARD_BASE_URL=http://localhost:5173  # used in forgot-password email links
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 DOCS_ENABLED=true                         # exposes /api/docs and /api/openapi.json
 
 # Development-only — see "Seed admin credentials" below
@@ -53,6 +55,13 @@ SEED_ADMIN_PASSWORD=admin123
 ```
 
 The Docker Compose service names are `db` (PostgreSQL 16, database `sapa`, user/password `sapa`) and `mailpit`. There is no `postgres` service and no `appdesa` database — those names are stale leftovers from an earlier draft of this file.
+
+## Login troubleshooting
+If the dashboard login form appears to do nothing in the browser, check these first:
+- The backend must be running at `http://localhost:8080/api`.
+- The dashboard must use the same API base URL (`VITE_API_BASE_URL`, if overridden).
+- `backend/.env` should allow the dashboard origin through `CORS_ORIGINS`.
+- The admin account is created by `npm run db:seed` and defaults to `admin@gampongblang.id` / `admin123` in development unless you changed `SEED_ADMIN_EMAIL` or `SEED_ADMIN_PASSWORD`.
 
 ## Email providers
 The backend supports 4 outbound email providers:

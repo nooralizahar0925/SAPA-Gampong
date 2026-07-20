@@ -5,6 +5,7 @@ import { createApp } from '../src/app';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
+const currentYear = new Date().getFullYear();
 
 beforeEach(async () => {
   await truncateAll();
@@ -33,7 +34,7 @@ describe('POST /api/requests/:id/generate', () => {
     async () => {
       const created = await testPrisma.letterRequest.create({
         data: {
-          referenceCode: 'GB-2026-001000',
+          referenceCode: `GB-${currentYear}-001000`,
           letterType: 'L1',
           status: 'APPROVED',
           applicantName: 'Budi',
@@ -65,7 +66,7 @@ describe('POST /api/requests/:id/generate', () => {
       expect(generated.body.pdf_id).toEqual(expect.any(String));
       expect(generated.body.pdf_url).toContain(`/api/uploads/${generated.body.pdf_id}?`);
       expect(generated.body.verification_token).toMatch(/^[a-f0-9]{32}$/);
-      expect(generated.body.nomor_surat).toMatch(/^400\.12\.2\.1\/1\/2026$/);
+      expect(generated.body.nomor_surat).toBe(`400.12.2.1/1/${currentYear}`);
 
       const reloaded = await testPrisma.letterRequest.findUnique({
         where: { id: created.id },

@@ -1,5 +1,6 @@
 import express from 'express';
 import { env } from './config/env';
+import { corsMiddleware } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
@@ -13,6 +14,7 @@ import { verifyRouter } from './modules/verify/routes';
 export function createApp() {
   const app = express();
 
+  app.use(corsMiddleware);
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api/health', healthRouter);

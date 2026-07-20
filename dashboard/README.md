@@ -1,14 +1,20 @@
-# SAPA Gampong — Admin Dashboard (React)
+# SAPA Gampong - Admin Dashboard
 
-Web admin dashboard for the village office (aparatur desa): request queue, review/approve, letter generation & send, content management, feedback inbox.
+React + Vite + TypeScript dashboard for the village office workflow.
 
-**Not scaffolded yet.** The full build plan for this app lives in **`../backend/PLAN.md` (Phase 3 onward)** — it's planned alongside the backend since they share the same API contract and the same developer (Full Stack).
+## Available now
+- Login page
+- Token storage
+- Protected route guard
+- Queue placeholder page
 
-## Stack (planned)
-React 18 + Vite + TypeScript · React Query · React Router · component lib (Ant Design or MUI) · react-hook-form + Zod. Talks to the backend at `http://localhost:8080/api` (see `../API-CONTRACT.md`).
-
-## Getting started (once scaffolded)
+## Local run
 ```bash
+cd dashboard
 npm install
-npm run dev        # http://localhost:5173
+npm run dev
 ```
+
+Default frontend URL: `http://localhost:5173`
+
+The dashboard talks to the backend API at `http://localhost:8080/api` unless `VITE_API_BASE_URL` is set.

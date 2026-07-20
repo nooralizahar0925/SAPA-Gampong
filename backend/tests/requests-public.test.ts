@@ -4,6 +4,7 @@ import { createApp } from '../src/app';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
+const currentYear = new Date().getFullYear();
 
 beforeEach(async () => {
   await truncateAll();
@@ -48,7 +49,7 @@ describe('public requests flow', () => {
 
     expect(createRes.status).toBe(201);
     expect(createRes.body.id).toEqual(expect.any(String));
-    expect(createRes.body.reference_code).toMatch(/^GB-2026-\d{6}$/);
+    expect(createRes.body.reference_code).toMatch(new RegExp(`^GB-${currentYear}-\\d{6}$`));
     expect(createRes.body.status).toBe('SUBMITTED');
 
     const saved = await testPrisma.letterRequest.findUnique({

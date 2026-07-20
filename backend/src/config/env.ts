@@ -7,6 +7,8 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(8),
   PUBLIC_BASE_URL: z.string().url().default('http://localhost:8080'),
+  DASHBOARD_BASE_URL: z.string().url().default('http://localhost:5173'),
+  CORS_ORIGINS: z.string().default('http://localhost:5173,http://127.0.0.1:5173'),
   EMAIL_PROVIDER_DEFAULT: z.enum(['mailersend', 'mailgun', 'gmail', 'smtp']).default('mailersend'),
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().int().positive().optional(),

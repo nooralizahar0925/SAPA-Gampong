@@ -5,6 +5,7 @@ import { createApp } from '../src/app';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
+const currentYear = new Date().getFullYear();
 
 beforeEach(async () => {
   await truncateAll();
@@ -161,7 +162,7 @@ describe('admin request management', () => {
 
     expect(approved.status).toBe(200);
     expect(approved.body.status).toBe('APPROVED');
-    expect(approved.body.nomor_surat).toMatch(/^400\.12\.2\.1\/1\/2026$/);
+    expect(approved.body.nomor_surat).toBe(`400.12.2.1/1/${currentYear}`);
     expect(approved.body.status_history).toHaveLength(2);
     expect(approved.body.status_history[0]).toMatchObject({
       status: 'IN_REVIEW',
@@ -172,7 +173,7 @@ describe('admin request management', () => {
       status: 'APPROVED',
       action: 'approve',
       by: 'Admin Gampong',
-      nomor_surat: '400.12.2.1/1/2026',
+      nomor_surat: `400.12.2.1/1/${currentYear}`,
     });
 
     const another = await testPrisma.letterRequest.create({
