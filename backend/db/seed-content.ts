@@ -146,7 +146,31 @@ const DEMOGRAPHICS = [
   },
 ];
 
+/**
+ * Contact block, letterhead, and signatory names. The signatory values match the ones
+ * currently hardcoded in modules/letters/rendering.ts so the dashboard shows what the
+ * generated PDFs actually print today.
+ */
+const APP_SETTINGS = {
+  contactPhone: '+62 812 3456 789',
+  contactEmail: 'gampongblang@acehjaya.go.id',
+  contactAddress: 'Jl. Pesisir No. 1, Gampong Blang, Krueng Sabee',
+  letterheadLine1: 'PEMERINTAH KABUPATEN ACEH JAYA',
+  letterheadLine2: 'KECAMATAN KRUENG SABEE',
+  letterheadLine3: 'GAMPONG BLANG',
+  keuchikTitle: 'Keuchik Gampong Blang',
+  keuchikName: 'SOFIAN',
+  secretaryTitle: 'Sekretaris Gampong a.n. Keuchik Gampong Blang',
+  secretaryName: 'AFZALUL ZIKRI, S.P',
+};
+
 export async function seedContent() {
+  await prisma.appConfig.upsert({
+    where: { id: SINGLETON },
+    create: { id: SINGLETON, ...APP_SETTINGS },
+    update: APP_SETTINGS,
+  });
+
   await prisma.villageProfile.upsert({
     where: { id: SINGLETON },
     create: { id: SINGLETON, ...PROFILE },
@@ -186,7 +210,8 @@ export async function seedContent() {
 
   console.log(
     `Seeded content: profile, visi+${MISSIONS.length} misi, ${OFFICIALS.length} perangkat, ` +
-      `${STRENGTHS.length} potensi, ${MOSQUES.length} masjid, ${DEMOGRAPHICS.length} blok demografi, prayer config.`,
+      `${STRENGTHS.length} potensi, ${MOSQUES.length} masjid, ${DEMOGRAPHICS.length} blok demografi, ` +
+      'prayer config, app settings (kontak/kop surat/penanda tangan).',
   );
 }
 

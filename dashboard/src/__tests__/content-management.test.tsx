@@ -596,6 +596,13 @@ describe('app settings page', () => {
     expect(screen.getByRole('button', { name: /simpan nomor \(1\)/i })).toBeEnabled();
   });
 
+  // Read from the API's updated_at, so it survives a reload rather than resetting.
+  it('shows when the settings were last saved', async () => {
+    renderApp(['/settings/app']);
+
+    expect(await screen.findByText(/terakhir disimpan 20 Jul 2026/i)).toBeInTheDocument();
+  });
+
   it('only enables save once something changes', async () => {
     const user = userEvent.setup();
     renderApp(['/settings/app']);

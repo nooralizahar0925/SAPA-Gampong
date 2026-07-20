@@ -1,3 +1,4 @@
+import { prisma } from '../../lib/prisma';
 import { getLetterDefinition } from './data';
 import { readBriefAssetDataUrl, renderLetterTemplate } from './template.service';
 
@@ -10,7 +11,12 @@ type RenderLetterInput = {
   keperluan?: string | null;
 };
 
-const SIGNATORY_BLOCKS: Record<string, { title: string; name: string }> = {
+/**
+ * Used when an admin has not filled a field in Pengaturan yet. Keeping these means an
+ * unconfigured install still prints a correct Gampong Blang letter rather than a blank
+ * letterhead or an empty signature line.
+ */
+const DEFAULT_SIGNATORY_BLOCKS: Record<string, { title: string; name: string }> = {
   Keuchik: {
     title: 'Keuchik Gampong Blang',
     name: 'SOFIAN',
@@ -21,6 +27,55 @@ const SIGNATORY_BLOCKS: Record<string, { title: string; name: string }> = {
   },
 };
 
+const DEFAULT_LETTERHEAD = {
+  line1: 'PEMERINTAH KABUPATEN ACEH JAYA',
+  line2: 'KECAMATAN KRUENG SABEE',
+  line3: 'GAMPONG BLANG',
+};
+
+/** Treats "" like "not set", so a cleared field falls back instead of printing blank. */
+function orDefault(value: string | null | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
+/**
+ * Resolves letterhead and signatory from AppConfig, falling back per field. The letter
+ * definition still decides *which role* signs (Keuchik vs Sekretaris a.n. Keuchik); the
+ * dashboard supplies that role's title and name.
+ */
+async function resolveBranding(signatoryRole: string) {
+  const config = await prisma.appConfig.findUnique({
+    where: { id: 'singleton' },
+    select: {
+      letterheadLine1: true,
+      letterheadLine2: true,
+      letterheadLine3: true,
+      keuchikTitle: true,
+      keuchikName: true,
+      secretaryTitle: true,
+      secretaryName: true,
+    },
+  });
+
+  const fallback = DEFAULT_SIGNATORY_BLOCKS[signatoryRole] ?? {
+    title: signatoryRole,
+    name: signatoryRole.toUpperCase(),
+  };
+
+  const isSecretary = signatoryRole.startsWith('Sekretaris');
+  const configuredTitle = isSecretary ? config?.secretaryTitle : config?.keuchikTitle;
+  const configuredName = isSecretary ? config?.secretaryName : config?.keuchikName;
+
+  return {
+    letterheadLine1: orDefault(config?.letterheadLine1, DEFAULT_LETTERHEAD.line1),
+    letterheadLine2: orDefault(config?.letterheadLine2, DEFAULT_LETTERHEAD.line2),
+    letterheadLine3: orDefault(config?.letterheadLine3, DEFAULT_LETTERHEAD.line3),
+    signatoryTitle: orDefault(configuredTitle, fallback.title),
+    signatoryName: orDefault(configuredName, fallback.name),
+  };
+}
+
 export async function renderRequestLetterHtml(input: RenderLetterInput) {
   const definition = getLetterDefinition(input.letterType);
   if (!definition) {
@@ -28,10 +83,7 @@ export async function renderRequestLetterHtml(input: RenderLetterInput) {
   }
 
   const logoDataUrl = await readBriefAssetDataUrl('logo.webp');
-  const signatory = SIGNATORY_BLOCKS[definition.signatory] ?? {
-    title: definition.signatory,
-    name: definition.signatory.toUpperCase(),
-  };
+  const branding = await resolveBranding(definition.signatory);
 
   const templateValues = {
     logoDataUrl,
@@ -39,9 +91,8 @@ export async function renderRequestLetterHtml(input: RenderLetterInput) {
     tanggalTerbit: formatIndonesianDate(new Date()),
     verificationUrl: input.verificationUrl,
     qrDataUrl: input.qrDataUrl,
-    signatoryTitle: signatory.title,
-    signatoryName: signatory.name,
     letterName: definition.name,
+    ...branding,
     ...buildTemplateValues(input.letterType, input.subjectData, input.keperluan),
   };
 

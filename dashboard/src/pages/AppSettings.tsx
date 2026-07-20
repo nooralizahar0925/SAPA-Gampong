@@ -12,6 +12,7 @@ import {
 import { DashboardFrame } from '../components/DashboardFrame';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { alertApiError, toastSuccess } from '../lib/alerts';
+import { formatSavedAt } from '../lib/format';
 
 type SettingsForm = Omit<AppSettings, 'updated_at'>;
 
@@ -196,6 +197,9 @@ export function AppSettingsPage() {
 
   const changedCounters = [...countersDirty];
 
+  // Sourced from the API rather than a local clock, so it survives a page reload.
+  const savedLabel = formatSavedAt(settingsQuery.data?.updated_at);
+
   return (
     <DashboardFrame
       header={
@@ -206,7 +210,13 @@ export function AppSettingsPage() {
           </div>
 
           <div className="content-header-actions">
-            {dirty ? <span className="content-saved-at">Ada perubahan belum disimpan</span> : null}
+            <span className="content-saved-at">
+              {dirty
+                ? 'Ada perubahan belum disimpan'
+                : savedLabel
+                  ? `Terakhir disimpan ${savedLabel}`
+                  : 'Belum ada perubahan tersimpan'}
+            </span>
             <button
               className="primary-button"
               type="button"
@@ -384,7 +394,8 @@ export function AppSettingsPage() {
                 <b>{form.secretary_name || '—'}</b>
               </div>
               <small className="field-hint">
-                Blok ini belum dipakai oleh generator PDF; surat masih memakai nama bawaan.
+                Jenis surat menentukan siapa yang menandatangani; nama dan jabatan di atas yang
+                tercetak pada PDF.
               </small>
             </div>
           </section>

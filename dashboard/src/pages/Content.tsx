@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { alertApiError, toastSuccess } from '../lib/alerts';
+import { formatSavedAt } from '../lib/format';
 import { BannerTab } from '../components/content/BannerTab';
 import { DemographicsTab } from '../components/content/DemographicsTab';
 import { MosqueTab } from '../components/content/MosqueTab';
@@ -30,19 +31,6 @@ const TABS: Array<{ id: ContentTabId; label: string; slug: string }> = [
 
 function tabFromSlug(slug: string | undefined): ContentTabId {
   return TABS.find((tab) => tab.slug === slug)?.id ?? 'banner';
-}
-
-function formatSavedAt(value: Date | null): string | null {
-  if (!value) return null;
-
-  const date = value.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-  const time = value.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-  return `${date} · ${time}`;
 }
 
 export function ContentPage() {
