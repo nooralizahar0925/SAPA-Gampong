@@ -29,7 +29,7 @@ class _AttachmentScreenState extends State<AttachmentScreen> {
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
       subtitle: 'Langkah 3 dari 5',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           const Text(
@@ -66,7 +66,7 @@ class _AttachmentScreenState extends State<AttachmentScreen> {
                           ),
                         )
                         .toList();
-                    context.goNamed(
+                    context.pushNamed(
                       AppRouteNames.review,
                       extra: widget.flowDraft.copyWith(
                         attachments: attachments,

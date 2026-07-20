@@ -55,6 +55,20 @@ void main() {
 
     expect(find.text('NIK harus 16 digit'), findsOneWidget);
   });
+
+  testWidgets('back arrow returns from letter form to catalog', (tester) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const Key('home-letter-request')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('letter-type-L1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Data Pemohon'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pilih jenis surat'), findsOneWidget);
+  });
 }
 
 Future<void> scrollTo(

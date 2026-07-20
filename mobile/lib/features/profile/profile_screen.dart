@@ -12,7 +12,7 @@ class ProfileScreen extends StatelessWidget {
     return SapaScaffold(
       title: 'Profil Desa',
       subtitle: 'Gampong Blang',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           Container(

@@ -12,7 +12,7 @@ class VerificationScreen extends StatelessWidget {
     return SapaScaffold(
       title: 'Verifikasi Keaslian Surat',
       subtitle: 'Pindai QR pada surat',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: const [
           Card(

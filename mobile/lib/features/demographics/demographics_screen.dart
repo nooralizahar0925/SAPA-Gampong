@@ -16,7 +16,7 @@ class DemographicsScreen extends StatelessWidget {
     return SapaScaffold(
       title: 'Demografi',
       subtitle: 'Data umum Gampong Blang',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           Row(

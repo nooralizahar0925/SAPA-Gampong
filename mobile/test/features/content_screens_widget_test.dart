@@ -41,12 +41,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Riwayat Status'), findsOneWidget);
 
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byTooltip('Kembali'));
     await tester.pumpAndSettle();
     await scrollTo(tester, find.byKey(const Key('service-verify')));
     await tester.tap(find.byKey(const Key('service-verify')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Surat TERVERIFIKASI'), findsOneWidget);
+  });
+
+  testWidgets('back arrow returns from profile to home', (tester) async {
+    await pumpApp(tester);
+
+    await scrollTo(tester, find.byKey(const Key('home-profile')));
+    await tester.tap(find.byKey(const Key('home-profile')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tentang Desa'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-letter-request')), findsOneWidget);
   });
 }
 

@@ -34,7 +34,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     return SapaScaffold(
       title: 'Pelaporan Warga',
       subtitle: 'Sampaikan ke kantor keuchik',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: sent ? _success(context) : _form(),
     );
   }

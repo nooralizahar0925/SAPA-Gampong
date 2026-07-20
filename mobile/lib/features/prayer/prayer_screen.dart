@@ -18,7 +18,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
     return SapaScaffold(
       title: 'Jadwal Sholat',
       subtitle: 'Gampong Blang · WIB',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           const Text(

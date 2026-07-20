@@ -107,7 +107,7 @@ class _LetterFormScreenState extends State<LetterFormScreen> {
     return SapaScaffold(
       title: widget.letterType.name,
       subtitle: 'Langkah 2 dari 5',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: Form(
         key: formKey,
@@ -187,7 +187,7 @@ class _LetterFormScreenState extends State<LetterFormScreen> {
           : values[field.key]?.text ?? '';
     }
 
-    context.goNamed(
+    context.pushNamed(
       AppRouteNames.attachments,
       extra: LetterFlowDraft(
         letterType: widget.letterType,

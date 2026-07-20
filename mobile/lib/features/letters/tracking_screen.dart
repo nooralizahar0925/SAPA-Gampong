@@ -25,7 +25,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return SapaScaffold(
       title: 'Lacak Permohonan',
       subtitle: searched ? controller.text : 'Masukkan kode',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           TextField(

@@ -13,7 +13,7 @@ class LetterCatalogScreen extends StatelessWidget {
     return SapaScaffold(
       title: 'Permohonan Surat',
       subtitle: 'Langkah 1 dari 5',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           const Text(
@@ -32,7 +32,7 @@ class LetterCatalogScreen extends StatelessWidget {
               icon: Icons.description_outlined,
               title: letter.name,
               subtitle: '${letter.code} · ${letter.description}',
-              onTap: () => context.goNamed(
+              onTap: () => context.pushNamed(
                 AppRouteNames.letterForm,
                 pathParameters: {'code': letter.code},
               ),

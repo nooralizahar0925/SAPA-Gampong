@@ -116,6 +116,31 @@ class SapaScaffold extends StatelessWidget {
   }
 }
 
+class SapaBackButton extends StatelessWidget {
+  const SapaBackButton({
+    super.key,
+    this.fallbackRouteName = AppRouteNames.home,
+  });
+
+  final String fallbackRouteName;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Kembali',
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        if (context.canPop()) {
+          context.pop();
+          return;
+        }
+
+        context.goNamed(fallbackRouteName);
+      },
+    );
+  }
+}
+
 class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key});
 

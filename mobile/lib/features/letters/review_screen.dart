@@ -25,7 +25,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
       subtitle: 'Langkah 4 dari 5',
-      leading: const BackButton(),
+      leading: const SapaBackButton(),
       body: ListView(
         children: [
           const Text(
@@ -60,7 +60,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           FilledButton.icon(
             key: const Key('review-submit'),
             onPressed: canSubmit
-                ? () => context.goNamed(
+                ? () => context.pushNamed(
                     AppRouteNames.success,
                     extra: widget.flowDraft.copyWith(
                       falseStatementConfirmed: confirmed,
