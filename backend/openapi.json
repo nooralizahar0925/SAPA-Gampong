@@ -19,6 +19,10 @@
     {
       "name": "Auth",
       "description": "Autentikasi admin"
+    },
+    {
+      "name": "Letter Types",
+      "description": "Katalog tipe surat dan skema formulir"
     }
   ],
   "components": {
@@ -140,6 +144,106 @@
           "token",
           "user"
         ]
+      },
+      "LetterField": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "date",
+              "time",
+              "year",
+              "number",
+              "nik",
+              "phone",
+              "email",
+              "enum"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type",
+          "required"
+        ]
+      },
+      "LetterType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "subject_is_applicant": {
+            "type": "boolean"
+          },
+          "required_attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "signatory": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LetterField"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "description",
+          "subject_is_applicant",
+          "required_attachments",
+          "signatory",
+          "fields"
+        ]
+      },
+      "LetterTypeListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LetterType"
+        }
       }
     },
     "parameters": {}
@@ -253,6 +357,26 @@
                   "required": [
                     "ok"
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/letter-types": {
+      "get": {
+        "tags": [
+          "Letter Types"
+        ],
+        "summary": "Daftar tipe surat dan skema formulir dinamis",
+        "responses": {
+          "200": {
+            "description": "Daftar tipe surat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterTypeListResponse"
                 }
               }
             }

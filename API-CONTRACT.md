@@ -58,6 +58,7 @@ Returns the 10 types and their **form schema** so the mobile form engine can ren
     "name": "Surat Keterangan Berdomisili",
     "description": "Keterangan domisili warga.",
     "subject_is_applicant": true,
+    "signatory": "Keuchik",
     "required_attachments": ["KTP", "KK"],
     "fields": [
       { "key": "nama", "label": "Nama", "type": "text", "required": true },
@@ -70,6 +71,7 @@ Returns the 10 types and their **form schema** so the mobile form engine can ren
 ]
 ```
 `field.type` ∈ `text | textarea | date | time | year | number | nik | phone | email | enum`. `enum` fields carry `options`. Field lists per type come from brief §6.
+`signatory` is a per-type label used later by the PDF/QR letter generator; `L9` returns `Sekretaris Gampong a.n. Keuchik`.
 
 ---
 

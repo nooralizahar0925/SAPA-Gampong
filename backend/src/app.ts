@@ -4,6 +4,7 @@ import { errorHandler, notFoundHandler } from './middleware/error';
 import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
 import { healthRouter } from './modules/health/routes';
+import { lettersRouter } from './modules/letters/routes';
 
 export function createApp() {
   const app = express();
@@ -11,6 +12,7 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api/health', healthRouter);
+  app.use('/api', lettersRouter);
 
   app.use('/api/auth', authRouter);
 

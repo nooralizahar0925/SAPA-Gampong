@@ -6,6 +6,7 @@ import { env } from '../config/env';
 // Add a line here whenever a new module with routes is created.
 import '../modules/auth/routes';
 import '../modules/health/routes';
+import '../modules/letters/routes';
 
 export function buildDocument() {
   const generator = new OpenApiGeneratorV31(registry.definitions);
@@ -23,6 +24,7 @@ export function buildDocument() {
     tags: [
       { name: 'Health', description: 'Status layanan' },
       { name: 'Auth', description: 'Autentikasi admin' },
+      { name: 'Letter Types', description: 'Katalog tipe surat dan skema formulir' },
     ],
   });
 }
