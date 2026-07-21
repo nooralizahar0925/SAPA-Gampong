@@ -20,7 +20,7 @@ class ServicesScreen extends StatelessWidget {
             key: const Key('service-letter-request'),
             icon: Icons.description_outlined,
             title: 'Permohonan Pembuatan Surat',
-            subtitle: '7 jenis surat keterangan',
+            subtitle: '10 jenis surat keterangan',
             onTap: () => context.pushNamed(AppRouteNames.letterCatalog),
           ),
           SapaListTile(

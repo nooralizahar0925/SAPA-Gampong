@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 
@@ -92,37 +93,99 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Widget _success(BuildContext context) {
-    return Center(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    return ListView(
+      children: [
+        const SizedBox(height: 42),
+        Center(
+          child: Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              color: AppTheme.okBg,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: const Icon(
+              Icons.check,
+              size: 52,
+              color: AppTheme.ok,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Laporan telah dikirim',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Laporan Anda akan ditindaklanjuti melalui email ${email.text} dalam waktu maksimal 3×24 jam.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppTheme.ink500, height: 1.5),
+        ),
+        const SizedBox(height: 22),
+        // Report reference code card
+        Card(
+          color: AppTheme.g50,
+          child: const Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text(
+                  'Kode Laporan',
+                  style: TextStyle(
+                    color: AppTheme.ink500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'LPR-5D8Q3',
+                  style: TextStyle(
+                    color: AppTheme.villageGreen,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Info alert
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.g50,
+            border: Border.all(color: AppTheme.g300),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Row(
             children: [
-              const Icon(
-                Icons.check_circle,
-                size: 64,
-                color: Color(0xFF1E8A61),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Laporan telah dikirim',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Laporan Anda sedang diproses dan akan ditindaklanjuti melalui email ${email.text} dalam waktu maksimal 3×24 jam.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: () => context.goNamed(AppRouteNames.home),
-                child: const Text('Kembali ke Beranda'),
+              Icon(Icons.info_outline, size: 18, color: AppTheme.g700),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Diterima kantor keuchik. Simpan kode laporan untuk referensi.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.g700,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
               ),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 32),
+        FilledButton(
+          onPressed: () => context.goNamed(AppRouteNames.home),
+          child: const Text('Kembali ke Beranda'),
+        ),
+      ],
     );
   }
 }

@@ -7,6 +7,8 @@ import '../../features/home/home_screen.dart';
 import '../../features/letters/attachment_screen.dart';
 import '../../features/letters/letter_catalog_screen.dart';
 import '../../features/letters/letter_form_screen.dart';
+import '../../features/letters/my_requests_screen.dart';
+import '../../features/letters/purpose_screen.dart';
 import '../../features/letters/review_screen.dart';
 import '../../features/letters/success_screen.dart';
 import '../../features/letters/tracking_screen.dart';
@@ -15,21 +17,25 @@ import '../../features/prayer/prayer_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/services/services_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/splash/splash_screen.dart';
 import '../../features/verification/verification_screen.dart';
 
 class AppRouteNames {
   const AppRouteNames._();
 
+  static const splash = 'splash';
   static const home = 'home';
   static const services = 'services';
   static const news = 'news';
   static const settings = 'settings';
   static const letterCatalog = 'letterCatalog';
   static const letterForm = 'letterForm';
+  static const purpose = 'purpose';
   static const attachments = 'attachments';
   static const review = 'review';
   static const success = 'success';
   static const tracking = 'tracking';
+  static const myRequests = 'myRequests';
   static const profile = 'profile';
   static const prayer = 'prayer';
   static const demographics = 'demographics';
@@ -41,8 +47,13 @@ class AppRouter {
   const AppRouter._();
 
   static GoRouter get router => GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: AppRouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/',
         name: AppRouteNames.home,
@@ -74,6 +85,18 @@ class AppRouter {
         builder: (context, state) => LetterFormScreen(
           letterType: letterTypeByCode(state.pathParameters['code'] ?? 'L1'),
         ),
+      ),
+      GoRoute(
+        path: '/layanan/surat/tujuan',
+        name: AppRouteNames.purpose,
+        builder: (context, state) {
+          final flowDraft = state.extra;
+          return PurposeScreen(
+            flowDraft: flowDraft is LetterFlowDraft
+                ? flowDraft
+                : LetterFlowDraft.sample(letterTypeByCode('L1')),
+          );
+        },
       ),
       GoRoute(
         path: '/layanan/surat/lampiran',
@@ -115,6 +138,11 @@ class AppRouter {
         path: '/lacak',
         name: AppRouteNames.tracking,
         builder: (context, state) => const TrackingScreen(),
+      ),
+      GoRoute(
+        path: '/permohonan-saya',
+        name: AppRouteNames.myRequests,
+        builder: (context, state) => const MyRequestsScreen(),
       ),
       GoRoute(
         path: '/profil',

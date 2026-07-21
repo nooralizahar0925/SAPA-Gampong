@@ -28,30 +28,59 @@ class _AttachmentScreenState extends State<AttachmentScreen> {
 
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
-      subtitle: 'Langkah 3 dari 5',
+      subtitle: 'Langkah 4 dari 5',
       leading: const SapaBackButton(),
+      padding: EdgeInsets.zero,
       body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
+          StepHeader(step: 4, code: widget.flowDraft.letterType.code),
           const Text(
             'Unggah lampiran',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Simulasi frontend: ketuk lampiran untuk menandai terunggah.',
+            'Pastikan foto jelas dan dokumen terbaca dengan baik.',
+            style: TextStyle(color: AppTheme.ink500),
           ),
           const SizedBox(height: 16),
           for (final kind in requiredKinds)
-            _AttachmentTile(
-              key: Key('attachment-$kind'),
-              kind: kind,
-              uploaded: uploadedKinds.contains(kind),
-              onTap: () => setState(() => uploadedKinds.add(kind)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _AttachmentTile(
+                key: Key('attachment-$kind'),
+                kind: kind,
+                uploaded: uploadedKinds.contains(kind),
+                onTap: () => setState(() => uploadedKinds.add(kind)),
+              ),
             ),
-          const SizedBox(height: 10),
-          const Text(
-            'Format: foto atau PDF, maksimal 5 MB per berkas.',
-            style: TextStyle(color: Color(0xFF667069)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.g50,
+              border: Border.all(color: AppTheme.g300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lightbulb_outline, size: 16, color: AppTheme.g700),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Foto kurang jelas? Ambil di tempat terang atau gunakan flash. Format: foto atau PDF, maks. 5 MB.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.g700,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
@@ -97,18 +126,102 @@ class _AttachmentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        onTap: uploaded ? null : onTap,
-        leading: Icon(
-          uploaded ? Icons.check_circle : Icons.upload_file_outlined,
-          color: uploaded ? AppTheme.villageGreen : const Color(0xFF667069),
+    if (uploaded) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppTheme.ok),
+          borderRadius: BorderRadius.circular(12),
         ),
-        title: Text('Lampiran $kind'),
-        subtitle: Text(
-          uploaded ? '$kind berhasil diunggah' : 'Ketuk untuk unggah $kind',
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.okBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.insert_drive_file_outlined,
+                color: AppTheme.ok,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Lampiran $kind',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const Text(
+                    '1,2 MB · terunggah',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.ok,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.check_circle, color: AppTheme.ok),
+          ],
         ),
-        trailing: uploaded ? const Text('Selesai') : const Icon(Icons.add),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.g50,
+          border: Border.all(
+            color: AppTheme.g300,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.g100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.upload_file_outlined,
+                color: AppTheme.g700,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Lampiran $kind',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.ink700,
+                  ),
+                ),
+                const Text(
+                  'Ketuk untuk memilih berkas',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.ink500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

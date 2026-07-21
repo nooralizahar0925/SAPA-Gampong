@@ -114,7 +114,7 @@ class _LetterFormScreenState extends State<LetterFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _StepHeader(step: 2, code: widget.letterType.code),
+            StepHeader(step: 2, code: widget.letterType.code),
             if (!widget.letterType.subjectIsApplicant)
               const Card(
                 child: Padding(
@@ -188,7 +188,7 @@ class _LetterFormScreenState extends State<LetterFormScreen> {
     }
 
     context.pushNamed(
-      AppRouteNames.attachments,
+      AppRouteNames.purpose,
       extra: LetterFlowDraft(
         letterType: widget.letterType,
         applicantName: applicantName.text.trim(),
@@ -200,8 +200,8 @@ class _LetterFormScreenState extends State<LetterFormScreen> {
   }
 }
 
-class _StepHeader extends StatelessWidget {
-  const _StepHeader({required this.step, required this.code});
+class StepHeader extends StatelessWidget {
+  const StepHeader({super.key, required this.step, required this.code});
 
   final int step;
   final String code;
@@ -251,7 +251,41 @@ class _StepHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
+        StepLabels(step: step),
+        const SizedBox(height: 4),
       ],
+    );
+  }
+}
+
+class StepLabels extends StatelessWidget {
+  const StepLabels({super.key, required this.step});
+
+  final int step;
+
+  static const _labels = ['Jenis', 'Data', 'Tujuan', 'Lampiran', 'Kirim'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(_labels.length, (i) {
+        final active = i + 1 == step;
+        return Expanded(
+          child: Center(
+            child: Text(
+              _labels[i],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+                color: active
+                    ? AppTheme.villageGreen
+                    : const Color(0xFFB7BEB9),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

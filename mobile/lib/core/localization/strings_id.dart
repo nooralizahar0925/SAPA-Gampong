@@ -5,7 +5,7 @@ class StringsId {
   static const home = 'Beranda';
   static const services = 'Layanan';
   static const news = 'Berita';
-  static const settings = 'Pengaturan';
+  static const settings = 'Atur';
   static const letterRequest = 'Permohonan Pembuatan Surat';
   static const villageProfile = 'Profil Desa';
   static const demographics = 'Demografi';

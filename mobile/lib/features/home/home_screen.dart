@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
       selectedIndex: 0,
       actions: [
         IconButton(
-          tooltip: StringsId.settings,
+          tooltip: 'Pengaturan',
           onPressed: () => context.goNamed(AppRouteNames.settings),
           icon: const Icon(Icons.more_vert),
         ),
@@ -29,14 +29,19 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [_Dot(active: true), _Dot(), _Dot()],
+            children: const [
+              _Dot(active: true),
+              _Dot(),
+              _Dot(),
+              _Dot(),
+            ],
           ),
           const SizedBox(height: 18),
           _PrimaryActionCard(
             key: const Key('home-letter-request'),
             onTap: () => context.pushNamed(AppRouteNames.letterCatalog),
           ),
-          const SectionTitle('Menu Utama'),
+          const SectionTitle('Layanan Lainnya'),
           GridView.count(
             crossAxisCount: 2,
             crossAxisSpacing: 12,
@@ -78,10 +83,18 @@ class HomeScreen extends StatelessWidget {
           const SectionTitle('Permohonan Anda'),
           SapaListTile(
             icon: Icons.hourglass_top_outlined,
-            title: 'BLG-2K7F9',
-            subtitle: 'Surat Keterangan Miskin · Sedang diproses',
+            title: 'SKTM · BLG-2K7F9',
+            subtitle: 'Diajukan 18 Juli 2026',
             onTap: () => context.pushNamed(AppRouteNames.tracking),
-            trailing: const _StatusPill('Diproses'),
+            trailing: const _StatusPill('Ditinjau', AppTheme.warnBg, AppTheme.warn),
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+              child: const Text('Lihat semua'),
+            ),
           ),
         ],
       ),
@@ -116,13 +129,13 @@ class _BannerCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: const Text(
-              'INFO GAMPONG',
+              'PENGUMUMAN',
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
             ),
           ),
           const SizedBox(height: 10),
           const Text(
-            'Pelayanan administrasi Gampong Blang kini lebih mudah',
+            'Gotong Royong Jumat\n07.00 WIB · Dusun Kuini',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -169,7 +182,7 @@ class _PrimaryActionCard extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Ajukan 7 jenis surat resmi dari HP',
+                      '10 jenis surat keterangan resmi',
                       style: TextStyle(color: Color(0xFFCDEBDD), fontSize: 13),
                     ),
                   ],
@@ -218,21 +231,40 @@ class _FeatureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.line),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: AppTheme.villageGreen),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.g50,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(icon, color: AppTheme.g700, size: 22),
+              ),
               const Spacer(),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF667069)),
+                style: const TextStyle(fontSize: 11.5, color: AppTheme.ink500, height: 1.4),
               ),
             ],
           ),
@@ -254,7 +286,7 @@ class _Dot extends StatelessWidget {
       height: 7,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
-        color: active ? AppTheme.accentYellow : const Color(0xFFC4E0D2),
+        color: active ? AppTheme.accentYellow : AppTheme.g300,
         borderRadius: BorderRadius.circular(999),
       ),
     );
@@ -262,22 +294,24 @@ class _Dot extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill(this.text);
+  const _StatusPill(this.text, this.bgColor, this.textColor);
 
   final String text;
+  final Color bgColor;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8ECCB),
+        color: bgColor,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFFC68A1B),
+        style: TextStyle(
+          color: textColor,
           fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
