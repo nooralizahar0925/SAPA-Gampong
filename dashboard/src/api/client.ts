@@ -280,20 +280,56 @@ export function listLetterTypesRequest() {
   return apiRequest<LetterTypeDefinition[]>('/letter-types');
 }
 
+export type RequestSortColumn =
+  | 'created_at'
+  | 'reference_code'
+  | 'applicant_name'
+  | 'letter_type'
+  | 'status';
+
+export type SortDirection = 'asc' | 'desc';
+
 export function listRequestsRequest(input: {
   status?: RequestStatus;
   letter_type?: LetterTypeCode;
   q?: string;
+  sort?: RequestSortColumn;
+  direction?: SortDirection;
+  year?: number;
+  month?: number;
   page?: number;
 }) {
   const params = new URLSearchParams();
   if (input.status) params.set('status', input.status);
   if (input.letter_type) params.set('letter_type', input.letter_type);
   if (input.q?.trim()) params.set('q', input.q.trim());
+  if (input.sort) params.set('sort', input.sort);
+  if (input.direction) params.set('direction', input.direction);
+  if (input.year) params.set('year', String(input.year));
+  if (input.month) params.set('month', String(input.month));
   if (input.page && input.page > 1) params.set('page', String(input.page));
 
   const suffix = params.size > 0 ? `?${params.toString()}` : '';
   return apiRequest<ListRequestsResponse>(`/requests${suffix}`);
+}
+
+export type RequestPeriod = {
+  year: number;
+  month: number;
+  count: number;
+};
+
+export type RequestCountsResponse = {
+  by_status: Record<RequestStatus, number>;
+  total: number;
+  /** SUBMITTED + IN_REVIEW + NEEDS_INFO — the work waiting on an admin. */
+  pending: number;
+  /** Months that actually contain requests, newest first. */
+  periods: RequestPeriod[];
+};
+
+export function getRequestCountsRequest() {
+  return apiRequest<RequestCountsResponse>('/requests/counts');
 }
 
 export function getRequestDetailRequest(id: string) {
@@ -704,6 +740,92 @@ export function updateLetterCounterRequest(input: {
 }) {
   return apiRequest<LetterCountersResponse>('/settings/letter-counters', {
     method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Feedback inbox                                                             */
+/* -------------------------------------------------------------------------- */
+
+export type FeedbackStatus = 'new' | 'read' | 'responded';
+
+export type FeedbackAttachment = {
+  file_id: string;
+  kind: string;
+  mime: string;
+  size: number;
+  original_name: string | null;
+  url: string;
+};
+
+export type FeedbackInboxItem = {
+  id: string;
+  reference_code: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  body: string;
+  status: FeedbackStatus;
+  note: string | null;
+  attachment_count: number;
+  created_at: string;
+};
+
+export type ListFeedbackResponse = {
+  items: FeedbackInboxItem[];
+  total: number;
+  page: number;
+  /** Unread total across the whole inbox, not just the current filter. */
+  new_count: number;
+};
+
+export type FeedbackDetail = {
+  id: string;
+  reference_code: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  body: string;
+  status: FeedbackStatus;
+  note: string | null;
+  reply: string | null;
+  replied_at: string | null;
+  attachments: FeedbackAttachment[];
+  created_at: string;
+};
+
+export function listFeedbackRequest(input: {
+  status?: FeedbackStatus;
+  q?: string;
+  page?: number;
+}) {
+  const params = new URLSearchParams();
+  if (input.status) params.set('status', input.status);
+  if (input.q?.trim()) params.set('q', input.q.trim());
+  if (input.page && input.page > 1) params.set('page', String(input.page));
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : '';
+  return apiRequest<ListFeedbackResponse>(`/feedback${suffix}`);
+}
+
+export function getFeedbackDetailRequest(id: string) {
+  return apiRequest<FeedbackDetail>(`/feedback/${id}`);
+}
+
+export function updateFeedbackRequest(
+  id: string,
+  input: { status?: FeedbackStatus; note?: string },
+) {
+  return apiRequest<FeedbackDetail>(`/feedback/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function replyToFeedbackRequest(id: string, input: { reply: string; note?: string }) {
+  return apiRequest<FeedbackDetail>(`/feedback/${id}/reply`, {
+    method: 'POST',
     body: JSON.stringify(input),
   });
 }

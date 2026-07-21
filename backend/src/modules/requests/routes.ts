@@ -7,6 +7,7 @@ import {
   GenerateRequestResponse,
   ListRequestsQuery,
   ListRequestsResponse,
+  RequestCountsResponse,
   PatchRequestStatusBody,
   RevokeResponse,
   RequestDetailParams,
@@ -18,6 +19,7 @@ import {
 import {
   createPublicRequest,
   getAdminRequestDetail,
+  getRequestCounts,
   listAdminRequests,
   revokeVerification,
   trackRequest,
@@ -84,6 +86,26 @@ defineRoute(requestsRouter, {
   },
   handler: async ({ params, res }) => {
     res.json(await trackRequest(params.referenceCode));
+  },
+});
+
+// Must stay above `/:id`, otherwise Express matches "counts" as a request id.
+defineRoute(requestsRouter, {
+  method: 'get',
+  path: '/counts',
+  fullPath: '/api/requests/counts',
+  tags: ['Requests'],
+  summary: 'Count requests per status across the whole queue',
+  auth: 'admin',
+  responses: {
+    200: {
+      description: 'Counts per status',
+      content: { 'application/json': { schema: RequestCountsResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ res }) => {
+    res.json(await getRequestCounts());
   },
 });
 

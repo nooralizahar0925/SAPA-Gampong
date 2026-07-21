@@ -82,7 +82,7 @@ const queueItems = [
     letter_type: 'L5',
     applicant_name: 'Ibrahim HS',
     status: 'APPROVED',
-    created_at: '2026-07-19T03:05:00.000Z',
+    created_at: '2026-06-19T03:05:00.000Z',
     email: 'ibrahim.hs@gmail.com',
   },
 ];
@@ -182,6 +182,18 @@ const approvedRequestDetail = {
       action: 'approve',
       by: 'Admin Gampong',
       nomor_surat: '400.1.4.3/011/2026',
+    },
+    {
+      status: 'GENERATED',
+      at: '2026-07-20T08:30:00.000Z',
+      action: 'generate',
+      by: 'Admin Gampong',
+    },
+    {
+      status: 'GENERATED',
+      at: '2026-07-20T08:40:00.000Z',
+      action: 'regenerate',
+      by: 'Admin Gampong',
     },
   ],
   nomor_surat: '400.1.4.3/011/2026',
@@ -471,7 +483,95 @@ export let contentState = initialContentState();
 
 export function resetContentState() {
   contentState = initialContentState();
+  feedbackState = initialFeedbackState();
 }
+
+/**
+ * Mutable feedback fixture. Statuses are spread across `new`/`read`/`responded` so the
+ * inbox filters have something to distinguish, and two reports are unread so the badge
+ * count is not confusable with a list length.
+ */
+type FeedbackFixtureItem = {
+  id: string;
+  reference_code: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  body: string;
+  status: 'new' | 'read' | 'responded';
+  note: string | null;
+  reply: string | null;
+  replied_at: string | null;
+  created_at: string;
+  attachments: Array<{
+    file_id: string;
+    kind: string;
+    mime: string;
+    size: number;
+    original_name: string | null;
+    url: string;
+  }>;
+};
+
+function initialFeedbackState(): { items: FeedbackFixtureItem[] } {
+  return {
+    items: [
+      {
+        id: 'fb-1',
+        reference_code: 'LPR-5D8Q3',
+        name: 'Nurul Aini',
+        email: 'nurul@example.com',
+        phone: '081234567890',
+        body: 'Lampu jalan di dusun Meunasah mati sejak seminggu lalu.',
+        status: 'new',
+        note: null,
+        reply: null,
+        replied_at: null,
+        created_at: '2026-07-20T02:41:00.000Z',
+        attachments: [
+          {
+            file_id: 'file-fb-1',
+            kind: 'photo',
+            mime: 'image/jpeg',
+            size: 480000,
+            original_name: 'jalan-kuini.jpg',
+            url: 'https://example.test/files/file-fb-1',
+          },
+        ],
+      },
+      {
+        id: 'fb-2',
+        reference_code: 'LPR-4C2N8',
+        name: 'Zulkifli',
+        email: 'zulkifli@example.com',
+        phone: null,
+        body: 'Saluran air di depan meunasah tersumbat.',
+        status: 'new',
+        note: null,
+        reply: null,
+        replied_at: null,
+        created_at: '2026-07-19T06:10:00.000Z',
+        attachments: [],
+      },
+      {
+        id: 'fb-3',
+        reference_code: 'LPR-9K6V1',
+        name: 'Basri Amin',
+        email: 'basri@example.com',
+        phone: '085200000000',
+        body: 'Mohon jadwal posyandu diumumkan lebih awal.',
+        status: 'read',
+        note: 'Sudah dijawab lewat telepon.',
+        reply: null,
+        replied_at: null,
+        created_at: '2026-07-18T01:00:00.000Z',
+        attachments: [],
+      },
+    ],
+  };
+}
+
+export let feedbackState = initialFeedbackState();
 
 export const server = setupServer(
   http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
@@ -505,6 +605,10 @@ export const server = setupServer(
     const status = url.searchParams.get('status');
     const letterType = url.searchParams.get('letter_type');
     const q = url.searchParams.get('q')?.toLowerCase() ?? '';
+    const sort = url.searchParams.get('sort') ?? 'created_at';
+    const direction = url.searchParams.get('direction') ?? 'desc';
+    const year = url.searchParams.get('year');
+    const month = url.searchParams.get('month');
 
     const filtered = queueItems.filter((item) => {
       const matchesStatus = status ? item.status === status : true;
@@ -512,13 +616,65 @@ export const server = setupServer(
       const matchesQuery = q
         ? [item.reference_code, item.applicant_name, item.email].join(' ').toLowerCase().includes(q)
         : true;
-      return matchesStatus && matchesType && matchesQuery;
+
+      const created = new Date(item.created_at);
+      const matchesYear = year ? created.getUTCFullYear() === Number(year) : true;
+      const matchesMonth = month ? created.getUTCMonth() + 1 === Number(month) : true;
+
+      return matchesStatus && matchesType && matchesQuery && matchesYear && matchesMonth;
+    });
+
+    const sortKeys: Record<string, (item: (typeof queueItems)[number]) => string> = {
+      created_at: (item) => item.created_at,
+      reference_code: (item) => item.reference_code,
+      applicant_name: (item) => item.applicant_name,
+      letter_type: (item) => item.letter_type,
+      status: (item) => item.status,
+    };
+
+    const readKey = sortKeys[sort] ?? sortKeys.created_at;
+    const sorted = [...filtered].sort((a, b) => {
+      const compared = readKey(a).localeCompare(readKey(b));
+      return direction === 'asc' ? compared : -compared;
     });
 
     return HttpResponse.json({
-      items: filtered,
-      total: filtered.length,
+      items: sorted,
+      total: sorted.length,
       page: 1,
+    });
+  }),
+  http.get('http://localhost:8080/api/requests/counts', () => {
+    const byStatus = {
+      SUBMITTED: 0,
+      IN_REVIEW: 0,
+      NEEDS_INFO: 0,
+      APPROVED: 0,
+      GENERATED: 0,
+      SENT: 0,
+      REJECTED: 0,
+    } as Record<string, number>;
+
+    for (const item of queueItems) byStatus[item.status] += 1;
+
+    const periodMap = new Map<string, { year: number; month: number; count: number }>();
+    for (const item of queueItems) {
+      const created = new Date(item.created_at);
+      const year = created.getUTCFullYear();
+      const month = created.getUTCMonth() + 1;
+      const key = `${year}-${month}`;
+      const entry = periodMap.get(key) ?? { year, month, count: 0 };
+      entry.count += 1;
+      periodMap.set(key, entry);
+    }
+
+    return HttpResponse.json({
+      by_status: byStatus,
+      total: queueItems.length,
+      pending: byStatus.SUBMITTED + byStatus.IN_REVIEW + byStatus.NEEDS_INFO,
+      periods: [...periodMap.values()].sort(
+        (a, b) => b.year - a.year || b.month - a.month,
+      ),
     });
   }),
   http.get('http://localhost:8080/api/requests/:id', ({ params }) => {
@@ -1024,5 +1180,100 @@ export const server = setupServer(
     const index = contentState.letterCounters.findIndex((c) => c.letter_type === body.letter_type);
     if (index >= 0) contentState.letterCounters[index].last_number = body.last_number;
     return HttpResponse.json({ year: body.year, counters: contentState.letterCounters });
+  }),
+
+  /* ---------------------------------------------------------------------- */
+  /* Feedback inbox                                                         */
+  /* ---------------------------------------------------------------------- */
+
+  http.get('http://localhost:8080/api/feedback', ({ request }) => {
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const q = url.searchParams.get('q')?.toLowerCase() ?? '';
+
+    const filtered = feedbackState.items.filter((item) => {
+      const matchesStatus = status ? item.status === status : true;
+      const matchesQuery = q
+        ? [item.name, item.email, item.body].join(' ').toLowerCase().includes(q)
+        : true;
+      return matchesStatus && matchesQuery;
+    });
+
+    return HttpResponse.json({
+      items: filtered.map(({ attachments, ...item }) => ({
+        ...item,
+        attachment_count: attachments.length,
+      })),
+      total: filtered.length,
+      page: 1,
+      // Counted across the whole inbox, like the real backend — the badge must not
+      // change when the admin filters the list.
+      new_count: feedbackState.items.filter((item) => item.status === 'new').length,
+    });
+  }),
+  http.get('http://localhost:8080/api/feedback/:id', ({ params }) => {
+    const found = feedbackState.items.find((item) => item.id === params.id);
+
+    if (!found) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Laporan tidak ditemukan' } },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(found);
+  }),
+  http.patch('http://localhost:8080/api/feedback/:id', async ({ params, request }) => {
+    const body = (await request.json()) as { status?: string; note?: string };
+    const index = feedbackState.items.findIndex((item) => item.id === params.id);
+
+    if (index < 0) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Laporan tidak ditemukan' } },
+        { status: 404 },
+      );
+    }
+
+    feedbackState.items[index] = {
+      ...feedbackState.items[index],
+      ...(body.status !== undefined ? { status: body.status as FeedbackFixtureItem['status'] } : {}),
+      ...(body.note !== undefined ? { note: body.note || null } : {}),
+    };
+
+    return HttpResponse.json(feedbackState.items[index]);
+  }),
+  http.post('http://localhost:8080/api/feedback/:id/reply', async ({ params, request }) => {
+    const body = (await request.json()) as { reply?: string; note?: string };
+    const index = feedbackState.items.findIndex((item) => item.id === params.id);
+
+    if (index < 0) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Laporan tidak ditemukan' } },
+        { status: 404 },
+      );
+    }
+
+    if (!body.reply?.trim()) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Data yang dikirim tidak valid',
+            fields: { reply: 'Balasan wajib diisi' },
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    feedbackState.items[index] = {
+      ...feedbackState.items[index],
+      reply: body.reply.trim(),
+      replied_at: '2026-07-21T03:00:00.000Z',
+      status: 'responded',
+      ...(body.note !== undefined ? { note: body.note || null } : {}),
+    };
+
+    return HttpResponse.json(feedbackState.items[index]);
   }),
 );

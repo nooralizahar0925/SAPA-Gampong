@@ -56,10 +56,23 @@ export const TrackRequestResponse = registry.register(
   }),
 );
 
+/** Allow-list, so a sort column can never be attacker-controlled SQL. */
+export const RequestSortSchema = z.enum([
+  'created_at',
+  'reference_code',
+  'applicant_name',
+  'letter_type',
+  'status',
+]);
+
 export const ListRequestsQuery = z.object({
   status: RequestStatusSchema.optional(),
   letter_type: z.enum(LETTER_TYPE_CODES).optional(),
   q: z.string().trim().min(1).optional(),
+  sort: RequestSortSchema.default('created_at'),
+  direction: z.enum(['asc', 'desc']).default('desc'),
+  year: z.coerce.number().int().min(2000).max(2200).optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
   page: z.coerce.number().int().positive().default(1),
 });
 
@@ -82,6 +95,27 @@ export const ListRequestsResponse = registry.register(
     items: z.array(RequestQueueItem),
     total: z.number().int().nonnegative(),
     page: z.number().int().positive(),
+  }),
+);
+
+export const RequestPeriod = registry.register(
+  'RequestPeriod',
+  z.object({
+    year: z.number().int(),
+    month: z.number().int().min(1).max(12),
+    count: z.number().int().nonnegative(),
+  }),
+);
+
+export const RequestCountsResponse = registry.register(
+  'RequestCountsResponse',
+  z.object({
+    by_status: z.record(RequestStatusSchema, z.number().int().nonnegative()),
+    total: z.number().int().nonnegative(),
+    /** SUBMITTED + IN_REVIEW + NEEDS_INFO — the work waiting on an admin. */
+    pending: z.number().int().nonnegative(),
+    /** Months that actually contain requests, newest first — drives the period filter. */
+    periods: z.array(RequestPeriod),
   }),
 );
 

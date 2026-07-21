@@ -89,16 +89,49 @@ export async function trackRequest(referenceCode: string) {
   };
 }
 
+/**
+ * The office works in WIB (UTC+7), so "Juli" must mean July in Jakarta. Building the
+ * bounds in UTC would put the first seven hours of each month in the wrong bucket.
+ */
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function periodRange(year: number, month?: number) {
+  const startUtc = month
+    ? Date.UTC(year, month - 1, 1)
+    : Date.UTC(year, 0, 1);
+  const endUtc = month
+    ? Date.UTC(year, month, 1)
+    : Date.UTC(year + 1, 0, 1);
+
+  return {
+    gte: new Date(startUtc - WIB_OFFSET_MS),
+    lt: new Date(endUtc - WIB_OFFSET_MS),
+  };
+}
+
+const SORT_COLUMNS: Record<string, keyof Prisma.LetterRequestOrderByWithRelationInput> = {
+  created_at: 'createdAt',
+  reference_code: 'referenceCode',
+  applicant_name: 'applicantName',
+  letter_type: 'letterType',
+  status: 'status',
+};
+
 export async function listAdminRequests(input: {
   status?: LetterRequest['status'];
   letter_type?: string;
   q?: string;
+  sort?: string;
+  direction?: 'asc' | 'desc';
+  year?: number;
+  month?: number;
   page: number;
 }) {
   const pageSize = 20;
   const where: Prisma.LetterRequestWhereInput = {
     ...(input.status ? { status: input.status } : {}),
     ...(input.letter_type ? { letterType: input.letter_type as LetterType } : {}),
+    ...(input.year ? { createdAt: periodRange(input.year, input.month) } : {}),
     ...(input.q
       ? {
           OR: [
@@ -110,11 +143,21 @@ export async function listAdminRequests(input: {
       : {}),
   };
 
+  const sortColumn = SORT_COLUMNS[input.sort ?? 'created_at'] ?? 'createdAt';
+  const direction = input.direction ?? 'desc';
+
   const [total, items] = await Promise.all([
     prisma.letterRequest.count({ where }),
     prisma.letterRequest.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      // Always end on `id`, a unique column, so the ordering is total. Without a
+      // unique tiebreaker the DB may order equal rows differently per query, which
+      // makes pages overlap and silently skip rows — bulk-imported requests share a
+      // createdAt to the millisecond, so even the default sort ties in practice.
+      orderBy:
+        sortColumn === 'createdAt'
+          ? [{ createdAt: direction }, { id: 'desc' }]
+          : [{ [sortColumn]: direction }, { createdAt: 'desc' }, { id: 'desc' }],
       skip: (input.page - 1) * pageSize,
       take: pageSize,
     }),
@@ -133,6 +176,58 @@ export async function listAdminRequests(input: {
     total,
     page: input.page,
   };
+}
+
+const ALL_STATUSES = [
+  'SUBMITTED',
+  'IN_REVIEW',
+  'NEEDS_INFO',
+  'APPROVED',
+  'GENERATED',
+  'SENT',
+  'REJECTED',
+] as const;
+
+/**
+ * Counted in the database rather than from a page of results: the queue page shows 20
+ * rows, so counting client-side silently caps every figure at 20.
+ */
+export async function getRequestCounts() {
+  const grouped = await prisma.letterRequest.groupBy({
+    by: ['status'],
+    _count: { _all: true },
+  });
+
+  const byStatus = Object.fromEntries(ALL_STATUSES.map((status) => [status, 0])) as Record<
+    (typeof ALL_STATUSES)[number],
+    number
+  >;
+
+  for (const row of grouped) {
+    byStatus[row.status] = row._count._all;
+  }
+
+  const total = Object.values(byStatus).reduce((sum, count) => sum + count, 0);
+  const pending = byStatus.SUBMITTED + byStatus.IN_REVIEW + byStatus.NEEDS_INFO;
+
+  // Grouped in WIB so a request filed at 08:00 on 1 July is not reported as June.
+  const periodRows = await prisma.$queryRaw<Array<{ year: number; month: number; count: bigint }>>`
+    SELECT
+      EXTRACT(YEAR FROM "createdAt" AT TIME ZONE 'Asia/Jakarta')::int AS year,
+      EXTRACT(MONTH FROM "createdAt" AT TIME ZONE 'Asia/Jakarta')::int AS month,
+      COUNT(*) AS count
+    FROM "LetterRequest"
+    GROUP BY year, month
+    ORDER BY year DESC, month DESC
+  `;
+
+  const periods = periodRows.map((row) => ({
+    year: row.year,
+    month: row.month,
+    count: Number(row.count),
+  }));
+
+  return { by_status: byStatus, total, pending, periods };
 }
 
 export async function getAdminRequestDetail(id: string) {
