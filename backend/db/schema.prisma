@@ -64,11 +64,13 @@ enum DemographicBlockType {
 }
 
 model File {
-  id          String   @id @default(cuid())
-  storagePath String
-  mime        String
-  size        Int
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  storagePath  String
+  // Name the uploader's device supplied, shown on attachment cards.
+  originalName String?
+  mime         String
+  size         Int
+  createdAt    DateTime @default(now())
 
   requestAttachments  RequestAttachment[]
   feedbackAttachments FeedbackAttachment[]
@@ -150,14 +152,23 @@ model LetterNumberCounter {
 }
 
 model Feedback {
-  id        String         @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  body      String
-  status    FeedbackStatus @default(new)
-  note      String?
-  createdAt DateTime       @default(now())
+  id            String         @id @default(cuid())
+  // Human-quotable code shown in the dashboard and the reply email, e.g. LPR-5D8Q3.
+  referenceCode String         @unique
+  name          String
+  email         String
+  phone         String?
+  body          String
+  status        FeedbackStatus @default(new)
+  note          String?
+
+  // Reply sent back to the reporter by email; feedback has no login, so email is the
+  // only channel that reaches them.
+  reply         String?
+  repliedAt     DateTime?
+  repliedBy     String?
+
+  createdAt DateTime @default(now())
 
   attachments FeedbackAttachment[]
 

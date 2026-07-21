@@ -43,6 +43,7 @@ export async function storeUpload(input: UploadInput) {
     buffer: processed.buffer,
     mime: processed.mime,
     extension: processed.extension,
+    originalName: input.originalName,
   });
 
   return {
@@ -161,7 +162,12 @@ async function compressImage(buffer: Buffer, mime: string): Promise<ProcessedUpl
   }
 }
 
-async function persistStoredFile(input: { buffer: Buffer; mime: string; extension: string }) {
+async function persistStoredFile(input: {
+  buffer: Buffer;
+  mime: string;
+  extension: string;
+  originalName?: string;
+}) {
   const storageName = `${randomUUID()}${input.extension}`;
   const absolutePath = join(storageRoot, storageName);
   await mkdir(dirname(absolutePath), { recursive: true });
@@ -170,6 +176,8 @@ async function persistStoredFile(input: { buffer: Buffer; mime: string; extensio
   return prisma.file.create({
     data: {
       storagePath: storageName,
+      // Stored for display only; the file on disk keeps its generated UUID name.
+      originalName: input.originalName ?? null,
       mime: input.mime,
       size: input.buffer.length,
     },

@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npx tsx -e ' *)",
       "Bash(node -e ' *)",
-      "mcp__plugin_playwright_playwright__browser_fill_form"
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "Bash(npx tsc *)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, StartTime, @{n='Cmd';e={\\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.Id\\)\"\\).CommandLine}} | Format-List)",
+      "Bash(python -c ' *)",
+      "Bash(npx tsx *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(cp templates/letters/partials/styles.html /tmp/styles.bak)",
+      "Bash(cp templates/letters/partials/styles.html styles.bak.tmp)"
     ]
   }
 }

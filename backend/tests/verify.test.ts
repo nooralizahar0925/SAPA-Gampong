@@ -134,7 +134,46 @@ describe('GET /verify/:token', () => {
     const res = await request(app).get('/verify/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/html/);
-    expect(res.text).toContain('Surat TERVERIFIKASI');
+    expect(res.text).toContain('Surat Terverifikasi');
     expect(res.text).toContain('400.12.2.1/125/2026');
+    // Dates are shown the way warga read them, not as a raw column value.
+    expect(res.text).toContain('Juli 2026');
+    expect(res.text).not.toContain('2026-07');
+    // The masked identity is the privacy guarantee — it must never print in full.
+    expect(res.text).toContain('B***');
+    expect(res.text).not.toContain('1607010101010001');
+  });
+
+  it('serves the page without any external requests', async () => {
+    await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-000903',
+        letterType: 'L1',
+        status: 'GENERATED',
+        applicantName: 'Sari',
+        applicantEmail: 'sari@mail.com',
+        subjectData: { nama: 'Sari', nik: '1607010101010002' },
+        nomorSurat: '400.12.2.1/126/2026',
+        verificationToken: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      },
+    });
+
+    const res = await request(app).get('/verify/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+
+    // Warga scan this on rural signal: no scripts, no web fonts, no remote assets.
+    expect(res.text).not.toMatch(/<script/i);
+    expect(res.text).not.toMatch(/<link[^>]+stylesheet/i);
+    expect(res.text).not.toMatch(/https?:\/\/(?!localhost)/);
+    expect(res.text).toContain('<style>');
+  });
+
+  it('tells the reader what to do when a QR does not verify', async () => {
+    const res = await request(app).get('/verify/cccccccccccccccccccccccccccccccc');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Tidak Terverifikasi');
+    // An unverifiable letter is a security warning, so it must not dead-end.
+    expect(res.text).toContain('Yang perlu dilakukan');
+    expect(res.text).toMatch(/Hubungi Kantor Keuchik/i);
   });
 });

@@ -5,6 +5,7 @@ import { errorHandler, notFoundHandler } from './middleware/error';
 import { docsRouter } from './openapi/routes';
 import { authRouter } from './modules/auth/routes';
 import { contentRouter } from './modules/content/routes';
+import { feedbackRouter } from './modules/feedback/routes';
 import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
 import { requestsRouter } from './modules/requests/routes';
@@ -19,6 +20,7 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api/content', contentRouter);
+  app.use('/api/feedback', feedbackRouter);
   app.use('/api/health', healthRouter);
   app.use('/api', lettersRouter);
   app.use('/api/requests', requestsRouter);

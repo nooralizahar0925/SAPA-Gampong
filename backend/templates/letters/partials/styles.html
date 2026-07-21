@@ -12,11 +12,14 @@ body {
 }
 
 .page {
-  padding: 24mm 18mm 22mm;
+  /* The only page margin in the system: pdf.service.ts passes zero margins to
+     Playwright, so these values are the whole story. Roughly matches the Word
+     reference — comfortable sides, tighter at the top so the kop sits high. */
+  padding: 11mm 20mm 10mm;
 }
 
 .title {
-  margin: 24px 0 2px;
+  margin: 14px 0 2px;
   text-align: center;
   font-size: 16pt;
   font-weight: 700;
@@ -25,7 +28,7 @@ body {
 }
 
 .subtitle {
-  margin: 0 0 24px;
+  margin: 0 0 18px;
   text-align: center;
   font-size: 12pt;
 }
@@ -41,13 +44,14 @@ body {
 .meta-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 10px 0 18px;
+  margin: 8px 0 14px;
 }
 
 .identity-table td,
 .meta-table td {
   vertical-align: top;
-  padding: 2px 0;
+  padding: 1px 0;
+  line-height: 1.3;
 }
 
 .identity-table td.label,
@@ -69,37 +73,43 @@ body {
 }
 
 .sign-row {
-  margin-top: 28px;
+  margin-top: 14px;
   display: flex;
   justify-content: flex-end;
+  /* The signature, QR, and name are one unit: breaking between them would leave a
+     name on page 2 with the QR that verifies it on page 1. */
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .sign-block {
   width: 72mm;
   text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .sign-place {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .qr {
-  width: 108px;
-  height: 108px;
+  width: 84px;
+  height: 84px;
   object-fit: contain;
   display: block;
   margin: 0 auto 6px;
 }
 
 .qr-caption {
-  margin: 0 auto 10px;
+  margin: 0 auto 6px;
   width: 62mm;
   font-size: 8.5pt;
   line-height: 1.35;
 }
 
 .sign-title {
-  margin-bottom: 64px;
+  margin-bottom: 12px;
 }
 
 .sign-name {
@@ -109,7 +119,7 @@ body {
 }
 
 .verify-link {
-  margin-top: 8px;
+  margin-top: 5px;
   font-size: 8pt;
   word-break: break-all;
 }

@@ -1,18 +1,26 @@
 import { useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import crestLogo from '../assets/logo.webp';
+import { getRequestCountsRequest, listFeedbackRequest } from '../api/client';
 import { clearStoredSession, getStoredSession } from '../auth/session';
 import { AppIcon, type IconName } from './AppIcon';
 
 type DashboardFrameProps = {
   header: ReactNode;
   children: ReactNode;
+  /** Lets the inbox page pass the count it already fetched instead of refetching. */
+  feedbackCount?: number;
+  /** Same idea for the letter queue's pending count. */
+  requestCount?: number;
 };
 
 type NavItem = {
   label: string;
   icon: IconName;
   count?: number;
+  /** Badge sourced from live data at render time rather than a fixed `count`. */
+  countKey?: 'feedback' | 'requests';
   to?: string;
   matchPrefix?: string;
 };
@@ -26,9 +34,21 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Operasional',
     items: [
-      { label: 'Permohonan Surat', icon: 'inbox', count: 6, to: '/requests', matchPrefix: '/requests' },
+      {
+        label: 'Permohonan Surat',
+        icon: 'inbox',
+        countKey: 'requests',
+        to: '/requests',
+        matchPrefix: '/requests',
+      },
       { label: 'Arsip Surat', icon: 'archive' },
-      { label: 'Kotak Pelaporan', icon: 'megaphone', count: 3 },
+      {
+        label: 'Kotak Pelaporan',
+        icon: 'megaphone',
+        countKey: 'feedback',
+        to: '/feedback',
+        matchPrefix: '/feedback',
+      },
     ],
   },
   {
@@ -65,11 +85,35 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
-export function DashboardFrame({ header, children }: DashboardFrameProps) {
+export function DashboardFrame({
+  header,
+  children,
+  feedbackCount,
+  requestCount,
+}: DashboardFrameProps) {
   const session = getStoredSession();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // The unread badge shows on every page, so the frame fetches it unless the page
+  // already has the number. Shares the ['feedback'] key, so inbox writes refresh it.
+  const feedbackQuery = useQuery({
+    queryKey: ['feedback', 'ALL', ''],
+    queryFn: () => listFeedbackRequest({}),
+    enabled: feedbackCount === undefined,
+  });
+
+  const unreadFeedback = feedbackCount ?? feedbackQuery.data?.new_count ?? 0;
+
+  // Pending letters badge the sidebar on every page, same pattern as feedback.
+  const requestCountsQuery = useQuery({
+    queryKey: ['request-counts'],
+    queryFn: getRequestCountsRequest,
+    enabled: requestCount === undefined,
+  });
+
+  const pendingRequests = requestCount ?? requestCountsQuery.data?.pending ?? 0;
 
   function signOut() {
     clearStoredSession();
@@ -102,6 +146,13 @@ export function DashboardFrame({ header, children }: DashboardFrameProps) {
                   ? location.pathname === item.to
                   : false;
 
+              const badge =
+                item.countKey === 'feedback'
+                  ? unreadFeedback
+                  : item.countKey === 'requests'
+                    ? pendingRequests
+                    : item.count;
+
               return (
                 <button
                   key={item.label}
@@ -115,8 +166,19 @@ export function DashboardFrame({ header, children }: DashboardFrameProps) {
                 >
                   <AppIcon name={item.icon} />
                   <span>{item.label}</span>
-                  {typeof item.count === 'number' ? (
-                    <span className="dashboard-link-count">{item.count}</span>
+                  {typeof badge === 'number' && badge > 0 ? (
+                    <span
+                      className="dashboard-link-count"
+                      // The badge counts work waiting on an admin, not the total in the
+                      // section — say so, since the page below shows a different number.
+                      title={
+                        item.countKey === 'requests'
+                          ? `${badge} permohonan menunggu tindakan`
+                          : `${badge} laporan belum dibaca`
+                      }
+                    >
+                      {badge}
+                    </span>
                   ) : null}
                 </button>
               );

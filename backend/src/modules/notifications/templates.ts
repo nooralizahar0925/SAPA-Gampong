@@ -68,6 +68,38 @@ export async function renderRejectedEmailHtml(input: {
   });
 }
 
+export async function renderFeedbackReplyEmailHtml(input: {
+  reporterName: string;
+  referenceCode: string;
+  reportedAt: string;
+  reply: string;
+}) {
+  return renderEmailTemplate('feedback-reply.html', {
+    preview_text: 'Balasan resmi atas laporan yang Anda sampaikan kepada Gampong Blang.',
+    heading: 'Balasan Atas Laporan Anda',
+    badge_label: 'KOTAK PELAPORAN',
+    applicant_name: input.reporterName,
+    intro_body:
+      'Terima kasih telah menyampaikan laporan kepada Pemerintah Gampong Blang. Laporan Anda telah kami tinjau, dan berikut tanggapan resmi dari perangkat gampong.',
+    letter_name: input.reportedAt,
+    reference_code: input.referenceCode,
+    reply_body: input.reply,
+    status_label: 'Laporan sudah ditanggapi',
+    action_note:
+      'Apabila tanggapan ini belum menjawab persoalan yang Anda sampaikan, silakan kirimkan laporan susulan melalui aplikasi dengan mencantumkan kode laporan di atas.',
+    closing_note:
+      'Partisipasi Anda sangat membantu kami dalam meningkatkan pelayanan dan pembangunan gampong.',
+    summary_title: 'Ringkasan Laporan',
+    footer_title: 'Pemerintah Gampong Blang',
+    footer_text:
+      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh sistem layanan administrasi gampong.',
+    accent_color: '#0f5132',
+    accent_soft: '#e8f3ee',
+    status_soft: '#dff3e7',
+    status_text: '#166534',
+  });
+}
+
 export async function writeEmailPreviews() {
   const previewRoot = resolve(process.cwd(), 'previews');
   await mkdir(previewRoot, { recursive: true });

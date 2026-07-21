@@ -1,6 +1,10 @@
 import { getLetterDefinition } from '../letters/data';
 import { EmailService } from '../../services/email.service';
-import { renderRejectedEmailHtml, renderSentEmailHtml } from './templates';
+import {
+  renderFeedbackReplyEmailHtml,
+  renderRejectedEmailHtml,
+  renderSentEmailHtml,
+} from './templates';
 
 export async function notifyRequestSent(input: {
   applicantEmail: string;
@@ -50,6 +54,34 @@ export async function notifyRequestRejected(input: {
   await EmailService.send({
     to: input.applicantEmail,
     subject: `Permohonan Surat Ditolak - ${input.referenceCode}`,
+    html,
+  });
+}
+
+export async function notifyFeedbackReply(input: {
+  reporterEmail: string;
+  reporterName: string;
+  referenceCode: string;
+  reportedAt: Date;
+  reply: string;
+}) {
+  const reportedAt = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(input.reportedAt);
+
+  const html = await renderFeedbackReplyEmailHtml({
+    reporterName: input.reporterName,
+    referenceCode: input.referenceCode,
+    reportedAt,
+    reply: input.reply,
+  });
+
+  await EmailService.send({
+    to: input.reporterEmail,
+    subject: `Balasan Laporan Anda - ${input.referenceCode}`,
     html,
   });
 }

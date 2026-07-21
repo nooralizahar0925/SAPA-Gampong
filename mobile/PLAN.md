@@ -257,6 +257,32 @@ This is the reason the app exists (brief §5). Prove the whole loop for **L1** f
 - Produces: `PrayerService.timesFor(DateTime, PrayerConfig) → {subuh,dhuhur,ashar,maghrib,isya}` as WIB times.
 - [ ] Steps: (1) unit test: for fixed coords+date, five times are ordered subuh<dhuhur<ashar<maghrib<isya; (2) FAIL; (3) implement via `adhan` CalculationMethod; (4) PASS; (5) commit `feat(mobile): prayer time service`.
 
+> **As-built correction (2026-07-21):** the shipped `PrayerTimesService` does **not** compute on-device with `adhan`. It calls the Aladhan HTTP API using GPS coordinates from `geolocator`, and falls back to hardcoded times when offline. Task 15A below aligns it with `GET /content/prayer-config`; treat 15A as the current spec where it conflicts with the paragraph above.
+
+### Task 15A: Drive prayer times from `GET /content/prayer-config` (remove hardcoded fallback)
+**Files:** `lib/data/services/prayer_times_service.dart`, `lib/data/repositories/content_repository.dart`, `lib/features/prayer/prayer_screen.dart`; Test `test/services/prayer_times_service_test.dart`
+
+**Why:** the offline schedule is currently frozen in `PrayerTimes.fallback()` (`04:58/12:31/15:52/18:38/19:49`) and the Aladhan query params are hardcoded in the service. Admins can now edit both from the dashboard (Konten → Masjid & Sholat), but the app ignores them, so an admin correcting the offline times changes nothing on the handset.
+
+**Contract** (`GET /api/content/prayer-config`, public):
+```json
+{
+  "lat": 4.7, "lng": 95.5, "calc_method": null, "timezone": "Asia/Jakarta",
+  "aladhan_method": 99, "fajr_angle": 20, "isha_angle": 18, "school": 0,
+  "fallback_times": { "subuh": "04:58", "dhuhur": "12:31", "ashar": "15:52", "maghrib": "18:38", "isya": "19:49" },
+  "updated_at": "2026-07-21T02:18:00.000Z"
+}
+```
+**Every field is nullable** on an unconfigured install, and `fallback_times` entries are independently nullable — so the app keeps its current constants as a last-resort default rather than rendering blank rows. `aladhan_method`/`fajr_angle`/`isha_angle` map to the existing `method` / `methodSettings: '<fajr>,null,<isha>'` query params.
+
+**Resolution order** for the displayed schedule: (1) live Aladhan call using config coords/params, (2) Hive-cached config `fallback_times`, (3) the built-in constants. `sourceLabel` must say which one is showing — the screen already surfaces `fromFallback`.
+
+- [ ] **Step 1:** Write tests — (a) `PrayerConfig.fromJson` with all-null fields yields the built-in defaults; (b) a config with `fajr_angle: 19` produces `methodSettings: '19,null,18'` on the Aladhan request (assert via `http_mock_adapter`); (c) with the network stubbed to fail, `timesFor` returns the config's `fallback_times`, not the hardcoded ones; (d) with network failing *and* no cached config, it returns the built-in constants.
+- [ ] **Step 2:** Run `flutter test test/services/prayer_times_service_test.dart` — expect FAIL.
+- [ ] **Step 3:** Implement — add `PrayerConfig` model + `ContentRepository.prayerConfig()`, cache it in Hive (Task 19), thread it through `fetchForCoordinates`, and make `PrayerTimes.fallback()` take an optional `PrayerConfig`. Keep the coords precedence explicit: GPS when permitted, else config `lat`/`lng`.
+- [ ] **Step 4:** Run — PASS.
+- [ ] **Step 5:** Commit `feat(mobile): drive prayer times from backend config`.
+
 ### Task 16: S9 Jadwal Sholat UI + azan alarm scheduling
 **Files:** `lib/features/prayer/*`, `lib/data/services/notification_service.dart`; Test `test/features/prayer_screen_test.dart`
 - Rows `XX:XX WIB`; "Aktifkan Alarm Suara Azan" toggle → schedule local notifications + bundled azan sound (`flutter_local_notifications`), respect DND. Masjid/meunasah list from `GET /content/mosques`.

@@ -597,8 +597,16 @@ function buildTimeline(detail: RequestDetailResponse) {
   }));
 }
 
+/**
+ * The audit trail is a log of *actions*, not statuses. Falling back to the status label
+ * made every PDF rebuild read "Surat Dibuat", so a row of regenerations looked like the
+ * same event logged repeatedly. The backend already records `generate` vs `regenerate`
+ * vs `send` — these cases surface that distinction.
+ */
 function actionTitle(action: string | undefined, status: RequestDetailResponse['status']) {
   switch (action) {
+    case 'submit':
+      return 'Permohonan diajukan';
     case 'in_review':
       return 'Dibuka & ditinjau';
     case 'approve':
@@ -607,6 +615,12 @@ function actionTitle(action: string | undefined, status: RequestDetailResponse['
       return 'Diminta perbaikan';
     case 'reject':
       return 'Ditolak';
+    case 'generate':
+      return 'Surat dibuat';
+    case 'regenerate':
+      return 'Surat dibuat ulang';
+    case 'send':
+      return 'Surat dikirim ke pemohon';
     default:
       return getStatusLabel(status);
   }

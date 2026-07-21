@@ -158,3 +158,14 @@ describe('generate and send flow', () => {
     expect(screen.getByText(/surat berhasil dikirim/i)).toBeInTheDocument();
   });
 });
+
+describe('audit trail labels', () => {
+  it('distinguishes a regenerated PDF from the first generation', async () => {
+    renderApp(['/requests/req-3']);
+
+    // Every entry previously fell back to the status label ("Surat Dibuat"), so a
+    // row of rebuilds looked like the same event logged over and over.
+    expect(await screen.findByText('Surat dibuat')).toBeInTheDocument();
+    expect(screen.getByText('Surat dibuat ulang')).toBeInTheDocument();
+  });
+});
