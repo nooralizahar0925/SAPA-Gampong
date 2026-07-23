@@ -1,0 +1,494 @@
+# Staging VPS Deployment Guide
+
+This runbook deploys Gampong Blang Digital staging to one Ubuntu VPS.
+
+Target layout:
+
+- Dashboard: `https://gampongblangdigital.web.id/`
+- Mobile web preview: `https://gampongblangdigital.web.id/mobile/`
+- Backend API: `https://gampongblangdigital.web.id/api`
+- Verification page: `https://gampongblangdigital.web.id/verify/...`
+
+## 0. DNS
+
+Create an `A` record:
+
+```text
+gampongblangdigital.web.id -> <VPS_PUBLIC_IP>
+```
+
+Wait until it resolves:
+
+```bash
+dig +short gampongblangdigital.web.id
+```
+
+## 1. One-Time VPS Setup
+
+SSH into the VPS:
+
+```bash
+ssh root@<VPS_PUBLIC_IP>
+```
+
+Install system packages:
+
+```bash
+apt update
+apt install -y curl git nginx postgresql postgresql-contrib sudo ufw unzip
+```
+
+Install Node.js 20:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+node -v
+npm -v
+```
+
+Create the app user and folders:
+
+```bash
+adduser --disabled-password --gecos "" gbd
+mkdir -p /opt/gampong-blang
+chown -R gbd:gbd /opt/gampong-blang
+```
+
+Create the staging database:
+
+```bash
+sudo -u postgres psql
+```
+
+Inside `psql`:
+
+```sql
+CREATE USER gbd_staging WITH PASSWORD '<STRONG_DATABASE_PASSWORD>';
+CREATE DATABASE gbd_staging OWNER gbd_staging;
+\q
+```
+
+## 2. Clone Repository
+
+Run as the app user:
+
+```bash
+su - gbd
+cd /opt/gampong-blang
+git clone git@github.com:nooralizahar0925/SAPA-Gampong.git
+cd SAPA-Gampong
+```
+
+If the VPS does not have GitHub SSH access yet, add an SSH deploy key first or clone with HTTPS.
+
+## 3. Copy Required Private Assets
+
+The backend reads the government logo from `../../Brief/logo.webp` at runtime for generated PDFs and email logos. Because `Brief/` is outside the repo, create it on the VPS:
+
+```bash
+mkdir -p /opt/gampong-blang/Brief
+```
+
+Copy the logo from your local machine:
+
+```bash
+scp "../Brief/logo.webp" gbd@<VPS_PUBLIC_IP>:/opt/gampong-blang/Brief/logo.webp
+```
+
+Check it exists:
+
+```bash
+ls -lh /opt/gampong-blang/Brief/logo.webp
+```
+
+## 4. Backend Environment
+
+Create the staging env file:
+
+```bash
+cd /opt/gampong-blang/SAPA-Gampong/backend
+cp .env.example .env
+nano .env
+```
+
+Use values like this:
+
+```env
+NODE_ENV=production
+PORT=8081
+DATABASE_URL=postgresql://gbd_staging:<STRONG_DATABASE_PASSWORD>@localhost:5432/gbd_staging
+JWT_SECRET=<LONG_RANDOM_SECRET>
+APP_CONFIG_ENCRYPTION_KEY=<LONG_RANDOM_ENCRYPTION_SECRET>
+
+PUBLIC_BASE_URL=https://gampongblangdigital.web.id
+DASHBOARD_BASE_URL=https://gampongblangdigital.web.id
+CORS_ORIGINS=https://gampongblangdigital.web.id
+DOCS_ENABLED=true
+
+EMAIL_PROVIDER_DEFAULT=mailersend
+MAILERSEND_API_KEY=<MAILERSEND_API_KEY>
+MAILERSEND_FROM_EMAIL=<VERIFIED_SENDER_EMAIL>
+MAILERSEND_FROM_NAME=Gampong Blang Digital
+
+MAILGUN_API_KEY=
+MAILGUN_DOMAIN=
+MAILGUN_BASE_URL=https://api.mailgun.net
+MAILGUN_FROM_EMAIL=
+MAILGUN_FROM_NAME=
+
+GMAIL_USER=
+GMAIL_APP_PASSWORD=
+GMAIL_FROM_EMAIL=
+GMAIL_FROM_NAME=
+
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM_EMAIL=
+SMTP_FROM_NAME=
+
+FIREBASE_SERVICE_ACCOUNT_JSON=<PASTE_ONE_LINE_JSON_OR_LEAVE_EMPTY_FOR_NOW>
+
+SEED_ADMIN_EMAIL=<ADMIN_EMAIL>
+SEED_ADMIN_PASSWORD=<TEMP_ADMIN_PASSWORD_CHANGE_AFTER_LOGIN>
+```
+
+Generate strong secrets locally or on the VPS:
+
+```bash
+openssl rand -hex 32
+```
+
+Important:
+
+- `PUBLIC_BASE_URL` must be the public HTTPS staging URL. It is used for file links, verification URLs, and OpenAPI.
+- `DASHBOARD_BASE_URL` is used in admin password reset emails.
+- `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are required when `NODE_ENV=production`.
+- Keep `.env` out of Git.
+
+## 5. Install and Build Backend
+
+```bash
+cd /opt/gampong-blang/SAPA-Gampong/backend
+npm ci
+npx prisma generate
+npx playwright install --with-deps chromium
+npm run build
+npm run db:deploy
+npm run db:seed
+```
+
+The backend stores uploads and generated PDFs under:
+
+```text
+/opt/gampong-blang/SAPA-Gampong/backend/storage/production
+```
+
+Do not delete this folder during deploys.
+
+## 6. systemd Backend Service
+
+Create the service as root:
+
+```bash
+sudo nano /etc/systemd/system/gbd-backend-staging.service
+```
+
+Paste:
+
+```ini
+[Unit]
+Description=Gampong Blang Digital Backend Staging
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=gbd
+Group=gbd
+WorkingDirectory=/opt/gampong-blang/SAPA-Gampong/backend
+EnvironmentFile=/opt/gampong-blang/SAPA-Gampong/backend/.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable gbd-backend-staging
+sudo systemctl start gbd-backend-staging
+sudo systemctl status gbd-backend-staging
+```
+
+Check logs:
+
+```bash
+journalctl -u gbd-backend-staging -f
+```
+
+Local health check:
+
+```bash
+curl -i http://127.0.0.1:8081/api/health
+```
+
+## 7. Build Dashboard
+
+```bash
+cd /opt/gampong-blang/SAPA-Gampong/dashboard
+cat > .env.production <<'EOF'
+VITE_API_BASE_URL=https://gampongblangdigital.web.id/api
+EOF
+npm ci
+npm run build
+```
+
+The dashboard build output is:
+
+```text
+/opt/gampong-blang/SAPA-Gampong/dashboard/dist
+```
+
+## 8. Build Mobile Web Preview
+
+Only do this if the staging VPS should serve the resident app in browser.
+
+Install Flutter on the VPS first, or build `mobile/build/web` locally and upload it. If Flutter is installed on the VPS:
+
+```bash
+cd /opt/gampong-blang/SAPA-Gampong/mobile
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter build web \
+  --base-href=/mobile/ \
+  --dart-define=API_BASE_URL=https://gampongblangdigital.web.id/api
+```
+
+The mobile web build output is:
+
+```text
+/opt/gampong-blang/SAPA-Gampong/mobile/build/web
+```
+
+## 9. Nginx
+
+Create the Nginx site:
+
+```bash
+sudo nano /etc/nginx/sites-available/gbd-staging
+```
+
+Paste:
+
+```nginx
+server {
+    listen 80;
+    server_name gampongblangdigital.web.id;
+
+    client_max_body_size 25m;
+
+    root /opt/gampong-blang/SAPA-Gampong/dashboard/dist;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /verify/ {
+        proxy_pass http://127.0.0.1:8081/verify/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /mobile/ {
+        alias /opt/gampong-blang/SAPA-Gampong/mobile/build/web/;
+        try_files $uri $uri/ /mobile/index.html;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+Enable it:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/gbd-staging /etc/nginx/sites-enabled/gbd-staging
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+## 10. HTTPS With Let's Encrypt
+
+Use Let's Encrypt through Certbot. Install the Nginx Certbot plugin:
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+```
+
+Issue the Let's Encrypt certificate:
+
+```bash
+sudo certbot --nginx -d gampongblangdigital.web.id
+```
+
+Confirm Let's Encrypt auto-renew:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+## 11. Firewall
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+sudo ufw status
+```
+
+Do not expose PostgreSQL or backend port `8081` publicly. Nginx should be the public entry point.
+
+## 12. Smoke Test
+
+From your laptop:
+
+```bash
+curl -i https://gampongblangdigital.web.id/api/health
+curl -I https://gampongblangdigital.web.id/
+curl -I https://gampongblangdigital.web.id/mobile/
+```
+
+Then check manually:
+
+1. Open `https://gampongblangdigital.web.id/`.
+2. Login using the seeded admin.
+3. Immediately change the seeded admin password from the dashboard profile page.
+4. Open `https://gampongblangdigital.web.id/api/docs`.
+5. Upload a small image/PDF from the dashboard or mobile web.
+6. Create a test surat request from mobile web.
+7. Approve, generate PDF, and send email from dashboard.
+8. Check the received email:
+   - Logo appears.
+   - PDF is attached.
+   - Verification QR/link opens.
+
+## 13. Repeat Deploy After New Code
+
+Run this every time you push a new staging build:
+
+```bash
+sudo -iu gbd
+cd /opt/gampong-blang/SAPA-Gampong
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+
+cd backend
+npm ci
+npx prisma generate
+npm run build
+npm run db:deploy
+
+cd ../dashboard
+npm ci
+cat > .env.production <<'EOF'
+VITE_API_BASE_URL=https://gampongblangdigital.web.id/api
+EOF
+npm run build
+
+cd ../mobile
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter build web \
+  --base-href=/mobile/ \
+  --dart-define=API_BASE_URL=https://gampongblangdigital.web.id/api
+
+exit
+```
+
+Then reload services as root or a sudo user:
+
+```bash
+sudo systemctl restart gbd-backend-staging
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Run the smoke tests again after deployment.
+
+## 14. Database Backup Before Risky Deploys
+
+```bash
+sudo -u postgres pg_dump gbd_staging > /opt/gampong-blang/backups/gbd_staging_$(date +%Y%m%d_%H%M%S).sql
+```
+
+Create the backup folder once:
+
+```bash
+sudo mkdir -p /opt/gampong-blang/backups
+sudo chown gbd:gbd /opt/gampong-blang/backups
+```
+
+Restore only if you are sure:
+
+```bash
+sudo -u postgres psql gbd_staging < /opt/gampong-blang/backups/<BACKUP_FILE>.sql
+```
+
+## 15. Useful Operations
+
+Backend logs:
+
+```bash
+journalctl -u gbd-backend-staging -f
+```
+
+Restart backend:
+
+```bash
+sudo systemctl restart gbd-backend-staging
+```
+
+Check backend status:
+
+```bash
+sudo systemctl status gbd-backend-staging
+```
+
+Check Nginx:
+
+```bash
+sudo nginx -t
+sudo systemctl status nginx
+```
+
+Check PostgreSQL:
+
+```bash
+sudo systemctl status postgresql
+sudo -u postgres psql -d gbd_staging -c '\dt'
+```
+
+## 16. Staging Notes
+
+- Staging should use real HTTPS because email links, file URLs, Firebase web push, and QR verification all depend on public URLs.
+- `DOCS_ENABLED=true` is fine for staging. Set it to `false` for production if public docs are not desired.
+- iOS push notification is still blocked until a paid Apple Developer account exists.
+- Keep `/opt/gampong-blang/Brief/logo.webp` and `backend/storage/production` backed up. The repo alone is not enough to restore uploaded files or generated PDFs.

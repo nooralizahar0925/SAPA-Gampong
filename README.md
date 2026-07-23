@@ -51,6 +51,10 @@ The authoritative spec is `../Brief/Aplikasi-Desa-Dev-Brief.md` (v1.1). Section 
 
 3 months, **1 Jul 2026 – 30 Sep 2026**. See `../Timeline - Aplikasi Desa Gampong Blang.xlsx`. Each plan maps its phases to that timeline.
 
+## Deployment
+
+- Staging VPS runbook: [`docs/STAGING_VPS_DEPLOYMENT.md`](docs/STAGING_VPS_DEPLOYMENT.md)
+
 ## Team
 
 - **Mobile Developer** → owns `mobile/`.
