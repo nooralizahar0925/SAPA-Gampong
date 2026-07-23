@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/sapa_scaffold.dart';
+import '../../data/models/letter_request.dart';
+import '../../data/providers/letter_providers.dart';
+import '../../data/providers/resident_providers.dart';
+import '../../data/providers/submission_queue_providers.dart';
 import 'letter_form_screen.dart';
 
-class ReviewScreen extends StatefulWidget {
+class ReviewScreen extends ConsumerStatefulWidget {
   const ReviewScreen({super.key, required this.flowDraft});
 
   final LetterFlowDraft flowDraft;
 
   @override
-  State<ReviewScreen> createState() => _ReviewScreenState();
+  ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
 }
 
-class _ReviewScreenState extends State<ReviewScreen> {
-  late bool confirmed = widget.flowDraft.falseStatementConfirmed;
+class _ReviewScreenState extends ConsumerState<ReviewScreen> {
+  late bool _confirmed = widget.flowDraft.falseStatementConfirmed;
+  bool _submitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +45,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
             style: TextStyle(color: AppTheme.ink500),
           ),
           const SizedBox(height: 16),
-          // Email warning alert
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -65,7 +70,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                       children: [
-                        const TextSpan(text: 'Pastikan email benar. Surat akan dikirim ke '),
+                        const TextSpan(
+                          text: 'Pastikan email benar. Surat akan dikirim ke ',
+                        ),
                         TextSpan(
                           text: widget.flowDraft.applicantEmail,
                           style: const TextStyle(fontWeight: FontWeight.w800),
@@ -78,7 +85,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          // Pemohon section
           const SectionTitle('Pemohon'),
           _GroupedCard(
             rows: [
@@ -87,7 +93,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
               _RowData('No. HP', widget.flowDraft.applicantPhone),
             ],
           ),
-          // Data Surat section
+          if (widget.flowDraft.keperluan != null) ...[
+            const SectionTitle('Tujuan Surat'),
+            _GroupedCard(
+              rows: [_RowData('Keperluan', widget.flowDraft.keperluan!)],
+            ),
+          ],
           const SectionTitle('Data Surat'),
           _GroupedCard(
             rows: [
@@ -98,7 +109,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 ),
             ],
           ),
-          // Lampiran section
           const SectionTitle('Lampiran'),
           _GroupedCard(
             rows: [
@@ -107,11 +117,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Confirmation checkbox for all letter types
           Card(
             child: CheckboxListTile(
-              value: confirmed,
-              onChanged: (value) => setState(() => confirmed = value ?? false),
+              value: _confirmed,
+              onChanged: _submitting
+                  ? null
+                  : (value) => setState(() => _confirmed = value ?? false),
               title: const Text(
                 'Saya menyatakan bahwa data yang saya isi adalah benar dan dapat dipertanggungjawabkan.',
                 style: TextStyle(fontSize: 13, height: 1.4),
@@ -122,28 +133,75 @@ class _ReviewScreenState extends State<ReviewScreen> {
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const Key('review-submit'),
-            onPressed: confirmed
-                ? () => context.pushNamed(
-                    AppRouteNames.success,
-                    extra: widget.flowDraft.copyWith(
-                      falseStatementConfirmed: confirmed,
+            onPressed: (_confirmed && !_submitting) ? _submit : null,
+            icon: _submitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
                     ),
                   )
-                : null,
-            icon: const Icon(Icons.send_outlined),
+                : const Icon(Icons.send_outlined),
             label: const Text('Ajukan Permohonan'),
           ),
           const SizedBox(height: 10),
           OutlinedButton(
-            onPressed: () => context.goNamed(
-              AppRouteNames.letterForm,
-              pathParameters: {'code': widget.flowDraft.letterType.code},
-            ),
+            onPressed: _submitting
+                ? null
+                : () => context.goNamed(
+                    AppRouteNames.letterForm,
+                    extra: widget.flowDraft.letterType,
+                  ),
             child: const Text('Ubah Data'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+
+    final requestDraft = LetterRequestDraft(
+      letterType: widget.flowDraft.letterType.code,
+      applicantName: widget.flowDraft.applicantName,
+      applicantEmail: widget.flowDraft.applicantEmail,
+      applicantPhone: widget.flowDraft.applicantPhone,
+      keperluan: widget.flowDraft.keperluan,
+      subjectData: Map<String, Object?>.from(widget.flowDraft.subjectData),
+      attachments: widget.flowDraft.attachments,
+    );
+
+    try {
+      final result = await ref
+          .read(letterRepositoryProvider)
+          .submit(requestDraft);
+      if (!mounted) return;
+      ref.invalidate(residentRequestsProvider);
+      context.pushNamed(
+        AppRouteNames.success,
+        extra: widget.flowDraft.copyWith(
+          falseStatementConfirmed: true,
+          referenceCode: result.referenceCode,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      await ref
+          .read(submissionQueueProvider)
+          .enqueueLetter(requestDraft.toJson());
+      setState(() => _submitting = false);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Koneksi bermasalah. Permohonan disimpan offline dan akan dikirim otomatis.',
+          ),
+        ),
+      );
+    }
   }
 }
 

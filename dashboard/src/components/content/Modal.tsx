@@ -6,13 +6,14 @@ type ModalProps = {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  className?: string;
 };
 
 /**
  * Dialog for the add/edit forms. Uses <dialog> so the browser supplies the modal
  * semantics, focus trapping, and Escape handling rather than reimplementing them.
  */
-export function Modal({ title, onClose, children, footer }: ModalProps) {
+export function Modal({ title, onClose, children, footer, className }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
   }, [onClose]);
 
   return (
-    <dialog className="sapa-modal" ref={ref} aria-label={title}>
+    <dialog className={className ? `sapa-modal ${className}` : 'sapa-modal'} ref={ref} aria-label={title}>
       <div className="sapa-modal-head">
         <h2>{title}</h2>
         <button className="ghost-button" type="button" aria-label="Tutup" onClick={onClose}>

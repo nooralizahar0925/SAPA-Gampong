@@ -575,9 +575,287 @@ as String,
 
 
 /// @nodoc
+mixin _$TrackStatusHistory {
+
+ String get status; DateTime get at; String? get action; String? get by; String? get reason;@JsonKey(name: 'nomor_surat') String? get nomorSurat;
+/// Create a copy of TrackStatusHistory
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TrackStatusHistoryCopyWith<TrackStatusHistory> get copyWith => _$TrackStatusHistoryCopyWithImpl<TrackStatusHistory>(this as TrackStatusHistory, _$identity);
+
+  /// Serializes this TrackStatusHistory to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackStatusHistory&&(identical(other.status, status) || other.status == status)&&(identical(other.at, at) || other.at == at)&&(identical(other.action, action) || other.action == action)&&(identical(other.by, by) || other.by == by)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.nomorSurat, nomorSurat) || other.nomorSurat == nomorSurat));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,status,at,action,by,reason,nomorSurat);
+
+@override
+String toString() {
+  return 'TrackStatusHistory(status: $status, at: $at, action: $action, by: $by, reason: $reason, nomorSurat: $nomorSurat)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TrackStatusHistoryCopyWith<$Res>  {
+  factory $TrackStatusHistoryCopyWith(TrackStatusHistory value, $Res Function(TrackStatusHistory) _then) = _$TrackStatusHistoryCopyWithImpl;
+@useResult
+$Res call({
+ String status, DateTime at, String? action, String? by, String? reason,@JsonKey(name: 'nomor_surat') String? nomorSurat
+});
+
+
+
+
+}
+/// @nodoc
+class _$TrackStatusHistoryCopyWithImpl<$Res>
+    implements $TrackStatusHistoryCopyWith<$Res> {
+  _$TrackStatusHistoryCopyWithImpl(this._self, this._then);
+
+  final TrackStatusHistory _self;
+  final $Res Function(TrackStatusHistory) _then;
+
+/// Create a copy of TrackStatusHistory
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? at = null,Object? action = freezed,Object? by = freezed,Object? reason = freezed,Object? nomorSurat = freezed,}) {
+  return _then(_self.copyWith(
+status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
+as DateTime,action: freezed == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String?,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,nomorSurat: freezed == nomorSurat ? _self.nomorSurat : nomorSurat // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [TrackStatusHistory].
+extension TrackStatusHistoryPatterns on TrackStatusHistory {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TrackStatusHistory value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _TrackStatusHistory() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TrackStatusHistory value)  $default,){
+final _that = this;
+switch (_that) {
+case _TrackStatusHistory():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TrackStatusHistory value)?  $default,){
+final _that = this;
+switch (_that) {
+case _TrackStatusHistory() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status,  DateTime at,  String? action,  String? by,  String? reason, @JsonKey(name: 'nomor_surat')  String? nomorSurat)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _TrackStatusHistory() when $default != null:
+return $default(_that.status,_that.at,_that.action,_that.by,_that.reason,_that.nomorSurat);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status,  DateTime at,  String? action,  String? by,  String? reason, @JsonKey(name: 'nomor_surat')  String? nomorSurat)  $default,) {final _that = this;
+switch (_that) {
+case _TrackStatusHistory():
+return $default(_that.status,_that.at,_that.action,_that.by,_that.reason,_that.nomorSurat);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status,  DateTime at,  String? action,  String? by,  String? reason, @JsonKey(name: 'nomor_surat')  String? nomorSurat)?  $default,) {final _that = this;
+switch (_that) {
+case _TrackStatusHistory() when $default != null:
+return $default(_that.status,_that.at,_that.action,_that.by,_that.reason,_that.nomorSurat);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _TrackStatusHistory implements TrackStatusHistory {
+  const _TrackStatusHistory({required this.status, required this.at, this.action, this.by, this.reason, @JsonKey(name: 'nomor_surat') this.nomorSurat});
+  factory _TrackStatusHistory.fromJson(Map<String, dynamic> json) => _$TrackStatusHistoryFromJson(json);
+
+@override final  String status;
+@override final  DateTime at;
+@override final  String? action;
+@override final  String? by;
+@override final  String? reason;
+@override@JsonKey(name: 'nomor_surat') final  String? nomorSurat;
+
+/// Create a copy of TrackStatusHistory
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$TrackStatusHistoryCopyWith<_TrackStatusHistory> get copyWith => __$TrackStatusHistoryCopyWithImpl<_TrackStatusHistory>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$TrackStatusHistoryToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackStatusHistory&&(identical(other.status, status) || other.status == status)&&(identical(other.at, at) || other.at == at)&&(identical(other.action, action) || other.action == action)&&(identical(other.by, by) || other.by == by)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.nomorSurat, nomorSurat) || other.nomorSurat == nomorSurat));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,status,at,action,by,reason,nomorSurat);
+
+@override
+String toString() {
+  return 'TrackStatusHistory(status: $status, at: $at, action: $action, by: $by, reason: $reason, nomorSurat: $nomorSurat)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$TrackStatusHistoryCopyWith<$Res> implements $TrackStatusHistoryCopyWith<$Res> {
+  factory _$TrackStatusHistoryCopyWith(_TrackStatusHistory value, $Res Function(_TrackStatusHistory) _then) = __$TrackStatusHistoryCopyWithImpl;
+@override @useResult
+$Res call({
+ String status, DateTime at, String? action, String? by, String? reason,@JsonKey(name: 'nomor_surat') String? nomorSurat
+});
+
+
+
+
+}
+/// @nodoc
+class __$TrackStatusHistoryCopyWithImpl<$Res>
+    implements _$TrackStatusHistoryCopyWith<$Res> {
+  __$TrackStatusHistoryCopyWithImpl(this._self, this._then);
+
+  final _TrackStatusHistory _self;
+  final $Res Function(_TrackStatusHistory) _then;
+
+/// Create a copy of TrackStatusHistory
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? at = null,Object? action = freezed,Object? by = freezed,Object? reason = freezed,Object? nomorSurat = freezed,}) {
+  return _then(_TrackStatusHistory(
+status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
+as DateTime,action: freezed == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String?,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,nomorSurat: freezed == nomorSurat ? _self.nomorSurat : nomorSurat // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$TrackStatus {
 
-@JsonKey(name: 'reference_code') String get referenceCode;@JsonKey(name: 'letter_type') String get letterType; String get status;@JsonKey(name: 'status_label') String get statusLabel;@JsonKey(name: 'updated_at') DateTime get updatedAt;
+@JsonKey(name: 'reference_code') String get referenceCode;@JsonKey(name: 'letter_type') String get letterType; String get status;@JsonKey(name: 'status_label') String get statusLabel;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt;@JsonKey(name: 'status_history') List<TrackStatusHistory> get statusHistory;
 /// Create a copy of TrackStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -590,16 +868,16 @@ $TrackStatusCopyWith<TrackStatus> get copyWith => _$TrackStatusCopyWithImpl<Trac
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackStatus&&(identical(other.referenceCode, referenceCode) || other.referenceCode == referenceCode)&&(identical(other.letterType, letterType) || other.letterType == letterType)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackStatus&&(identical(other.referenceCode, referenceCode) || other.referenceCode == referenceCode)&&(identical(other.letterType, letterType) || other.letterType == letterType)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.statusHistory, statusHistory));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,referenceCode,letterType,status,statusLabel,updatedAt);
+int get hashCode => Object.hash(runtimeType,referenceCode,letterType,status,statusLabel,createdAt,updatedAt,const DeepCollectionEquality().hash(statusHistory));
 
 @override
 String toString() {
-  return 'TrackStatus(referenceCode: $referenceCode, letterType: $letterType, status: $status, statusLabel: $statusLabel, updatedAt: $updatedAt)';
+  return 'TrackStatus(referenceCode: $referenceCode, letterType: $letterType, status: $status, statusLabel: $statusLabel, createdAt: $createdAt, updatedAt: $updatedAt, statusHistory: $statusHistory)';
 }
 
 
@@ -610,7 +888,7 @@ abstract mixin class $TrackStatusCopyWith<$Res>  {
   factory $TrackStatusCopyWith(TrackStatus value, $Res Function(TrackStatus) _then) = _$TrackStatusCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'reference_code') String referenceCode,@JsonKey(name: 'letter_type') String letterType, String status,@JsonKey(name: 'status_label') String statusLabel,@JsonKey(name: 'updated_at') DateTime updatedAt
+@JsonKey(name: 'reference_code') String referenceCode,@JsonKey(name: 'letter_type') String letterType, String status,@JsonKey(name: 'status_label') String statusLabel,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt,@JsonKey(name: 'status_history') List<TrackStatusHistory> statusHistory
 });
 
 
@@ -627,14 +905,16 @@ class _$TrackStatusCopyWithImpl<$Res>
 
 /// Create a copy of TrackStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? referenceCode = null,Object? letterType = null,Object? status = null,Object? statusLabel = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? referenceCode = null,Object? letterType = null,Object? status = null,Object? statusLabel = null,Object? createdAt = freezed,Object? updatedAt = null,Object? statusHistory = null,}) {
   return _then(_self.copyWith(
 referenceCode: null == referenceCode ? _self.referenceCode : referenceCode // ignore: cast_nullable_to_non_nullable
 as String,letterType: null == letterType ? _self.letterType : letterType // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,statusLabel: null == statusLabel ? _self.statusLabel : statusLabel // ignore: cast_nullable_to_non_nullable
-as String,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,statusHistory: null == statusHistory ? _self.statusHistory : statusHistory // ignore: cast_nullable_to_non_nullable
+as List<TrackStatusHistory>,
   ));
 }
 
@@ -719,10 +999,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'status_history')  List<TrackStatusHistory> statusHistory)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TrackStatus() when $default != null:
-return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.updatedAt);case _:
+return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.createdAt,_that.updatedAt,_that.statusHistory);case _:
   return orElse();
 
 }
@@ -740,10 +1020,10 @@ return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLa
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'updated_at')  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'status_history')  List<TrackStatusHistory> statusHistory)  $default,) {final _that = this;
 switch (_that) {
 case _TrackStatus():
-return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.updatedAt);case _:
+return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.createdAt,_that.updatedAt,_that.statusHistory);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -760,10 +1040,10 @@ return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLa
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'reference_code')  String referenceCode, @JsonKey(name: 'letter_type')  String letterType,  String status, @JsonKey(name: 'status_label')  String statusLabel, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'status_history')  List<TrackStatusHistory> statusHistory)?  $default,) {final _that = this;
 switch (_that) {
 case _TrackStatus() when $default != null:
-return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.updatedAt);case _:
+return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLabel,_that.createdAt,_that.updatedAt,_that.statusHistory);case _:
   return null;
 
 }
@@ -775,14 +1055,22 @@ return $default(_that.referenceCode,_that.letterType,_that.status,_that.statusLa
 @JsonSerializable()
 
 class _TrackStatus implements TrackStatus {
-  const _TrackStatus({@JsonKey(name: 'reference_code') required this.referenceCode, @JsonKey(name: 'letter_type') required this.letterType, required this.status, @JsonKey(name: 'status_label') required this.statusLabel, @JsonKey(name: 'updated_at') required this.updatedAt});
+  const _TrackStatus({@JsonKey(name: 'reference_code') required this.referenceCode, @JsonKey(name: 'letter_type') required this.letterType, required this.status, @JsonKey(name: 'status_label') required this.statusLabel, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt, @JsonKey(name: 'status_history') final  List<TrackStatusHistory> statusHistory = const []}): _statusHistory = statusHistory;
   factory _TrackStatus.fromJson(Map<String, dynamic> json) => _$TrackStatusFromJson(json);
 
 @override@JsonKey(name: 'reference_code') final  String referenceCode;
 @override@JsonKey(name: 'letter_type') final  String letterType;
 @override final  String status;
 @override@JsonKey(name: 'status_label') final  String statusLabel;
+@override@JsonKey(name: 'created_at') final  DateTime? createdAt;
 @override@JsonKey(name: 'updated_at') final  DateTime updatedAt;
+ final  List<TrackStatusHistory> _statusHistory;
+@override@JsonKey(name: 'status_history') List<TrackStatusHistory> get statusHistory {
+  if (_statusHistory is EqualUnmodifiableListView) return _statusHistory;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_statusHistory);
+}
+
 
 /// Create a copy of TrackStatus
 /// with the given fields replaced by the non-null parameter values.
@@ -797,16 +1085,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackStatus&&(identical(other.referenceCode, referenceCode) || other.referenceCode == referenceCode)&&(identical(other.letterType, letterType) || other.letterType == letterType)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackStatus&&(identical(other.referenceCode, referenceCode) || other.referenceCode == referenceCode)&&(identical(other.letterType, letterType) || other.letterType == letterType)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other._statusHistory, _statusHistory));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,referenceCode,letterType,status,statusLabel,updatedAt);
+int get hashCode => Object.hash(runtimeType,referenceCode,letterType,status,statusLabel,createdAt,updatedAt,const DeepCollectionEquality().hash(_statusHistory));
 
 @override
 String toString() {
-  return 'TrackStatus(referenceCode: $referenceCode, letterType: $letterType, status: $status, statusLabel: $statusLabel, updatedAt: $updatedAt)';
+  return 'TrackStatus(referenceCode: $referenceCode, letterType: $letterType, status: $status, statusLabel: $statusLabel, createdAt: $createdAt, updatedAt: $updatedAt, statusHistory: $statusHistory)';
 }
 
 
@@ -817,7 +1105,7 @@ abstract mixin class _$TrackStatusCopyWith<$Res> implements $TrackStatusCopyWith
   factory _$TrackStatusCopyWith(_TrackStatus value, $Res Function(_TrackStatus) _then) = __$TrackStatusCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'reference_code') String referenceCode,@JsonKey(name: 'letter_type') String letterType, String status,@JsonKey(name: 'status_label') String statusLabel,@JsonKey(name: 'updated_at') DateTime updatedAt
+@JsonKey(name: 'reference_code') String referenceCode,@JsonKey(name: 'letter_type') String letterType, String status,@JsonKey(name: 'status_label') String statusLabel,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt,@JsonKey(name: 'status_history') List<TrackStatusHistory> statusHistory
 });
 
 
@@ -834,14 +1122,16 @@ class __$TrackStatusCopyWithImpl<$Res>
 
 /// Create a copy of TrackStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? referenceCode = null,Object? letterType = null,Object? status = null,Object? statusLabel = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? referenceCode = null,Object? letterType = null,Object? status = null,Object? statusLabel = null,Object? createdAt = freezed,Object? updatedAt = null,Object? statusHistory = null,}) {
   return _then(_TrackStatus(
 referenceCode: null == referenceCode ? _self.referenceCode : referenceCode // ignore: cast_nullable_to_non_nullable
 as String,letterType: null == letterType ? _self.letterType : letterType // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,statusLabel: null == statusLabel ? _self.statusLabel : statusLabel // ignore: cast_nullable_to_non_nullable
-as String,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,statusHistory: null == statusHistory ? _self._statusHistory : statusHistory // ignore: cast_nullable_to_non_nullable
+as List<TrackStatusHistory>,
   ));
 }
 

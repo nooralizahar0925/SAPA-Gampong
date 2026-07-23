@@ -1,11 +1,11 @@
 {
-    "name": "sapa_gampong",
-    "short_name": "sapa_gampong",
+    "name": "Gampong Blang Digital",
+    "short_name": "Gampong Blang",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Aplikasi administrasi & pelayanan digital Gampong Blang.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

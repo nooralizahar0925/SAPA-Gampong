@@ -245,6 +245,8 @@ export const PrayerConfigResponse = registry.register(
       maghrib: z.string().nullable(),
       isya: z.string().nullable(),
     }),
+    adzan_file_id: z.string().nullable(),
+    adzan_url: z.string().nullable(),
     updated_at: z.string().nullable(),
   }),
 );
@@ -270,6 +272,7 @@ export const UpdatePrayerConfigBody = registry.register(
     fallback_ashar: TimeOfDay.nullish(),
     fallback_maghrib: TimeOfDay.nullish(),
     fallback_isya: TimeOfDay.nullish(),
+    adzan_file_id: z.string().min(1).nullish(),
   }),
 );
 

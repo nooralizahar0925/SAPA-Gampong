@@ -2,7 +2,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const TABS = [
   { label: 'Pengaturan Aplikasi', to: '/settings/app' },
+  { label: 'Pengaturan Surat', to: '/settings/letters' },
   { label: 'Email Provider', to: '/settings/email-provider' },
+  { label: 'Akun Pengguna', to: '/settings/users' },
 ];
 
 /**

@@ -20,6 +20,8 @@ export type EmailAttachment = {
   filename: string;
   content: Buffer;
   contentType: string;
+  cid?: string;
+  disposition?: 'attachment' | 'inline';
 };
 
 export type EmailMessage = {
@@ -631,7 +633,8 @@ async function sendWithMailerSend(config: ResolvedEmailProviderConfig, message: 
       attachments: (message.attachments ?? []).map((attachment) => ({
         filename: attachment.filename,
         content: attachment.content.toString('base64'),
-        disposition: 'attachment',
+        disposition: attachment.disposition ?? (attachment.cid ? 'inline' : 'attachment'),
+        ...(attachment.cid ? { id: attachment.cid } : {}),
       })),
     }),
   });
@@ -654,7 +657,7 @@ async function sendWithMailgun(config: ResolvedEmailProviderConfig, message: Ema
 
   for (const attachment of message.attachments ?? []) {
     form.append(
-      'attachment',
+      attachment.disposition === 'inline' || attachment.cid ? 'inline' : 'attachment',
       new Blob([attachment.content], { type: attachment.contentType }),
       attachment.filename,
     );

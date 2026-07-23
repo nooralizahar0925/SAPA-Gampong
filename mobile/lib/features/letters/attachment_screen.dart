@@ -1,30 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/attachment.dart';
+import '../../data/providers/letter_providers.dart';
+import '../../data/services/attachment_file_picker_service.dart';
 import 'letter_form_screen.dart';
 
-class AttachmentScreen extends StatefulWidget {
+class AttachmentScreen extends ConsumerStatefulWidget {
   const AttachmentScreen({super.key, required this.flowDraft});
 
   final LetterFlowDraft flowDraft;
 
   @override
-  State<AttachmentScreen> createState() => _AttachmentScreenState();
+  ConsumerState<AttachmentScreen> createState() => _AttachmentScreenState();
 }
 
-class _AttachmentScreenState extends State<AttachmentScreen> {
-  late final Set<String> uploadedKinds = {
-    for (final attachment in widget.flowDraft.attachments) attachment.kind,
+class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
+  static const _supportedKinds = ['KTP', 'KK'];
+
+  late final Map<String, Attachment> _uploaded = {
+    for (final a in widget.flowDraft.attachments) a.kind: a,
   };
+  final Set<String> _uploading = {};
+  final Map<String, int> _fileSizes = {};
 
   @override
   Widget build(BuildContext context) {
     final requiredKinds = widget.flowDraft.letterType.requiredAttachments;
-    final complete = requiredKinds.every(uploadedKinds.contains);
+    final optionalKinds = _supportedKinds
+        .where((kind) => !requiredKinds.contains(kind))
+        .toList();
+    final complete = requiredKinds.every(_uploaded.containsKey);
 
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
@@ -51,8 +61,30 @@ class _AttachmentScreenState extends State<AttachmentScreen> {
               child: _AttachmentTile(
                 key: Key('attachment-$kind'),
                 kind: kind,
-                uploaded: uploadedKinds.contains(kind),
-                onTap: () => setState(() => uploadedKinds.add(kind)),
+                required: true,
+                uploaded: _uploaded.containsKey(kind),
+                uploading: _uploading.contains(kind),
+                fileSizeBytes: _fileSizes[kind],
+                onTap:
+                    (_uploading.contains(kind) || _uploaded.containsKey(kind))
+                    ? null
+                    : () => _pickAndUpload(kind),
+              ),
+            ),
+          for (final kind in optionalKinds)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _AttachmentTile(
+                key: Key('attachment-$kind'),
+                kind: kind,
+                required: false,
+                uploaded: _uploaded.containsKey(kind),
+                uploading: _uploading.contains(kind),
+                fileSizeBytes: _fileSizes[kind],
+                onTap:
+                    (_uploading.contains(kind) || _uploaded.containsKey(kind))
+                    ? null
+                    : () => _pickAndUpload(kind),
               ),
             ),
           const SizedBox(height: 4),
@@ -85,28 +117,92 @@ class _AttachmentScreenState extends State<AttachmentScreen> {
           const SizedBox(height: 20),
           FilledButton.icon(
             key: const Key('attachments-next'),
-            onPressed: complete
-                ? () {
-                    final attachments = uploadedKinds
-                        .map(
-                          (kind) => Attachment(
-                            fileId: 'mock_${kind.toLowerCase()}',
-                            kind: kind,
-                          ),
-                        )
-                        .toList();
-                    context.pushNamed(
-                      AppRouteNames.review,
-                      extra: widget.flowDraft.copyWith(
-                        attachments: attachments,
-                      ),
-                    );
-                  }
-                : null,
+            onPressed: complete ? _next : null,
             icon: const Icon(Icons.arrow_forward),
             label: const Text('Selanjutnya'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _next() {
+    context.pushNamed(
+      AppRouteNames.review,
+      extra: widget.flowDraft.copyWith(attachments: _uploaded.values.toList()),
+    );
+  }
+
+  Future<void> _pickAndUpload(String kind) async {
+    final source = await _showPickerSheet();
+    if (source == null || !mounted) return;
+
+    PickedAttachmentFile? file;
+    try {
+      file = await ref.read(attachmentFilePickerProvider).pick(source);
+      if (file == null) return;
+    } catch (_) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    final sizeBytes = file.sizeBytes;
+    if (sizeBytes > 5 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File terlalu besar. Maks. 5 MB.')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _uploading.add(kind));
+    try {
+      final attachment = await ref
+          .read(uploadServiceProvider)
+          .upload(file, kind);
+      if (mounted) {
+        setState(() {
+          _uploaded[kind] = attachment;
+          _fileSizes[kind] = sizeBytes;
+          _uploading.remove(kind);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _uploading.remove(kind));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengunggah $kind. Coba lagi.')),
+        );
+      }
+    }
+  }
+
+  Future<AttachmentPickSource?> _showPickerSheet() {
+    return showModalBottomSheet<AttachmentPickSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Kamera'),
+              onTap: () => Navigator.pop(ctx, AttachmentPickSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeri'),
+              onTap: () => Navigator.pop(ctx, AttachmentPickSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_outlined),
+              title: const Text('PDF'),
+              onTap: () => Navigator.pop(ctx, AttachmentPickSource.pdf),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -116,16 +212,65 @@ class _AttachmentTile extends StatelessWidget {
   const _AttachmentTile({
     super.key,
     required this.kind,
+    required this.required,
     required this.uploaded,
+    required this.uploading,
     required this.onTap,
+    this.fileSizeBytes,
   });
 
   final String kind;
+  final bool required;
   final bool uploaded;
-  final VoidCallback onTap;
+  final bool uploading;
+  final VoidCallback? onTap;
+  final int? fileSizeBytes;
 
   @override
   Widget build(BuildContext context) {
+    if (uploading) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppTheme.g300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.g100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const Text(
+                  'Sedang mengunggah…',
+                  style: TextStyle(fontSize: 12, color: AppTheme.ink500),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     if (uploaded) {
       return Container(
         padding: const EdgeInsets.all(14),
@@ -154,12 +299,12 @@ class _AttachmentTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Lampiran $kind',
+                    _title,
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  const Text(
-                    '1,2 MB · terunggah',
-                    style: TextStyle(
+                  Text(
+                    '${_formatFileSize(fileSizeBytes ?? 0)} · terunggah',
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.ok,
                       fontWeight: FontWeight.w600,
@@ -180,10 +325,7 @@ class _AttachmentTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.g50,
-          border: Border.all(
-            color: AppTheme.g300,
-            width: 1.5,
-          ),
+          border: Border.all(color: AppTheme.g300, width: 1.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -205,18 +347,17 @@ class _AttachmentTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Lampiran $kind',
+                  _title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     color: AppTheme.ink700,
                   ),
                 ),
-                const Text(
-                  'Ketuk untuk memilih berkas',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.ink500,
-                  ),
+                Text(
+                  required
+                      ? 'Ketuk untuk memilih berkas'
+                      : 'Opsional, unggah bila tersedia',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.ink500),
                 ),
               ],
             ),
@@ -224,5 +365,16 @@ class _AttachmentTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String get _title => required ? 'Lampiran $kind *' : 'Lampiran $kind';
+
+  String _formatFileSize(int bytes) {
+    if (bytes == 0) return '';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

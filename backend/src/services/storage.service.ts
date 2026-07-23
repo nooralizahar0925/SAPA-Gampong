@@ -8,10 +8,11 @@ import { env } from '../config/env';
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const FIVE_MB = 5 * 1024 * 1024;
+const TWENTY_MB = 20 * 1024 * 1024;
 
 export const storageRoot = resolve(process.cwd(), 'storage', env.NODE_ENV);
 
-export const uploadKindValues = ['KTP', 'KK', 'other', 'photo', 'document'] as const;
+export const uploadKindValues = ['KTP', 'KK', 'other', 'photo', 'document', 'audio'] as const;
 
 type ProcessedUpload = {
   buffer: Buffer;
@@ -26,18 +27,18 @@ type UploadInput = {
 };
 
 export async function storeUpload(input: UploadInput) {
-  validateMime(input.mime);
-  validateSize(input.buffer.length);
+  const mimeKind = validateMime(input.mime);
+  validateSize(input.buffer.length, mimeKind === 'audio' ? TWENTY_MB : FIVE_MB);
 
   const processed = input.mime.startsWith('image/')
     ? await compressImage(input.buffer, input.mime)
     : {
         buffer: input.buffer,
         mime: input.mime,
-        extension: normalizeExtension(input.originalName, '.pdf'),
+        extension: normalizeExtension(input.originalName, mimeKind === 'audio' ? '.mp3' : '.pdf'),
       };
 
-  validateSize(processed.buffer.length);
+  if (mimeKind !== 'audio') validateSize(processed.buffer.length);
 
   const file = await persistStoredFile({
     buffer: processed.buffer,
@@ -107,20 +108,22 @@ function sign(fileId: string, exp: number) {
   return createHmac('sha256', env.JWT_SECRET).update(`${fileId}:${exp}`).digest('hex');
 }
 
-function validateMime(mime: string) {
-  if (mime === 'application/pdf') return;
-  if (mime.startsWith('image/')) return;
+function validateMime(mime: string): 'image' | 'pdf' | 'audio' {
+  if (mime === 'application/pdf') return 'pdf';
+  if (mime.startsWith('image/')) return 'image';
+  if (mime === 'audio/mpeg' || mime === 'audio/mp4' || mime === 'audio/ogg' || mime === 'audio/wav')
+    return 'audio';
 
   throw ApiError.validation('Data yang dikirim tidak valid', {
-    file: 'Tipe file harus gambar atau PDF',
+    file: 'Tipe file harus gambar, PDF, atau audio (MP3/M4A)',
   });
 }
 
-function validateSize(size: number) {
-  if (size <= FIVE_MB) return;
-
+function validateSize(size: number, limit = FIVE_MB) {
+  if (size <= limit) return;
+  const limitMb = Math.round(limit / 1024 / 1024);
   throw ApiError.validation('Data yang dikirim tidak valid', {
-    file: 'Ukuran file maksimal 5 MB',
+    file: `Ukuran file maksimal ${limitMb} MB`,
   });
 }
 
@@ -191,15 +194,14 @@ function normalizeExtension(originalName: string, fallback: string) {
 
 function extensionFromMime(mime: string) {
   switch (mime) {
-    case 'image/png':
-      return '.png';
-    case 'image/jpeg':
-      return '.jpg';
-    case 'image/webp':
-      return '.webp';
-    case 'image/gif':
-      return '.gif';
-    default:
-      return '.bin';
+    case 'image/png': return '.png';
+    case 'image/jpeg': return '.jpg';
+    case 'image/webp': return '.webp';
+    case 'image/gif': return '.gif';
+    case 'audio/mpeg': return '.mp3';
+    case 'audio/mp4': return '.m4a';
+    case 'audio/ogg': return '.ogg';
+    case 'audio/wav': return '.wav';
+    default: return '.bin';
   }
 }

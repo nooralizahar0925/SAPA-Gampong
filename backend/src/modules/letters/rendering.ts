@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import { getLetterDefinition } from './data';
+import { getLetterTemplateDefinition } from './service';
 import { readBriefAssetDataUrl, renderLetterTemplate } from './template.service';
 
 type RenderLetterInput = {
@@ -8,6 +8,7 @@ type RenderLetterInput = {
   nomorSurat: string;
   verificationUrl: string;
   qrDataUrl: string;
+  applicantName?: string | null;
   keperluan?: string | null;
 };
 
@@ -77,7 +78,7 @@ async function resolveBranding(signatoryRole: string) {
 }
 
 export async function renderRequestLetterHtml(input: RenderLetterInput) {
-  const definition = getLetterDefinition(input.letterType);
+  const definition = await getLetterTemplateDefinition(input.letterType, true);
   if (!definition) {
     throw new Error(`Letter definition ${input.letterType} is missing`);
   }
@@ -93,7 +94,10 @@ export async function renderRequestLetterHtml(input: RenderLetterInput) {
     qrDataUrl: input.qrDataUrl,
     letterName: definition.name,
     ...branding,
-    ...buildTemplateValues(input.letterType, input.subjectData, input.keperluan),
+    ...buildTemplateValues(input.letterType, input.subjectData, {
+      applicantName: input.applicantName,
+      keperluan: input.keperluan,
+    }),
   };
 
   return renderLetterTemplate(`${input.letterType}.html`, templateValues);
@@ -102,7 +106,7 @@ export async function renderRequestLetterHtml(input: RenderLetterInput) {
 function buildTemplateValues(
   letterType: string,
   subjectData: Record<string, unknown>,
-  keperluan?: string | null,
+  context: { applicantName?: string | null; keperluan?: string | null } = {},
 ): Record<string, string> {
   switch (letterType) {
     case 'L1':
@@ -122,7 +126,7 @@ function buildTemplateValues(
       };
     case 'L2':
       return {
-        namaPemohon: stringValue(subjectData.nama_pemohon),
+        namaPemohon: firstNonEmptyValue(subjectData.nama_pemohon, context.applicantName, '-'),
         namaKantor: stringValue(subjectData.nama_kantor),
         penanggungJawab: stringValue(subjectData.penanggung_jawab),
         alamatJalan: stringValue(subjectData.alamat_jalan),
@@ -153,7 +157,7 @@ function buildTemplateValues(
         statusPerkawinan: stringValue(subjectData.status_perkawinan),
         pekerjaan: stringValue(subjectData.pekerjaan),
         alamat: stringValue(subjectData.alamat),
-        keperluan: firstNonEmptyValue(subjectData.keperluan, keperluan, '-'),
+        keperluan: firstNonEmptyValue(subjectData.keperluan, context.keperluan, '-'),
       };
     case 'L5':
       return {
@@ -225,8 +229,7 @@ function buildTemplateValues(
       };
     case 'L10':
       return {
-        namaPemohon: stringValue(subjectData.nama_pemohon),
-        nomorSuratPermohonan: stringValue(subjectData.nomor_surat_permohonan),
+        namaPemohon: firstNonEmptyValue(subjectData.nama_pemohon, context.applicantName, '-'),
         tanggalPermohonan: formatDateFromIso(stringValueOrEmpty(subjectData.tanggal_permohonan)) || '-',
         perihal: stringValue(subjectData.perihal),
         tujuanJabatan: stringValue(subjectData.tujuan_jabatan),

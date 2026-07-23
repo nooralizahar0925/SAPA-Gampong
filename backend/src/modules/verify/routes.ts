@@ -155,7 +155,7 @@ function verifyPage(input: { title: string; body: string }) {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>${escapeHtml(input.title)} · Gampong Blang</title>
+    <title>${escapeHtml(input.title)} · Gampong Blang Digital</title>
     <style>${VERIFY_STYLES}</style>
   </head>
   <body>
@@ -175,7 +175,7 @@ function verifyPage(input: { title: string; body: string }) {
       </header>
 ${input.body}
       <footer class="foot">
-        <p>Verifikasi keaslian surat · Sistem Administrasi Gampong Blang</p>
+        <p>Verifikasi keaslian surat · Gampong Blang Digital</p>
       </footer>
     </main>
   </body>

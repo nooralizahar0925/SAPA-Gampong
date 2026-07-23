@@ -1,7 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import { buildMaskedPerihal } from './masking';
-import { getLetterDefinition } from '../letters/data';
+import { getLetterTemplateDefinition } from '../letters/service';
 
 const SIGNATORY_DISPLAY: Record<string, string> = {
   Keuchik: 'Sofian — Keuchik Gampong Blang',
@@ -22,7 +22,7 @@ export async function verifyByToken(token: string) {
     data: { verifiedCount: { increment: 1 } },
   });
 
-  const definition = getLetterDefinition(found.letterType);
+  const definition = await getLetterTemplateDefinition(found.letterType, true);
   const subjectData = found.subjectData as Record<string, unknown>;
   const name = pickSubjectName(subjectData);
   const nik = typeof subjectData.nik === 'string' ? subjectData.nik : undefined;

@@ -33,6 +33,7 @@ const EnvSchema = z.object({
   GMAIL_APP_PASSWORD: z.string().min(1).optional(),
   GMAIL_FROM_EMAIL: z.string().email().optional(),
   GMAIL_FROM_NAME: z.string().min(1).optional(),
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   DOCS_ENABLED: z
     .enum(['true', 'false'])
     .default('false')

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { AdminRole } from '@prisma/client';
 import { ApiError } from '../lib/errors';
+import { prisma } from '../lib/prisma';
 import { verifyToken } from '../modules/auth/service';
 
 declare global {
@@ -19,13 +20,21 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
     return;
   }
 
-  try {
-    const payload = verifyToken(header.slice('Bearer '.length).trim());
-    req.auth = { userId: payload.sub, role: payload.role };
-    next();
-  } catch (err) {
-    next(err);
-  }
+  Promise.resolve()
+    .then(async () => {
+      const payload = verifyToken(header.slice('Bearer '.length).trim());
+      const user = await prisma.adminUser.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, role: true, active: true },
+      });
+
+      if (!user) throw ApiError.unauthorized('Pengguna tidak ditemukan');
+      if (!user.active) throw ApiError.forbidden('Akun pengguna tidak aktif');
+
+      req.auth = { userId: user.id, role: user.role };
+      next();
+    })
+    .catch(next);
 }
 
 export function requireRole(...roles: AdminRole[]) {

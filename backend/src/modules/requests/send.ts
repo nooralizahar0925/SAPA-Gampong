@@ -34,6 +34,7 @@ export async function sendGeneratedRequest(id: string, adminUserId: string) {
   const { buffer } = await readStoredFile(found.generatedPdfId);
 
   await notifyRequestSent({
+    requestId: found.id,
     applicantEmail: found.applicantEmail,
     applicantName: found.applicantName,
     referenceCode: found.referenceCode,

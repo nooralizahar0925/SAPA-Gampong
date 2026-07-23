@@ -15,7 +15,7 @@ import { DashboardFrame } from '../components/DashboardFrame';
 import { ProviderStatusCard } from '../components/ProviderStatusCard';
 import { SettingsTabs } from '../components/SettingsTabs';
 
-const TEST_EMAIL_STORAGE_KEY = 'sapa-email-provider-test-targets';
+const TEST_EMAIL_STORAGE_KEY = 'gampong-blang-digital-email-provider-test-targets';
 
 type ProviderFormState = {
   from_email: string;

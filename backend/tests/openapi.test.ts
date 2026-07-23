@@ -18,7 +18,7 @@ describe('OpenAPI document', () => {
   it('is a valid OpenAPI 3.1 document with the project identity', () => {
     const doc = buildDocument() as any;
     expect(doc.openapi).toMatch(/^3\.1/);
-    expect(doc.info.title).toBe('SAPA Gampong API');
+    expect(doc.info.title).toBe('Gampong Blang Digital API');
     expect(doc.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',
       scheme: 'bearer',

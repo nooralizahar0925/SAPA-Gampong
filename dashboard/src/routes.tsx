@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthGuard } from './components/AuthGuard';
+import { AdminGuard, AuthGuard } from './components/AuthGuard';
 import { isAuthenticated } from './auth/session';
 import { AppSettingsPage } from './pages/AppSettings';
 import { ContentPage } from './pages/Content';
@@ -7,10 +7,13 @@ import { FeedbackPage } from './pages/Feedback';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { LoginPage } from './pages/Login';
 import { EmailProviderSettingsPage } from './pages/EmailProviderSettings';
+import { LetterTemplateSettingsPage } from './pages/LetterTemplateSettings';
 import { QueuePage } from './pages/Queue';
 import { GeneratePage } from './pages/Generate';
+import { ProfilePage } from './pages/Profile';
 import { RequestDetailPage } from './pages/RequestDetail';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { UserSettingsPage } from './pages/UserSettings';
 
 export function AppRoutes() {
   return (
@@ -29,8 +32,13 @@ export function AppRoutes() {
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/content" element={<Navigate to="/content/banners" replace />} />
         <Route path="/content/:tab" element={<ContentPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
+      <Route element={<AdminGuard />}>
         <Route path="/settings/email-provider" element={<EmailProviderSettingsPage />} />
+        <Route path="/settings/letters" element={<LetterTemplateSettingsPage />} />
         <Route path="/settings/app" element={<AppSettingsPage />} />
+        <Route path="/settings/users" element={<UserSettingsPage />} />
       </Route>
     </Routes>
   );

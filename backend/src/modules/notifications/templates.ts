@@ -1,8 +1,11 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { readBriefAssetDataUrl } from '../letters/template.service';
+import sharp from 'sharp';
+import type { EmailAttachment } from '../../services/email.service';
 
 const emailTemplatesRoot = resolve(process.cwd(), 'templates', 'emails');
+const briefRoot = resolve(process.cwd(), '..', '..', 'Brief');
+const EMAIL_LOGO_CID = 'gampong-logo.png';
 
 export async function renderSentEmailHtml(input: {
   applicantName: string;
@@ -28,7 +31,7 @@ export async function renderSentEmailHtml(input: {
     summary_title: 'Ringkasan Dokumen',
     footer_title: 'Pemerintah Gampong Blang',
     footer_text:
-      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh sistem layanan administrasi gampong.',
+      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh Gampong Blang Digital.',
     accent_color: '#0f5132',
     accent_soft: '#e8f3ee',
     status_soft: '#dff3e7',
@@ -60,7 +63,7 @@ export async function renderRejectedEmailHtml(input: {
     summary_title: 'Ringkasan Permohonan',
     footer_title: 'Pemerintah Gampong Blang',
     footer_text:
-      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh sistem layanan administrasi gampong.',
+      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh Gampong Blang Digital.',
     accent_color: '#8a5a12',
     accent_soft: '#f8efe1',
     status_soft: '#fdf1df',
@@ -92,7 +95,7 @@ export async function renderFeedbackReplyEmailHtml(input: {
     summary_title: 'Ringkasan Laporan',
     footer_title: 'Pemerintah Gampong Blang',
     footer_text:
-      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh sistem layanan administrasi gampong.',
+      'Kecamatan Krueng Sabee, Kabupaten Aceh Jaya. Email ini dikirim otomatis oleh Gampong Blang Digital.',
     accent_color: '#0f5132',
     accent_soft: '#e8f3ee',
     status_soft: '#dff3e7',
@@ -130,17 +133,27 @@ export async function writeEmailPreviews() {
   return { sentPath, rejectedPath };
 }
 
+export async function buildEmailLogoAttachment(): Promise<EmailAttachment> {
+  const source = await readFile(resolve(briefRoot, 'logo.webp'));
+  const content = await sharp(source).png().toBuffer();
+
+  return {
+    filename: EMAIL_LOGO_CID,
+    content,
+    contentType: 'image/png',
+    cid: EMAIL_LOGO_CID,
+    disposition: 'inline',
+  };
+}
+
 async function renderEmailTemplate(templateName: string, values: Record<string, string>) {
-  const [template, logoDataUrl] = await Promise.all([
-    readFile(resolve(emailTemplatesRoot, templateName), 'utf8'),
-    readBriefAssetDataUrl('logo.webp'),
-  ]);
+  const template = await readFile(resolve(emailTemplatesRoot, templateName), 'utf8');
 
   const merged = template.replaceAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key: string) => {
     return escapeHtml(values[key] ?? '');
   });
 
-  return merged.replaceAll('__LOGO_DATA_URL__', logoDataUrl);
+  return merged.replaceAll('__LOGO_DATA_URL__', `cid:${EMAIL_LOGO_CID}`);
 }
 
 function escapeHtml(value: string) {

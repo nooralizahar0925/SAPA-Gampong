@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -16,6 +16,7 @@ function renderApp(initialEntries: string[]) {
       name: 'Admin Gampong',
       email: 'admin@gampongblang.id',
       role: 'admin',
+      active: true,
     },
   });
 
@@ -91,6 +92,24 @@ describe('content hub shell', () => {
       ),
     );
   });
+
+  it('does not carry unsaved state from one tab into another', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/profile']);
+
+    await user.type(await screen.findByLabelText(/kontak kantor desa/i), '9');
+    expect(saveButton()).toBeEnabled();
+
+    await user.click(screen.getByRole('tab', { name: 'Banner' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Banner' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    );
+    await waitFor(() => expect(saveButton()).toBeDisabled());
+  });
 });
 
 describe('demographics tab', () => {
@@ -143,7 +162,8 @@ describe('demographics tab', () => {
 
     await waitFor(() => {
       const block = contentState.demographics.find((d) => d.key === 'tingkat_pendidikan');
-      expect((block?.data as Record<string, number>).pascasarjana).toBe(18);
+      const arr = block?.data as Array<{ label: string; value: number }>;
+      expect(arr.find((e) => e.label === 'Pascasarjana')?.value).toBe(18);
     });
   });
 
@@ -160,7 +180,57 @@ describe('demographics tab', () => {
 
     await waitFor(() => {
       const block = contentState.demographics.find((d) => d.key === 'tingkat_pendidikan');
-      expect(Object.keys(block?.data as object)).toContain('sd_sederajat');
+      const arr = block?.data as Array<{ label: string }>;
+      expect(arr.some((e) => e.label === 'SD Sederajat')).toBe(true);
+    });
+  });
+
+  it('reorders rows in an open-ended block', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/demographics']);
+
+    await screen.findByLabelText(/^tingkat pendidikan · label 1$/i);
+    await user.click(screen.getByRole('button', { name: /^turunkan sd$/i }));
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      const block = contentState.demographics.find((d) => d.key === 'tingkat_pendidikan');
+      const arr = block?.data as Array<{ label: string }>;
+      expect(arr.map((entry) => entry.label)).toEqual(['Sma', 'Sd']);
+    });
+  });
+
+  it('drag-reorders rows in an open-ended block', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/demographics']);
+
+    const firstLabel = await screen.findByLabelText(/^tingkat pendidikan · label 1$/i);
+    const secondLabel = screen.getByLabelText(/^tingkat pendidikan · label 2$/i);
+    const firstRow = firstLabel.closest('tr');
+    const secondRow = secondLabel.closest('tr');
+
+    expect(firstRow).not.toBeNull();
+    expect(secondRow).not.toBeNull();
+
+    const dragHandle = within(firstRow as HTMLTableRowElement).getByTitle(/^seret sd$/i);
+    const dataTransfer = {
+      dropEffect: '',
+      effectAllowed: '',
+      setData: () => undefined,
+    };
+
+    fireEvent.dragStart(dragHandle, { dataTransfer });
+    fireEvent.dragOver(secondRow as HTMLTableRowElement, { dataTransfer });
+    fireEvent.drop(secondRow as HTMLTableRowElement, { dataTransfer });
+
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      const block = contentState.demographics.find((d) => d.key === 'tingkat_pendidikan');
+      const arr = block?.data as Array<{ label: string }>;
+      expect(arr.map((entry) => entry.label)).toEqual(['Sma', 'Sd']);
     });
   });
 
@@ -174,7 +244,8 @@ describe('demographics tab', () => {
 
     await waitFor(() => {
       const block = contentState.demographics.find((d) => d.key === 'tingkat_pendidikan');
-      expect(Object.keys(block?.data as object)).not.toContain('sd');
+      const arr = block?.data as Array<{ label: string }>;
+      expect(arr.some((e) => e.label.toLowerCase() === 'sd')).toBe(false);
     });
   });
 
@@ -190,6 +261,17 @@ describe('demographics tab', () => {
 });
 
 describe('profile tab', () => {
+  it('keeps the header save disabled until profile fields change', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/profile']);
+
+    const save = await screen.findByRole('button', { name: /simpan perubahan/i });
+    await waitFor(() => expect(save).toBeDisabled());
+
+    await user.type(await screen.findByLabelText(/kontak kantor desa/i), '9');
+    expect(save).toBeEnabled();
+  });
+
   it('saves identity fields, including the ones added for the mock', async () => {
     const user = userEvent.setup();
     renderApp(['/content/profile']);
@@ -271,7 +353,7 @@ describe('profile tab', () => {
 });
 
 describe('banner tab', () => {
-  it('lists banners and persists a reorder', async () => {
+  it('lists banners and persists a reorder through the header save', async () => {
     const user = userEvent.setup();
     renderApp(['/content/banners']);
 
@@ -279,6 +361,10 @@ describe('banner tab', () => {
 
     const rows = screen.getAllByTestId('banner-row');
     await user.click(within(rows[1]).getByRole('button', { name: /naikkan/i }));
+
+    expect(contentState.banners.map((b) => b.id)).toEqual(['banner-1', 'banner-2']);
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
 
     await waitFor(() => {
       expect(contentState.banners.map((b) => b.id)).toEqual(['banner-2', 'banner-1']);
@@ -294,6 +380,11 @@ describe('banner tab', () => {
 
     const rows = screen.getAllByTestId('banner-row');
     await user.click(within(rows[0]).getByRole('button', { name: /hapus/i }));
+
+    await waitFor(() => expect(screen.getAllByTestId('banner-row')).toHaveLength(1));
+    expect(contentState.banners).toHaveLength(2);
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
 
     await waitFor(() => expect(contentState.banners).toHaveLength(1));
     expect(prompts).toEqual(['Hapus banner 1?']);
@@ -318,10 +409,16 @@ describe('banner tab', () => {
     renderApp(['/content/banners']);
 
     await waitFor(() => expect(screen.getAllByTestId('banner-row')).toHaveLength(2));
+    await waitFor(() => expect(saveButton()).toBeDisabled());
 
     const file = new File(['x'], 'banner.png', { type: 'image/png' });
     await user.upload(screen.getByLabelText(/unggah banner/i, { selector: 'input' }), file);
 
+    await waitFor(() => expect(screen.getAllByTestId('banner-row')).toHaveLength(3));
+    expect(contentState.banners).toHaveLength(2);
+    expect(saveButton()).toBeEnabled();
+
+    await user.click(saveButton());
     await waitFor(() => expect(contentState.banners).toHaveLength(3));
   });
 });
@@ -470,6 +567,26 @@ describe('masjid & sholat tab', () => {
     expect(screen.getByLabelText(/mazhab ashar/i)).toHaveValue('0');
   });
 
+  it('enables header save after uploading adzan audio', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/mosques']);
+
+    await screen.findByText(/belum ada audio azan/i);
+    expect(saveButton()).toBeDisabled();
+
+    const input = document.getElementById('adzan-upload') as HTMLInputElement;
+    const file = new File(['dummy mp3 bytes'], 'azan.mp3', { type: 'audio/mpeg' });
+    await user.upload(input, file);
+
+    await waitFor(() => expect(saveButton()).toBeEnabled());
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      expect(contentState.prayerConfig.adzan_file_id).toBe('file-uploaded');
+      expect(contentState.prayerConfig.adzan_url).toBe('http://localhost:8080/api/uploads/file-uploaded');
+    });
+  });
+
   it('adds a mosque through the modal form', async () => {
     const user = userEvent.setup();
     renderApp(['/content/mosques']);
@@ -508,6 +625,16 @@ describe('settings navigation', () => {
     await user.click(screen.getByRole('tab', { name: /pengaturan aplikasi/i }));
 
     expect(await screen.findByLabelText(/nama keuchik/i)).toBeInTheDocument();
+  });
+
+  it('reaches letter template settings from the settings tabs', async () => {
+    const user = userEvent.setup();
+    renderApp(['/settings/app']);
+
+    await screen.findByRole('heading', { name: /^pengaturan$/i });
+    await user.click(screen.getByRole('tab', { name: /pengaturan surat/i }));
+
+    expect(await screen.findByRole('heading', { name: /daftar template/i })).toBeInTheDocument();
   });
 });
 
@@ -612,5 +739,51 @@ describe('app settings page', () => {
 
     await user.type(screen.getByLabelText(/nama keuchik/i), 'X');
     expect(save).toBeEnabled();
+  });
+});
+
+describe('letter template settings page', () => {
+  it('edits the template copy and active state', async () => {
+    const user = userEvent.setup();
+    renderApp(['/settings/letters']);
+
+    const name = await screen.findByLabelText(/nama surat/i);
+    await waitFor(() => expect(name).toHaveValue('Surat Keterangan Berdomisili'));
+
+    await user.clear(name);
+    await user.type(name, 'Surat Domisili Warga');
+    await user.click(screen.getByLabelText(/tampilkan di aplikasi warga/i));
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      const template = contentState.letterTemplates.find((item) => item.code === 'L1');
+      expect(template?.name).toBe('Surat Domisili Warga');
+      expect(template?.active).toBe(false);
+    });
+  });
+
+  it('opens a template preview from the edit panel', async () => {
+    const user = userEvent.setup();
+    renderApp(['/settings/letters']);
+
+    await screen.findByLabelText(/nama surat/i);
+    await user.click(screen.getByRole('button', { name: /pratinjau/i }));
+
+    const dialog = await screen.findByRole('dialog', { name: /pratinjau L1/i });
+    expect(await within(dialog).findByText(/pratinjau surat/i)).toBeInTheDocument();
+    expect(within(dialog).getByText('Surat Keterangan Berdomisili')).toBeInTheDocument();
+    expect(within(dialog).getByTitle(/pratinjau PDF Surat Keterangan Berdomisili/i)).toBeInTheDocument();
+  });
+
+  it('does not expose add or delete template actions', async () => {
+    renderApp(['/settings/letters']);
+
+    await screen.findByRole('button', { name: /surat keterangan berdomisili/i });
+
+    expect(screen.queryByRole('button', { name: /tambah template/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /hapus template/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/kode template yang akan ditambahkan/i),
+    ).not.toBeInTheDocument();
   });
 });

@@ -1,53 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/cached_api_image.dart';
 import '../../core/widgets/sapa_scaffold.dart';
+import '../../data/models/mosque.dart';
+import '../../data/models/prayer_config.dart';
+import '../../data/providers/content_providers.dart';
 import '../../data/services/prayer_times_service.dart';
 
-class PrayerScreen extends StatefulWidget {
+class PrayerScreen extends ConsumerStatefulWidget {
   const PrayerScreen({super.key});
 
   @override
-  State<PrayerScreen> createState() => _PrayerScreenState();
+  ConsumerState<PrayerScreen> createState() => _PrayerScreenState();
 }
 
-class _PrayerScreenState extends State<PrayerScreen> {
-  final PrayerTimesService _service = PrayerTimesService();
+class _PrayerScreenState extends ConsumerState<PrayerScreen> {
+  bool _loading = false;
+  PrayerTimes _prayerTimes = PrayerTimes.fallback();
+  String? _errorMessage;
+  bool _alarmOn = false;
 
-  bool alarmOn = false;
-  bool loading = false;
-  String? errorMessage;
-  PrayerTimes prayerTimes = PrayerTimes.fallback();
+  String? _adzanUrl;
 
-  Future<void> _loadFromGps() async {
-    if (loading) return;
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
 
+  Future<void> _loadConfig() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      final config = await ref.read(prayerConfigProvider.future);
+      if (!mounted) return;
+
+      // Upgrade fallback to admin-configured times.
+      setState(() {
+        _prayerTimes = PrayerTimes.fromConfigFallback(config);
+        _adzanUrl = config.adzanUrl;
+        _loading = false;
+      });
+
+      // If village coordinates are configured, auto-fetch live times.
+      if (config.lat != null && config.lng != null) {
+        await _fetchForVillage(config);
+      }
+    } catch (_) {
+      // Keep hard-coded fallback on any config error.
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _fetchForVillage(PrayerConfig config) async {
+    if (!mounted) return;
     setState(() {
-      loading = true;
-      errorMessage = null;
+      _loading = true;
+      _errorMessage = null;
     });
 
     try {
-      final nextTimes = await _service.fetchUsingGps();
+      final service = ref.read(prayerTimesServiceProvider);
+      final times = await service.fetchForVillageConfig(config);
+      if (!mounted) return;
+      setState(() {
+        _prayerTimes = times;
+        _loading = false;
+      });
+    } catch (_) {
+      // Village fetch failed; config fallback already set, just stop loading.
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleAlarm(bool value) async {
+    if (value) {
+      final url = _adzanUrl;
+      if (url == null || url.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Audio azan belum dikonfigurasi oleh admin gampong.'),
+          ),
+        );
+        return;
+      }
+      final service = ref.read(notificationServiceProvider);
+      await service.scheduleDaily(prayerTimes: _prayerTimes, adzanUrl: url);
+      if (!mounted) return;
+      setState(() => _alarmOn = true);
+      final next = service.lastSchedule;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next == null
+                ? 'Alarm azan aktif.'
+                : 'Alarm azan aktif untuk ${next.prayerName}.',
+          ),
+        ),
+      );
+    } else {
+      await ref.read(notificationServiceProvider).cancel();
+      if (!mounted) return;
+      setState(() => _alarmOn = false);
+    }
+  }
+
+  Future<void> _loadFromGps() async {
+    if (_loading) return;
+
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final service = ref.read(prayerTimesServiceProvider);
+      final nextTimes = await service.fetchUsingGps();
       if (!mounted) return;
 
       setState(() {
-        prayerTimes = nextTimes;
-        loading = false;
+        _prayerTimes = nextTimes;
+        _loading = false;
       });
     } catch (error) {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = _friendlyError(error);
-        loading = false;
+        _errorMessage = _friendlyError(error);
+        _loading = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final activePrayer = _activePrayer(prayerTimes);
+    final activePrayer = _activePrayer(_prayerTimes);
 
     return SapaScaffold(
       title: 'Jadwal Sholat',
@@ -55,40 +145,36 @@ class _PrayerScreenState extends State<PrayerScreen> {
       leading: const SapaBackButton(),
       body: ListView(
         children: [
-          // Countdown card
-          _CountdownCard(activePrayer: activePrayer, prayerTimes: prayerTimes),
+          _CountdownCard(activePrayer: activePrayer, prayerTimes: _prayerTimes),
           const SizedBox(height: 14),
           _PrayerRow(
             'Subuh',
-            prayerTimes.subuh,
+            _prayerTimes.subuh,
             active: activePrayer == 'Subuh',
           ),
           _PrayerRow(
             'Dhuhur',
-            prayerTimes.dhuhur,
+            _prayerTimes.dhuhur,
             active: activePrayer == 'Dhuhur',
           ),
           _PrayerRow(
             'Ashar',
-            prayerTimes.ashar,
+            _prayerTimes.ashar,
             active: activePrayer == 'Ashar',
           ),
           _PrayerRow(
             'Maghrib',
-            prayerTimes.maghrib,
+            _prayerTimes.maghrib,
             active: activePrayer == 'Maghrib',
           ),
-          _PrayerRow(
-            'Isya',
-            prayerTimes.isya,
-            active: activePrayer == 'Isya',
-          ),
+          _PrayerRow('Isya', _prayerTimes.isya, active: activePrayer == 'Isya'),
           const SizedBox(height: 12),
           Card(
             color: AppTheme.deepGreen,
             child: SwitchListTile(
-              value: alarmOn,
-              onChanged: (value) => setState(() => alarmOn = value),
+              key: const Key('prayer-adzan-toggle'),
+              value: _alarmOn,
+              onChanged: (value) => _toggleAlarm(value),
               title: const Text(
                 'Aktifkan Alarm Suara Azan',
                 style: TextStyle(
@@ -96,81 +182,165 @@ class _PrayerScreenState extends State<PrayerScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              subtitle: const Text(
-                'Pengingat lokal di perangkat',
-                style: TextStyle(color: Color(0xFFCDEBDD)),
+              subtitle: Text(
+                _alarmOn
+                    ? 'Audio azan akan diputar saat waktu sholat berikutnya.'
+                    : _adzanUrl != null
+                    ? 'Aktifkan untuk menjadwalkan audio azan.'
+                    : 'Audio belum dikonfigurasi admin',
+                style: const TextStyle(color: Color(0xFFCDEBDD)),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          // GPS source card
-          if (!prayerTimes.fromFallback || errorMessage != null)
-            _PrayerSourceCard(
-              loading: loading,
-              prayerTimes: prayerTimes,
-              errorMessage: errorMessage,
-              onRefresh: _loadFromGps,
-            ),
-          if (prayerTimes.fromFallback && errorMessage == null)
-            _PrayerSourceCard(
-              loading: loading,
-              prayerTimes: prayerTimes,
-              errorMessage: null,
-              onRefresh: _loadFromGps,
-            ),
+          _PrayerSourceCard(
+            loading: _loading,
+            prayerTimes: _prayerTimes,
+            errorMessage: _errorMessage,
+            onRefresh: _loadFromGps,
+          ),
           const SectionTitle('Masjid & Meunasah'),
-          // Mosque card with image placeholder
-          Card(
+          _MosqueList(mosques: ref.watch(mosquesProvider)),
+        ],
+      ),
+    );
+  }
+
+  static String _friendlyError(Object error) {
+    if (error is LocationPermissionException) return error.message;
+    return 'Belum bisa mengambil jadwal dari GPS/internet. Data contoh tetap ditampilkan.';
+  }
+}
+
+class _MosqueList extends StatelessWidget {
+  const _MosqueList({required this.mosques});
+
+  final AsyncValue<List<Mosque>> mosques;
+
+  @override
+  Widget build(BuildContext context) {
+    return mosques.when(
+      loading: () => const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Text('Memuat data masjid...'),
+            ],
+          ),
+        ),
+      ),
+      error: (_, _) => const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'Data masjid belum bisa dimuat.',
+            style: TextStyle(
+              color: AppTheme.ink500,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return const Card(
+            key: Key('prayer-mosques-empty'),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Belum ada data masjid/meunasah dari admin.',
+                style: TextStyle(
+                  color: AppTheme.ink500,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          key: const Key('prayer-mosques-list'),
+          children: [
+            for (final mosque in items) ...[
+              _MosqueCard(mosque: mosque),
+              if (mosque != items.last) const SizedBox(height: 10),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MosqueCard extends StatelessWidget {
+  const _MosqueCard({required this.mosque});
+
+  final Mosque mosque;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = mosque.photoUrl != null && mosque.photoUrl!.isNotEmpty;
+    final locationText = mosque.landmark == null || mosque.landmark!.isEmpty
+        ? mosque.address
+        : '${mosque.address} · ${mosque.landmark}';
+
+    return Card(
+      key: Key('mosque-card-${mosque.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: hasImage
+                ? CachedApiImage(
+                    url: mosque.photoUrl,
+                    cacheKey: mosque.photoFileId,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    fallback: const _MosqueImageFallback(),
+                  )
+                : const _MosqueImageFallback(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  child: Container(
-                    height: 120,
-                    width: double.infinity,
-                    color: AppTheme.g100,
-                    child: const Icon(
-                      Icons.mosque_outlined,
-                      size: 48,
-                      color: AppTheme.g400,
-                    ),
+                Text(
+                  mosque.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Masjid Jami' Baitul Makmur",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppTheme.ink500,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        locationText,
+                        style: const TextStyle(
+                          color: AppTheme.ink500,
+                          fontSize: 13,
                         ),
                       ),
-                      SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: AppTheme.ink500,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Gampong Blang · Pusat gampong',
-                            style: TextStyle(
-                              color: AppTheme.ink500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -179,21 +349,26 @@ class _PrayerScreenState extends State<PrayerScreen> {
       ),
     );
   }
+}
 
-  static String _friendlyError(Object error) {
-    if (error is LocationPermissionException) {
-      return error.message;
-    }
+class _MosqueImageFallback extends StatelessWidget {
+  const _MosqueImageFallback();
 
-    return 'Belum bisa mengambil jadwal dari GPS/internet. Data contoh tetap ditampilkan.';
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 120,
+      width: double.infinity,
+      color: AppTheme.g100,
+      child: const Icon(Icons.mosque_outlined, size: 48, color: AppTheme.g400),
+    );
   }
 }
 
+// ── Countdown card ────────────────────────────────────────────────────────────
+
 class _CountdownCard extends StatelessWidget {
-  const _CountdownCard({
-    required this.activePrayer,
-    required this.prayerTimes,
-  });
+  const _CountdownCard({required this.activePrayer, required this.prayerTimes});
 
   final String? activePrayer;
   final PrayerTimes prayerTimes;
@@ -267,8 +442,7 @@ class _CountdownCard extends StatelessWidget {
 
     for (final entry in schedule) {
       final parts = entry.$2.split(':');
-      final entryMins =
-          int.parse(parts[0]) * 60 + int.parse(parts[1]);
+      final entryMins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
       if (entryMins > nowMins) {
         final diff = entryMins - nowMins;
         final h = diff ~/ 60;
@@ -284,11 +458,19 @@ class _CountdownCard extends StatelessWidget {
   }
 
   static String _approximateHijri(DateTime date) {
-    // Rough Hijri approximation for display
     final months = [
-      'Muharram', 'Safar', "Rabi'ul Awal", "Rabi'ul Akhir",
-      'Jumadil Awal', 'Jumadil Akhir', 'Rajab', "Sya'ban",
-      'Ramadan', 'Syawal', "Dzul Qa'dah", 'Dzul Hijjah',
+      'Muharram',
+      'Safar',
+      "Rabi'ul Awal",
+      "Rabi'ul Akhir",
+      'Jumadil Awal',
+      'Jumadil Akhir',
+      'Rajab',
+      "Sya'ban",
+      'Ramadan',
+      'Syawal',
+      "Dzul Qa'dah",
+      'Dzul Hijjah',
     ];
     final epoch = DateTime(622, 7, 16);
     final daysSinceEpoch = date.difference(epoch).inDays;
@@ -297,6 +479,8 @@ class _CountdownCard extends StatelessWidget {
     return '${date.day} ${months[monthIndex]} $hijriYear H';
   }
 }
+
+// ── Source card ───────────────────────────────────────────────────────────────
 
 class _PrayerSourceCard extends StatelessWidget {
   const _PrayerSourceCard({
@@ -349,6 +533,7 @@ class _PrayerSourceCard extends StatelessWidget {
                       ),
                       Text(
                         prayerTimes.sourceLabel,
+                        key: const Key('prayer-source-label'),
                         style: const TextStyle(
                           color: AppTheme.ink500,
                           fontWeight: FontWeight.w600,
@@ -359,8 +544,8 @@ class _PrayerSourceCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (prayerTimes.latitude != null && prayerTimes.longitude != null)
-              ...[
+            if (prayerTimes.latitude != null &&
+                prayerTimes.longitude != null) ...[
               const SizedBox(height: 10),
               Text(
                 'Lokasi: ${prayerTimes.latitude!.toStringAsFixed(4)}, '
@@ -375,6 +560,7 @@ class _PrayerSourceCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 errorMessage!,
+                key: const Key('prayer-error-text'),
                 style: const TextStyle(
                   color: Color(0xFF9A3412),
                   fontWeight: FontWeight.w700,
@@ -403,7 +589,8 @@ class _PrayerSourceCard extends StatelessWidget {
   }
 }
 
-// Returns null before Subuh (no prayer is "sekarang" yet today)
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 String? _activePrayer(PrayerTimes times) {
   final now = TimeOfDay.now();
   final schedule = [
@@ -417,11 +604,8 @@ String? _activePrayer(PrayerTimes times) {
   String? active;
   for (final entry in schedule) {
     final prayerTime = _parseTime(entry.$2);
-    if (_minutes(prayerTime) <= _minutes(now)) {
-      active = entry.$1;
-    }
+    if (_minutes(prayerTime) <= _minutes(now)) active = entry.$1;
   }
-
   return active;
 }
 

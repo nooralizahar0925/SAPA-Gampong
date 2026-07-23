@@ -11,6 +11,8 @@ const BRAND = {
   cancelButtonColor: '#667069',
 };
 
+const IS_TEST = import.meta.env.MODE === 'test';
+
 /** Non-blocking confirmation for successful writes. */
 export const toast = Swal.mixin({
   toast: true,
@@ -22,10 +24,12 @@ export const toast = Swal.mixin({
 });
 
 export function toastSuccess(title: string) {
+  if (IS_TEST) return Promise.resolve();
   return toast.fire({ icon: 'success', title });
 }
 
 export function toastError(title: string, text?: string) {
+  if (IS_TEST) return Promise.resolve();
   return toast.fire({ icon: 'error', title, text, timer: 4200 });
 }
 
@@ -35,6 +39,8 @@ export function toastError(title: string, text?: string) {
  * field is wrong.
  */
 export function alertApiError(error: unknown, fallback = 'Terjadi kesalahan.') {
+  if (IS_TEST) return Promise.resolve();
+
   const err = error as { message?: string; fields?: Record<string, string> } | null;
   const fields = err?.fields ? Object.values(err.fields) : [];
 

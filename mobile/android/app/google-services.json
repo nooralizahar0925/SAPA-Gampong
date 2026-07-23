@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "962715437463",
+    "project_id": "sapa-gampong",
+    "storage_bucket": "sapa-gampong.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:962715437463:android:04570ff258c4d06ad31cd2",
+        "android_client_info": {
+          "package_name": "id.gampongblang.sapa_gampong"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWrl1i-rkOAa5h74_jaKtElzzN8eXhv-k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

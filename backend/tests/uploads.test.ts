@@ -61,6 +61,20 @@ describe('POST /api/uploads', () => {
     });
   });
 
+  it('stores audio uploads up to the adzan limit', async () => {
+    const audio = Buffer.alloc(6 * 1024 * 1024, 1);
+
+    const res = await request(app)
+      .post('/api/uploads')
+      .field('kind', 'audio')
+      .attach('file', audio, { filename: 'adzan.mp3', contentType: 'audio/mpeg' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.mime).toBe('audio/mpeg');
+    expect(res.body.size).toBe(audio.length);
+    expect(res.body.url).toContain(`/api/uploads/${res.body.file_id}?`);
+  });
+
   it('rejects a disallowed mime type', async () => {
     const res = await request(app)
       .post('/api/uploads')
@@ -72,7 +86,7 @@ describe('POST /api/uploads', () => {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Data yang dikirim tidak valid',
-        fields: { file: 'Tipe file harus gambar atau PDF' },
+        fields: { file: 'Tipe file harus gambar, PDF, atau audio (MP3/M4A)' },
       },
     });
   });

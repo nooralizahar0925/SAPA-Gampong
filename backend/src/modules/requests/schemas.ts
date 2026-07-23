@@ -19,6 +19,8 @@ export const RequestAttachmentInput = z.object({
   kind: z.enum(uploadKindValues),
 });
 
+export const PushPlatformSchema = z.enum(['android', 'ios', 'web', 'unknown']);
+
 export const CreateRequestBody = registry.register(
   'CreateRequestBody',
   z.object({
@@ -29,6 +31,8 @@ export const CreateRequestBody = registry.register(
     keperluan: z.string().trim().optional(),
     subject_data: z.record(z.unknown()),
     attachments: z.array(RequestAttachmentInput),
+    push_token: z.string().trim().min(1).optional(),
+    push_platform: PushPlatformSchema.default('unknown'),
   }),
 );
 
@@ -45,6 +49,18 @@ export const TrackRequestParams = z.object({
   referenceCode: z.string().min(1),
 });
 
+export const RequestStatusHistoryItem = registry.register(
+  'RequestStatusHistoryItem',
+  z.object({
+    status: RequestStatusSchema,
+    at: z.string().datetime(),
+    action: z.string().optional(),
+    by: z.string().optional(),
+    reason: z.string().optional(),
+    nomor_surat: z.string().optional(),
+  }),
+);
+
 export const TrackRequestResponse = registry.register(
   'TrackRequestResponse',
   z.object({
@@ -52,7 +68,9 @@ export const TrackRequestResponse = registry.register(
     letter_type: z.enum(LETTER_TYPE_CODES),
     status: RequestStatusSchema,
     status_label: z.string(),
+    created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
+    status_history: z.array(RequestStatusHistoryItem),
   }),
 );
 
@@ -131,18 +149,6 @@ export const RequestDetailAttachment = registry.register(
     mime: z.string(),
     size: z.number().int().nonnegative(),
     url: z.string().url(),
-  }),
-);
-
-export const RequestStatusHistoryItem = registry.register(
-  'RequestStatusHistoryItem',
-  z.object({
-    status: RequestStatusSchema,
-    at: z.string().datetime(),
-    action: z.string().optional(),
-    by: z.string().optional(),
-    reason: z.string().optional(),
-    nomor_surat: z.string().optional(),
   }),
 );
 

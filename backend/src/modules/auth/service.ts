@@ -8,6 +8,7 @@ import { env } from '../../config/env';
 import { ApiError } from '../../lib/errors';
 import { EmailService } from '../../services/email.service';
 import type { AdminUserPublicType } from './schemas';
+import type { UpdateProfileBodyType } from './schemas';
 
 export type TokenPayload = { sub: string; role: AdminRole };
 export type ForgotPasswordResult = { previewUrl?: string };
@@ -16,7 +17,7 @@ export type ForgotPasswordResult = { previewUrl?: string };
 // trusted via `as AdminRole`, since the JWT payload is attacker-controlled input
 // once it crosses the trust boundary (a malformed/forged token should fail
 // closed as 401, not propagate an unvalidated role string).
-const AdminRoleSchema = z.enum(['admin', 'approver']);
+const AdminRoleSchema = z.enum(['admin', 'operator']);
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 // Valid bcrypt hash (60 chars, correctly formed) used to equalize bcrypt.compare
@@ -50,14 +51,41 @@ export async function verifyCredentials(
   const ok = await bcrypt.compare(password, hash);
 
   if (!user || !ok) throw ApiError.unauthorized('Email atau kata sandi salah');
+  if (!user.active) throw ApiError.forbidden('Akun pengguna tidak aktif');
 
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+  return toPublicUser(user);
 }
 
 export async function findUserById(id: string): Promise<AdminUserPublicType> {
   const user = await prisma.adminUser.findUnique({ where: { id } });
   if (!user) throw ApiError.unauthorized('Pengguna tidak ditemukan');
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+  if (!user.active) throw ApiError.forbidden('Akun pengguna tidak aktif');
+  return toPublicUser(user);
+}
+
+export async function updateOwnProfile(
+  id: string,
+  input: UpdateProfileBodyType,
+): Promise<AdminUserPublicType> {
+  const user = await prisma.adminUser.findUnique({ where: { id } });
+  if (!user) throw ApiError.unauthorized('Pengguna tidak ditemukan');
+  if (!user.active) throw ApiError.forbidden('Akun pengguna tidak aktif');
+
+  const data: { name?: string; passwordHash?: string } = {};
+  if (input.name !== undefined) data.name = input.name.trim();
+
+  if (input.password) {
+    const ok = await bcrypt.compare(input.current_password ?? '', user.passwordHash);
+    if (!ok) {
+      throw ApiError.validation('Kata sandi saat ini tidak sesuai', {
+        current_password: 'Kata sandi saat ini tidak sesuai',
+      });
+    }
+    data.passwordHash = await bcrypt.hash(input.password, 10);
+  }
+
+  const updated = await prisma.adminUser.update({ where: { id }, data });
+  return toPublicUser(updated);
 }
 
 export async function requestPasswordReset(email: string): Promise<ForgotPasswordResult> {
@@ -88,7 +116,7 @@ export async function requestPasswordReset(email: string): Promise<ForgotPasswor
   try {
     await EmailService.send({
       to: user.email,
-      subject: 'Reset Kata Sandi Dashboard Gampong Blang',
+      subject: 'Reset Kata Sandi Gampong Blang Digital',
       html: emailHtml,
     });
     return {};
@@ -153,7 +181,7 @@ function renderPasswordResetEmail(input: {
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dce7df;border-radius:16px;overflow:hidden">
         <div style="background:#0e3b2a;padding:28px 32px;color:#ffffff">
           <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e0a82e;margin-bottom:10px">
-            Pemerintah Gampong Blang
+            Gampong Blang Digital
           </div>
           <h1 style="margin:0;font-size:28px;line-height:1.2">Reset Kata Sandi Dashboard</h1>
         </div>
@@ -193,4 +221,14 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function toPublicUser(user: {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+  active: boolean;
+}): AdminUserPublicType {
+  return { id: user.id, name: user.name, email: user.email, role: user.role, active: user.active };
 }

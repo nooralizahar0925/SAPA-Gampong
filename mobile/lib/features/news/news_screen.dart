@@ -50,17 +50,24 @@ class NewsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppTheme.g50,
-              border: Border.all(color: AppTheme.g200, style: BorderStyle.solid),
+              border: Border.all(
+                color: AppTheme.g200,
+                style: BorderStyle.solid,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.build_circle_outlined, size: 16, color: AppTheme.g700),
+                Icon(
+                  Icons.build_circle_outlined,
+                  size: 16,
+                  color: AppTheme.g700,
+                ),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Catatan pengembangan: Berita, Pengumuman, Arsip Surat, dan Galeri masuk Fase 2.',
+                    'Halaman berita sedang dikembangkan. Informasi resmi akan ditampilkan setelah tersedia dari Pemerintah Gampong Blang.',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.g700,

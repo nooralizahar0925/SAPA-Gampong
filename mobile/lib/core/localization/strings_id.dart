@@ -1,7 +1,7 @@
 class StringsId {
   const StringsId._();
 
-  static const appName = 'SAPA Gampong';
+  static const appName = 'Gampong Blang Digital';
   static const home = 'Beranda';
   static const services = 'Layanan';
   static const news = 'Berita';

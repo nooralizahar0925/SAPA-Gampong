@@ -80,7 +80,7 @@ export const LETTER_DEFINITIONS: readonly LetterDefinition[] = [
     required_attachments: ATTACHMENT_DEFAULTS,
     signatory: 'Keuchik',
     fields: [
-      { key: 'nama_pemohon', label: 'Nama Pemohon', type: 'text', required: true },
+      { key: 'nama_pemohon', label: 'Nama Subjek Surat', type: 'text', required: true },
       { key: 'nama_kantor', label: 'Nama Kantor', type: 'text', required: true },
       { key: 'alamat_jalan', label: 'Alamat Kantor - Jalan', type: 'text', required: true },
       { key: 'alamat_desa', label: 'Alamat Kantor - Desa', type: 'text', required: true },
@@ -360,13 +360,7 @@ export const LETTER_DEFINITIONS: readonly LetterDefinition[] = [
     required_attachments: ATTACHMENT_DEFAULTS,
     signatory: 'Keuchik',
     fields: [
-      { key: 'nama_pemohon', label: 'Nama Pemohon', type: 'text', required: true },
-      {
-        key: 'nomor_surat_permohonan',
-        label: 'Nomor Surat Permohonan',
-        type: 'text',
-        required: true,
-      },
+      { key: 'nama_pemohon', label: 'Nama Subjek Surat', type: 'text', required: true },
       {
         key: 'tanggal_permohonan',
         label: 'Tanggal Permohonan',

@@ -38,6 +38,16 @@ async function createImageFile(name: string) {
   });
 }
 
+async function createAudioFile(name: string) {
+  return testPrisma.file.create({
+    data: {
+      storagePath: `content/${name}.mp3`,
+      mime: 'audio/mpeg',
+      size: 4096,
+    },
+  });
+}
+
 describe('content module', () => {
   describe('village profile (singleton)', () => {
     it('reflects an admin PATCH in the public GET', async () => {
@@ -320,6 +330,47 @@ describe('content module', () => {
         .send({ lat: 999, lng: 95.6, calc_method: 'Kemenag' });
 
       expect(res.status).toBe(400);
+    });
+
+    it('stores an adzan audio file for the mobile app', async () => {
+      const token = await login();
+      const audio = await createAudioFile('adzan');
+
+      const patch = await request(app)
+        .patch('/api/content/prayer-config')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          lat: 4.7,
+          lng: 95.6,
+          calc_method: 'Kemenag',
+          adzan_file_id: audio.id,
+        });
+
+      expect(patch.status).toBe(200);
+      expect(patch.body.adzan_file_id).toBe(audio.id);
+      expect(patch.body.adzan_url).toContain(`/api/uploads/${audio.id}?`);
+
+      const res = await request(app).get('/api/content/prayer-config');
+      expect(res.body.adzan_file_id).toBe(audio.id);
+      expect(res.body.adzan_url).toContain(`/api/uploads/${audio.id}?`);
+    });
+
+    it('rejects a non-audio file as adzan audio', async () => {
+      const token = await login();
+      const image = await createImageFile('not-adzan');
+
+      const res = await request(app)
+        .patch('/api/content/prayer-config')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          lat: 4.7,
+          lng: 95.6,
+          calc_method: 'Kemenag',
+          adzan_file_id: image.id,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.fields.adzan_file_id).toBe('File audio azan harus berupa audio');
     });
   });
 

@@ -5,6 +5,7 @@ import { createApp } from '../src/app';
 import {
   setEmailProviderConfigsForTests,
   setEmailTransportForTests,
+  type EmailAttachment,
 } from '../src/services/email.service';
 import { testPrisma, truncateAll } from './helpers/db';
 
@@ -27,7 +28,12 @@ afterEach(() => {
   setEmailProviderConfigsForTests(null);
 });
 
-type SentMessage = { to: string; subject: string; html: string };
+type SentMessage = {
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: EmailAttachment[];
+};
 
 /** Captures outgoing mail so reply tests never touch a real provider. */
 function stubEmailTransport() {
@@ -270,6 +276,15 @@ describe('feedback module', () => {
       expect(message.to).toBe('nurul@example.com');
       expect(message.subject).toContain(created.body.reference_code);
       expect(message.html).toContain('Terima kasih, lokasi akan kami tinjau pekan ini.');
+      expect(message.html).toContain('src="cid:gampong-logo.png"');
+      expect(message.attachments).toEqual([
+        expect.objectContaining({
+          filename: 'gampong-logo.png',
+          contentType: 'image/png',
+          cid: 'gampong-logo.png',
+          disposition: 'inline',
+        }),
+      ]);
     });
 
     it('does not mark the report responded when the email fails', async () => {

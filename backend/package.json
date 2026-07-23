@@ -1,5 +1,5 @@
 {
-  "name": "sapa-gampong-backend",
+  "name": "gampong-blang-digital-backend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -26,6 +26,7 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "firebase-admin": "^14.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",

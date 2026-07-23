@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 24),
               const Text(
-                'SAPA Gampong',
+                'Gampong Blang Digital',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,

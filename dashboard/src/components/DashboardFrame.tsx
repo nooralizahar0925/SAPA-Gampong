@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import crestLogo from '../assets/logo.webp';
 import { getRequestCountsRequest, listFeedbackRequest } from '../api/client';
-import { clearStoredSession, getStoredSession } from '../auth/session';
+import { clearStoredSession, getStoredSession, isSystemAdmin } from '../auth/session';
 import { AppIcon, type IconName } from './AppIcon';
 
 type DashboardFrameProps = {
@@ -79,8 +79,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Sistem',
     items: [
-      { label: 'Pengaturan', icon: 'settings', to: '/settings/app', matchPrefix: '/settings' },
-      { label: 'Akun Pengguna', icon: 'users' },
+      { label: 'Pengaturan', icon: 'settings', to: '/settings/app', matchPrefix: '/settings/app' },
+      { label: 'Akun Pengguna', icon: 'users', to: '/settings/users', matchPrefix: '/settings/users' },
     ],
   },
 ];
@@ -95,6 +95,7 @@ export function DashboardFrame({
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const visibleSections = NAV_SECTIONS.filter((section) => section.title !== 'Sistem' || isSystemAdmin());
 
   // The unread badge shows on every page, so the frame fetches it unless the page
   // already has the number. Shares the ['feedback'] key, so inbox writes refresh it.
@@ -131,12 +132,12 @@ export function DashboardFrame({
         <div className="dashboard-brand">
           <img src={crestLogo} alt="Logo Pemerintah Aceh Jaya" className="dashboard-brand-logo" />
           <div>
-            <b>Gampong Blang</b>
+            <b>Gampong Blang Digital</b>
             <small>Dashboard Admin</small>
           </div>
         </div>
 
-        {NAV_SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.title}>
             <div className="dashboard-group">{section.title}</div>
             {section.items.map((item) => {
@@ -187,13 +188,23 @@ export function DashboardFrame({
         ))}
 
         <div className="dashboard-user">
-          <div className="dashboard-user-avatar">
-            {(session?.user.name ?? 'A').slice(0, 1).toUpperCase()}
-          </div>
-          <div className="dashboard-user-meta">
-            <b>{session?.user.name ?? 'Admin Gampong'}</b>
-            <small>{session?.user.role === 'approver' ? 'Keuchik · Approver' : 'Admin · Operator'}</small>
-          </div>
+          <button
+            className="dashboard-user-profile"
+            type="button"
+            onClick={() => {
+              setSidebarOpen(false);
+              navigate('/profile');
+            }}
+            aria-label="Edit profil pengguna"
+          >
+            <span className="dashboard-user-avatar">
+              {(session?.user.name ?? 'A').slice(0, 1).toUpperCase()}
+            </span>
+            <span className="dashboard-user-meta">
+              <b>{session?.user.name ?? 'Admin Gampong'}</b>
+              <small>{session?.user.role === 'admin' ? 'Admin' : 'Operator'}</small>
+            </span>
+          </button>
           <button className="dashboard-user-logout" type="button" onClick={signOut} aria-label="Keluar">
             <AppIcon name="logout" />
           </button>

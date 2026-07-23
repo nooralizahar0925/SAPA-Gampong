@@ -5,7 +5,7 @@ import { prisma } from './lib/prisma';
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
-  console.log(`SAPA Gampong API listening on http://localhost:${env.PORT}/api`);
+  console.log(`Gampong Blang Digital API listening on http://localhost:${env.PORT}/api`);
 });
 
 server.on('error', (err) => {

@@ -111,10 +111,23 @@ class _PurposeScreenState extends State<PurposeScreen> {
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: () => context.pushNamed(
-              AppRouteNames.attachments,
-              extra: widget.flowDraft,
-            ),
+            onPressed: () {
+              final notes = _notesController.text.trim();
+              final String? keperluan;
+              if (_selected != null && notes.isNotEmpty) {
+                keperluan = '$_selected — $notes';
+              } else if (_selected != null) {
+                keperluan = _selected;
+              } else if (notes.isNotEmpty) {
+                keperluan = notes;
+              } else {
+                keperluan = null;
+              }
+              context.pushNamed(
+                AppRouteNames.attachments,
+                extra: widget.flowDraft.copyWith(keperluan: keperluan),
+              );
+            },
             icon: const Icon(Icons.arrow_forward),
             label: const Text('Selanjutnya'),
           ),

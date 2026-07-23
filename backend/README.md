@@ -1,6 +1,6 @@
-# Aplikasi Desa — Website (Backend API + Admin Dashboard)
+# Gampong Blang Digital — Backend API + Admin Dashboard
 
-The single backend/API and the web admin dashboard for Gampong Blang. See `PLAN.md` for the full build plan and `../API-CONTRACT.md` for the HTTP contract.
+The single backend/API and the web admin dashboard for Gampong Blang Digital. See `PLAN.md` for the full build plan and `../API-CONTRACT.md` for the HTTP contract.
 
 ## Stack
 Node 20 + TypeScript (CommonJS) · Express 4 · Prisma 5 + PostgreSQL · Zod · JWT · Vitest + Supertest.
@@ -54,6 +54,13 @@ SEED_ADMIN_EMAIL=admin@gampongblang.id
 SEED_ADMIN_PASSWORD=admin123
 ```
 
+Production domain values:
+```
+PUBLIC_BASE_URL=https://gampongblangdigital.com
+DASHBOARD_BASE_URL=https://gampongblangdigital.com
+CORS_ORIGINS=https://gampongblangdigital.com,https://www.gampongblangdigital.com
+```
+
 The Docker Compose service names are `db` (PostgreSQL 16, database `sapa`, user/password `sapa`) and `mailpit`. There is no `postgres` service and no `appdesa` database — those names are stale leftovers from an earlier draft of this file.
 
 ## Login troubleshooting
@@ -70,7 +77,7 @@ The backend supports 4 outbound email providers:
 - `gmail`
 - `smtp`
 
-`EMAIL_PROVIDER_DEFAULT=mailersend` is the fallback when no admin override has been saved yet. Admins can inspect and switch the active provider through `GET /api/settings/email-provider` and `PATCH /api/settings/email-provider`.
+`EMAIL_PROVIDER_DEFAULT=mailersend` is the production fallback when no admin override has been saved yet. For local development, `smtp` plus Mailpit is usually easier. Admins can inspect and switch the active provider through `GET /api/settings/email-provider` and `PATCH /api/settings/email-provider`.
 
 Provider readiness rules:
 - `mailersend` requires `MAILERSEND_API_KEY` and `MAILERSEND_FROM_EMAIL`.
@@ -118,7 +125,7 @@ cd dashboard && npm test       # vitest + React Testing Library + MSW
 ```
 
 ## Deploy (Railway)
-Provision a Railway Postgres, set the env vars above (with the Railway `DATABASE_URL`, a public `PUBLIC_BASE_URL`, and `NODE_ENV=production` + real `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`), deploy `backend` and `dashboard` services, then run `npm run db:deploy` (`prisma migrate deploy`) + `npm run db:seed`. See `PLAN.md` Task 22.
+Provision a Railway Postgres, set the env vars above (with the Railway `DATABASE_URL`, `PUBLIC_BASE_URL=https://gampongblangdigital.com`, `DASHBOARD_BASE_URL=https://gampongblangdigital.com`, and `NODE_ENV=production` + real `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`), deploy `backend` and `dashboard` services, then run `npm run db:deploy` (`prisma migrate deploy`) + `npm run db:seed`. See `PLAN.md` Task 22.
 
 ## Definition of done (per endpoint/page)
 - Matches `../API-CONTRACT.md` (route, payload, enums, error envelope).

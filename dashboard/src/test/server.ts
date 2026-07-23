@@ -5,6 +5,10 @@ import type {
   BannerSlide,
   DemographicBlock,
   EmailProviderSettingsResponse,
+  LetterTemplateDefinition,
+  LetterTypeDefinition,
+  LetterTypeCode,
+  ManagedUser,
   Mosque,
   Official,
   PrayerConfig,
@@ -55,7 +59,7 @@ const letterTypes = [
       { key: 'alamat_usaha', label: 'Alamat Usaha', type: 'textarea', required: true },
     ],
   },
-] as const;
+] satisfies LetterTypeDefinition[];
 
 const queueItems = [
   {
@@ -328,6 +332,7 @@ function initialContentState(): {
   demographics: DemographicBlock[];
   appSettings: AppSettings;
   letterCounters: Array<{ letter_type: string; last_number: number }>;
+  letterTemplates: LetterTemplateDefinition[];
 } {
   return {
     banners: [
@@ -421,6 +426,8 @@ function initialContentState(): {
         maghrib: '18:38',
         isya: '19:49',
       },
+      adzan_file_id: null,
+      adzan_url: null,
       updated_at: '2026-07-20T10:00:00.000Z',
     },
     // Mirrors db/seed-content.ts: two fixed-shape blocks plus open-ended ones.
@@ -476,6 +483,12 @@ function initialContentState(): {
       { letter_type: 'L9', last_number: 0 },
       { letter_type: 'L10', last_number: 0 },
     ],
+    letterTemplates: letterTypes.map((template, index) => ({
+      ...template,
+      id: `letter-template-${index + 1}`,
+      active: true,
+      updated_at: '2026-07-20T10:00:00.000Z',
+    })),
   };
 }
 
@@ -484,6 +497,7 @@ export let contentState = initialContentState();
 export function resetContentState() {
   contentState = initialContentState();
   feedbackState = initialFeedbackState();
+  managedUsers = initialManagedUsers();
 }
 
 /**
@@ -573,6 +587,31 @@ function initialFeedbackState(): { items: FeedbackFixtureItem[] } {
 
 export let feedbackState = initialFeedbackState();
 
+function initialManagedUsers(): ManagedUser[] {
+  return [
+    {
+      id: 'admin-1',
+      name: 'Admin Gampong',
+      email: 'admin@gampongblang.id',
+      role: 'admin',
+      active: true,
+      created_at: '2026-07-20T00:00:00.000Z',
+      updated_at: '2026-07-20T00:00:00.000Z',
+    },
+    {
+      id: 'operator-1',
+      name: 'Operator Kantor',
+      email: 'operator@gampongblang.id',
+      role: 'operator',
+      active: true,
+      created_at: '2026-07-21T00:00:00.000Z',
+      updated_at: '2026-07-21T00:00:00.000Z',
+    },
+  ];
+}
+
+let managedUsers: ManagedUser[] = initialManagedUsers();
+
 export const server = setupServer(
   http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
     const body = (await request.json()) as { email?: string; password?: string };
@@ -585,6 +624,7 @@ export const server = setupServer(
           name: 'Admin Gampong',
           email: 'admin@gampongblang.id',
           role: 'admin',
+          active: true,
         },
       });
     }
@@ -599,7 +639,79 @@ export const server = setupServer(
       { status: 401 },
     );
   }),
-  http.get('http://localhost:8080/api/letter-types', () => HttpResponse.json(letterTypes)),
+  http.get('http://localhost:8080/api/auth/me', () => HttpResponse.json(managedUsers[0])),
+  http.patch('http://localhost:8080/api/auth/me', async ({ request }) => {
+    const body = (await request.json()) as {
+      name?: string;
+      current_password?: string;
+      password?: string;
+    };
+    if (body.password && body.current_password !== 'admin123') {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Kata sandi saat ini tidak sesuai',
+            fields: { current_password: 'Kata sandi saat ini tidak sesuai' },
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    managedUsers[0] = {
+      ...managedUsers[0],
+      ...(body.name ? { name: body.name } : {}),
+      updated_at: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(managedUsers[0]);
+  }),
+  http.get('http://localhost:8080/api/settings/users', () => HttpResponse.json(managedUsers)),
+  http.post('http://localhost:8080/api/settings/users', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      email: string;
+      password: string;
+      active: boolean;
+      role: ManagedUser['role'];
+    };
+    const now = new Date().toISOString();
+    const user: ManagedUser = {
+      id: `user-${managedUsers.length + 1}`,
+      name: body.name,
+      email: body.email,
+      role: body.role,
+      active: body.active,
+      created_at: now,
+      updated_at: now,
+    };
+    managedUsers = [...managedUsers, user];
+    return HttpResponse.json(user, { status: 201 });
+  }),
+  http.patch('http://localhost:8080/api/settings/users/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Partial<{
+      name: string;
+      email: string;
+      password: string;
+      active: boolean;
+      role: ManagedUser['role'];
+    }>;
+    const id = String(params.id);
+    const current = managedUsers.find((user) => user.id === id);
+    if (!current) return HttpResponse.json({ error: { code: 'NOT_FOUND', message: 'Not found' } }, { status: 404 });
+
+    const updated = { ...current, ...body, updated_at: new Date().toISOString() };
+    managedUsers = managedUsers.map((user) => (user.id === id ? updated : user));
+    return HttpResponse.json(updated);
+  }),
+  http.get('http://localhost:8080/api/letter-types', () =>
+    HttpResponse.json(
+      contentState.letterTemplates
+        .filter((template) => template.active)
+        .map(({ id: _id, active: _active, updated_at: _updatedAt, ...template }) => template),
+    ),
+  ),
   http.get('http://localhost:8080/api/requests', ({ request }) => {
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
@@ -1126,6 +1238,12 @@ export const server = setupServer(
       ...contentState.prayerConfig,
       ...body,
       fallback_times: fallback,
+      adzan_url:
+        body.adzan_file_id === null
+          ? null
+          : typeof body.adzan_file_id === 'string'
+            ? `http://localhost:8080/api/uploads/${body.adzan_file_id}`
+            : contentState.prayerConfig.adzan_url,
     };
 
     return HttpResponse.json(contentState.prayerConfig);
@@ -1180,6 +1298,72 @@ export const server = setupServer(
     const index = contentState.letterCounters.findIndex((c) => c.letter_type === body.letter_type);
     if (index >= 0) contentState.letterCounters[index].last_number = body.last_number;
     return HttpResponse.json({ year: body.year, counters: contentState.letterCounters });
+  }),
+
+  http.get('http://localhost:8080/api/settings/letter-templates', () =>
+    HttpResponse.json(contentState.letterTemplates),
+  ),
+  http.post('http://localhost:8080/api/settings/letter-templates', async ({ request }) => {
+    const body = (await request.json()) as { code: LetterTypeCode; active?: boolean };
+    const existing = contentState.letterTemplates.find((template) => template.code === body.code);
+    if (existing) {
+      return HttpResponse.json(
+        { error: { code: 'CONFLICT', message: `Template ${body.code} sudah ada.` } },
+        { status: 409 },
+      );
+    }
+
+    const blueprint = letterTypes.find((template) => template.code === body.code);
+    if (!blueprint) {
+      return HttpResponse.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Kode surat tidak dikenal' } },
+        { status: 400 },
+      );
+    }
+
+    const created: LetterTemplateDefinition = {
+      ...blueprint,
+      id: `letter-template-${Date.now()}`,
+      active: body.active ?? true,
+      updated_at: '2026-07-22T10:00:00.000Z',
+    };
+    contentState.letterTemplates = [...contentState.letterTemplates, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.patch('http://localhost:8080/api/settings/letter-templates/:code', async ({
+    params,
+    request,
+  }) => {
+    const code = params.code as LetterTypeCode;
+    const body = (await request.json()) as Partial<LetterTemplateDefinition>;
+    const index = contentState.letterTemplates.findIndex((template) => template.code === code);
+
+    if (index < 0) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Template surat tidak ditemukan' } },
+        { status: 404 },
+      );
+    }
+
+    contentState.letterTemplates[index] = {
+      ...contentState.letterTemplates[index],
+      ...body,
+      updated_at: '2026-07-22T10:00:00.000Z',
+    };
+
+    return HttpResponse.json(contentState.letterTemplates[index]);
+  }),
+  http.get('http://localhost:8080/api/settings/letter-templates/:code/preview', () =>
+    new HttpResponse(new Uint8Array([37, 80, 68, 70]).buffer, {
+      status: 200,
+      headers: { 'Content-Type': 'application/pdf' },
+    }),
+  ),
+  http.delete('http://localhost:8080/api/settings/letter-templates/:code', ({ params }) => {
+    contentState.letterTemplates = contentState.letterTemplates.filter(
+      (template) => template.code !== params.code,
+    );
+    return new HttpResponse(null, { status: 204 });
   }),
 
   /* ---------------------------------------------------------------------- */

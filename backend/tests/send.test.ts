@@ -94,16 +94,30 @@ describe('request email delivery', () => {
         to: string;
         subject: string;
         html: string;
-        attachments: Array<{ filename: string; content: Buffer; contentType: string }>;
+        attachments: Array<{
+          filename: string;
+          content: Buffer;
+          contentType: string;
+          cid?: string;
+          disposition?: 'attachment' | 'inline';
+        }>;
       },
     ];
     expect(message).toBeDefined();
     expect(message.to).toBe('budi@mail.com');
     expect(message.subject).toContain('Surat');
-    expect(message.attachments).toHaveLength(1);
-    expect(message.attachments[0].filename).toContain('GB-2026-001100');
-    expect(message.attachments[0].contentType).toBe('application/pdf');
-    expect(Buffer.isBuffer(message.attachments[0].content)).toBe(true);
+    expect(message.html).toContain('src="cid:gampong-logo.png"');
+    expect(message.attachments).toHaveLength(2);
+    const pdfAttachment = message.attachments.find((item) => item.contentType === 'application/pdf');
+    const logoAttachment = message.attachments.find((item) => item.cid === 'gampong-logo.png');
+    expect(pdfAttachment?.filename).toContain('GB-2026-001100');
+    expect(Buffer.isBuffer(pdfAttachment?.content)).toBe(true);
+    expect(logoAttachment).toMatchObject({
+      filename: 'gampong-logo.png',
+      contentType: 'image/png',
+      cid: 'gampong-logo.png',
+      disposition: 'inline',
+    });
 
     const reloaded = await testPrisma.letterRequest.findUnique({
       where: { id: created.id },

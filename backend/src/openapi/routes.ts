@@ -11,7 +11,7 @@ docsRouter.get('/docs', (_req, res) => {
   res.type('html').send(`<!doctype html>
 <html>
   <head>
-    <title>SAPA Gampong API</title>
+    <title>Gampong Blang Digital API</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>

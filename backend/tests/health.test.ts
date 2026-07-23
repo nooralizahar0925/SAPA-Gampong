@@ -8,6 +8,17 @@ describe('GET /api/health', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
   });
+
+  it('allows local mobile web origins during development', async () => {
+    const res = await request(createApp())
+      .options('/api/health')
+      .set('Origin', 'http://127.0.0.1:8092')
+      .set('Access-Control-Request-Headers', 'content-type,x-client-version');
+
+    expect(res.status).toBe(204);
+    expect(res.headers['access-control-allow-origin']).toBe('http://127.0.0.1:8092');
+    expect(res.headers['access-control-allow-headers']).toBe('content-type,x-client-version');
+  });
 });
 
 describe('error envelope', () => {

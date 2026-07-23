@@ -8,9 +8,12 @@ import { contentRouter } from './modules/content/routes';
 import { feedbackRouter } from './modules/feedback/routes';
 import { healthRouter } from './modules/health/routes';
 import { lettersRouter } from './modules/letters/routes';
+import { notificationsRouter } from './modules/notifications/routes';
+import { residentRouter } from './modules/resident/routes';
 import { requestsRouter } from './modules/requests/routes';
 import { settingsRouter } from './modules/settings/routes';
 import { uploadsRouter } from './modules/uploads/routes';
+import { usersRouter } from './modules/users/routes';
 import { verifyRouter } from './modules/verify/routes';
 
 export function createApp() {
@@ -23,8 +26,11 @@ export function createApp() {
   app.use('/api/feedback', feedbackRouter);
   app.use('/api/health', healthRouter);
   app.use('/api', lettersRouter);
+  app.use('/api/notifications', notificationsRouter);
+  app.use('/api/resident', residentRouter);
   app.use('/api/requests', requestsRouter);
   app.use('/api/settings', settingsRouter);
+  app.use('/api/settings/users', usersRouter);
   app.use('/api/uploads', uploadsRouter);
   app.use('/verify', verifyRouter);
 

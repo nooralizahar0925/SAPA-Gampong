@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/resident_email_gate.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool azanAlarm = true;
   bool letterStatus = true;
   bool villageAnnouncements = false;
@@ -52,11 +54,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => context.pushNamed(AppRouteNames.tracking),
           ),
           SapaListTile(
-            icon: Icons.mail_outline,
-            title: 'Email Tersimpan',
-            subtitle: 'asra.roniasra@gmail.com',
-            onTap: () {},
+            icon: Icons.inbox_outlined,
+            title: 'Permohonan Saya',
+            subtitle: 'Riwayat surat berdasarkan email tersimpan',
+            onTap: () => context.pushNamed(AppRouteNames.myRequests),
           ),
+          SapaListTile(
+            icon: Icons.campaign_outlined,
+            title: 'Laporan Saya',
+            subtitle: 'Riwayat pelaporan berdasarkan email tersimpan',
+            onTap: () => context.pushNamed(AppRouteNames.myFeedback),
+          ),
+          const ResidentEmailSummary(),
           const SectionTitle('Aplikasi'),
           SapaListTile(
             icon: Icons.language_outlined,
@@ -73,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SapaListTile(
             icon: Icons.info_outline,
             title: 'Tentang Aplikasi',
-            subtitle: 'SAPA Gampong · Versi 1.0.0',
+            subtitle: 'Gampong Blang Digital · Versi 1.0.0',
             trailing: const SizedBox.shrink(),
             onTap: () {},
           ),

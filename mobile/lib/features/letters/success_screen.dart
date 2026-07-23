@@ -68,14 +68,14 @@ class SuccessScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'BLG-2K7F9',
-                    style: TextStyle(
+                  Text(
+                    flowDraft.referenceCode ?? '—',
+                    key: const Key('reference-code'),
+                    style: const TextStyle(
                       color: AppTheme.villageGreen,
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 2,
-                      fontFeatures: [],
                     ),
                   ),
                   const Divider(height: 28),

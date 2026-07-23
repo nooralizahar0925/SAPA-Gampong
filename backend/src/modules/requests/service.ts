@@ -1,15 +1,16 @@
-import { Prisma, type AttachmentKind, type LetterRequest, type LetterType, type PrismaClient } from '@prisma/client';
+import { Prisma, type AttachmentKind, type LetterRequest, type LetterType, type PrismaClient, type PushPlatform } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import { env } from '../../config/env';
-import { getLetterDefinition, type LetterField } from '../letters/data';
+import { type LetterField } from '../letters/data';
+import { getLetterTemplateDefinition } from '../letters/service';
 import { signedUrl } from '../../services/storage.service';
 import { assignLetterNumber } from '../letters/number.service';
 import type { CreateRequestBodyType, PatchRequestStatusBodyType } from './schemas';
 import { canTransition, targetStatusFor } from './state-machine';
 import { revokeVerification } from '../verify/service';
-import { notifyRequestRejected } from '../notifications/service';
+import { linkDeviceTokenToRequest, notifyRequestRejected } from '../notifications/service';
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'Menunggu diproses',
@@ -22,10 +23,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export async function createPublicRequest(input: CreateRequestBodyType) {
-  const definition = getLetterDefinition(input.letter_type);
+  const definition = await getLetterTemplateDefinition(input.letter_type);
   if (!definition) {
     throw ApiError.validation('Data yang dikirim tidak valid', {
-      letter_type: 'Jenis surat tidak dikenal',
+      letter_type: 'Jenis surat tidak dikenal atau sedang tidak aktif',
     });
   }
 
@@ -39,10 +40,10 @@ export async function createPublicRequest(input: CreateRequestBodyType) {
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      return await prisma.$transaction(async (tx) => {
+      const created = await prisma.$transaction(async (tx) => {
         const referenceCode = await nextReferenceCode(tx);
 
-        const created = await tx.letterRequest.create({
+        const request = await tx.letterRequest.create({
           data: {
             referenceCode,
             letterType: input.letter_type as LetterType,
@@ -59,11 +60,21 @@ export async function createPublicRequest(input: CreateRequestBodyType) {
         });
 
         return {
-          id: created.id,
-          reference_code: created.referenceCode,
-          status: created.status,
+          id: request.id,
+          reference_code: request.referenceCode,
+          status: request.status,
         };
       });
+
+      if (input.push_token?.trim()) {
+        await linkDeviceTokenToRequest({
+          requestId: created.id,
+          token: input.push_token,
+          platform: input.push_platform as PushPlatform,
+        });
+      }
+
+      return created;
     } catch (error) {
       if (isReferenceConflict(error)) continue;
       throw error;
@@ -76,6 +87,11 @@ export async function createPublicRequest(input: CreateRequestBodyType) {
 export async function trackRequest(referenceCode: string) {
   const found = await prisma.letterRequest.findUnique({
     where: { referenceCode },
+    include: {
+      histories: {
+        orderBy: { createdAt: 'asc' },
+      },
+    },
   });
 
   if (!found) throw ApiError.notFound('Permohonan tidak ditemukan');
@@ -85,7 +101,23 @@ export async function trackRequest(referenceCode: string) {
     letter_type: found.letterType,
     status: found.status,
     status_label: STATUS_LABELS[found.status] ?? found.status,
+    created_at: found.createdAt.toISOString(),
     updated_at: found.updatedAt.toISOString(),
+    status_history: [
+      {
+        status: 'SUBMITTED' as const,
+        at: found.createdAt.toISOString(),
+        action: 'submit',
+      },
+      ...found.histories.map((history) => ({
+        status: history.toStatus,
+        at: history.createdAt.toISOString(),
+        action: history.action,
+        by: history.actorName ?? undefined,
+        reason: history.reason ?? undefined,
+        nomor_surat: history.nomorSurat ?? undefined,
+      })),
+    ],
   };
 }
 
@@ -270,7 +302,7 @@ export async function updateRequestStatus(
   });
 
   const subjectData = input.subject_data
-    ? validateSubjectData(found.letterType, input.subject_data)
+    ? await validateSubjectData(found.letterType, input.subject_data)
     : (found.subjectData as Record<string, unknown>);
 
   const result = await prisma.$transaction(async (tx) => {
@@ -333,6 +365,7 @@ export async function updateRequestStatus(
 
   if (input.action === 'reject' && input.reason?.trim()) {
     await notifyRequestRejected({
+      requestId: found.id,
       applicantEmail: found.applicantEmail,
       applicantName: found.applicantName,
       referenceCode: found.referenceCode,
@@ -356,8 +389,8 @@ function buildSubjectSchema(fields: readonly LetterField[]) {
   return z.object(shape).strict();
 }
 
-function validateSubjectData(letterType: LetterType, subjectData: Record<string, unknown>) {
-  const definition = getLetterDefinition(letterType);
+async function validateSubjectData(letterType: LetterType, subjectData: Record<string, unknown>) {
+  const definition = await getLetterTemplateDefinition(letterType, true);
   if (!definition) {
     throw ApiError.validation('Data yang dikirim tidak valid', {
       letter_type: 'Jenis surat tidak dikenal',

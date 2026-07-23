@@ -1,6 +1,9 @@
 import { clearStoredSession, getStoredSession } from '../auth/session';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+export const API_BASE_URL =
+  import.meta.env.MODE === 'test'
+    ? 'http://localhost:8080/api'
+    : (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api');
 export const PUBLIC_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export type ErrorEnvelope = {
@@ -15,7 +18,8 @@ export type AdminUser = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'approver';
+  role: 'admin' | 'operator';
+  active: boolean;
 };
 
 export type LoginResponse = {
@@ -50,6 +54,12 @@ export type LetterTypeDefinition = {
   signatory: string;
   required_attachments: string[];
   fields: LetterFieldDefinition[];
+};
+
+export type LetterTemplateDefinition = LetterTypeDefinition & {
+  id: string;
+  active: boolean;
+  updated_at: string;
 };
 
 export type RequestQueueItem = {
@@ -251,6 +261,36 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   return (await response.json()) as T;
 }
 
+async function apiBlobRequest(path: string): Promise<Blob> {
+  const session = getStoredSession();
+  const headers = new Headers();
+
+  if (session?.token) {
+    headers.set('Authorization', `Bearer ${session.token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers });
+  if (!response.ok) {
+    let envelope: ErrorEnvelope | null = null;
+    try {
+      envelope = (await response.json()) as ErrorEnvelope;
+    } catch {
+      envelope = null;
+    }
+
+    if (response.status === 401) clearStoredSession();
+
+    throw new ApiClientError(
+      response.status,
+      envelope?.error.code ?? 'SERVER_ERROR',
+      envelope?.error.message ?? 'Unexpected server error',
+      envelope?.error.fields,
+    );
+  }
+
+  return response.blob();
+}
+
 export function loginRequest(input: { email: string; password: string }) {
   return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
@@ -260,6 +300,17 @@ export function loginRequest(input: { email: string; password: string }) {
 
 export function meRequest() {
   return apiRequest<AdminUser>('/auth/me');
+}
+
+export function updateProfileRequest(input: {
+  name?: string;
+  current_password?: string;
+  password?: string;
+}) {
+  return apiRequest<AdminUser>('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
 }
 
 export function forgotPasswordRequest(input: { email: string }) {
@@ -278,6 +329,79 @@ export function resetPasswordRequest(input: { token: string; password: string })
 
 export function listLetterTypesRequest() {
   return apiRequest<LetterTypeDefinition[]>('/letter-types');
+}
+
+export function listLetterTemplatesRequest() {
+  return apiRequest<LetterTemplateDefinition[]>('/settings/letter-templates');
+}
+
+export function createLetterTemplateRequest(
+  input: { code: LetterTypeCode } & Partial<Omit<LetterTypeDefinition, 'code'>> & {
+      active?: boolean;
+    },
+) {
+  return apiRequest<LetterTemplateDefinition>('/settings/letter-templates', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateLetterTemplateRequest(
+  code: LetterTypeCode,
+  input: Partial<Omit<LetterTemplateDefinition, 'id' | 'code' | 'updated_at'>>,
+) {
+  return apiRequest<LetterTemplateDefinition>(`/settings/letter-templates/${code}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteLetterTemplateRequest(code: LetterTypeCode) {
+  return apiRequest<void>(`/settings/letter-templates/${code}`, { method: 'DELETE' });
+}
+
+export function getLetterTemplatePreviewRequest(code: LetterTypeCode) {
+  return apiBlobRequest(`/settings/letter-templates/${code}/preview`);
+}
+
+export type ManagedUser = AdminUser & {
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserRole = ManagedUser['role'];
+
+export function listUsersRequest() {
+  return apiRequest<ManagedUser[]>('/settings/users');
+}
+
+export function createUserRequest(input: {
+  name: string;
+  email: string;
+  password: string;
+  active: boolean;
+  role: UserRole;
+}) {
+  return apiRequest<ManagedUser>('/settings/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateUserRequest(
+  id: string,
+  input: Partial<{
+    name: string;
+    email: string;
+    password: string;
+    active: boolean;
+    role: UserRole;
+  }>,
+) {
+  return apiRequest<ManagedUser>(`/settings/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
 }
 
 export type RequestSortColumn =
@@ -395,7 +519,7 @@ export type UploadResponse = {
  * Uploads via multipart. Content-Type is deliberately left unset so the browser adds
  * the multipart boundary itself; apiRequest only defaults it to JSON when absent.
  */
-export function uploadFileRequest(file: File, kind: 'photo' | 'document' = 'photo') {
+export function uploadFileRequest(file: File, kind: 'photo' | 'document' | 'audio' = 'photo') {
   const body = new FormData();
   body.append('kind', kind);
   body.append('file', file);
@@ -485,6 +609,9 @@ export type PrayerConfig = {
     maghrib: string | null;
     isya: string | null;
   };
+  /** Audio azan uploaded by the admin; streamed by the mobile app. */
+  adzan_file_id: string | null;
+  adzan_url: string | null;
   updated_at: string | null;
 };
 
@@ -663,6 +790,7 @@ export function updatePrayerConfigRequest(input: {
   fallback_ashar?: string | null;
   fallback_maghrib?: string | null;
   fallback_isya?: string | null;
+  adzan_file_id?: string | null;
 }) {
   return apiRequest<PrayerConfig>('/content/prayer-config', {
     method: 'PATCH',

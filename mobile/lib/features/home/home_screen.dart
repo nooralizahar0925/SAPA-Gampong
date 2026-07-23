@@ -1,17 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/localization/strings_id.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/cached_api_image.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/mock/village_seed.dart';
+import '../../data/models/banner_slide.dart';
+import '../../data/providers/content_providers.dart';
+import '../../data/providers/letter_providers.dart';
+import '../../data/providers/resident_providers.dart';
+import '../services/services_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bannersAsync = ref.watch(bannersProvider);
+    final letterTypesAsync = ref.watch(letterTypesProvider);
+
     return SapaScaffold(
       title: StringsId.appName,
       subtitle: villageSubtitle,
@@ -25,20 +37,23 @@ class HomeScreen extends StatelessWidget {
       ],
       body: ListView(
         children: [
-          const _BannerCard(),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              _Dot(active: true),
-              _Dot(),
-              _Dot(),
-              _Dot(),
-            ],
+          bannersAsync.when(
+            loading: () => const _FallbackBanner(),
+            error: (err, stack) => const _FallbackBanner(),
+            data: (slides) {
+              final active = slides.where((s) => s.active).toList();
+              return active.isEmpty
+                  ? const _FallbackBanner()
+                  : _BannerCarousel(slides: active);
+            },
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           _PrimaryActionCard(
             key: const Key('home-letter-request'),
+            subtitle: letterTypeCountLabel(
+              letterTypesAsync,
+              suffix: 'surat keterangan resmi',
+            ),
             onTap: () => context.pushNamed(AppRouteNames.letterCatalog),
           ),
           const SectionTitle('Layanan Lainnya'),
@@ -80,47 +95,356 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SectionTitle('Permohonan Anda'),
-          SapaListTile(
-            icon: Icons.hourglass_top_outlined,
-            title: 'SKTM · BLG-2K7F9',
-            subtitle: 'Diajukan 18 Juli 2026',
-            onTap: () => context.pushNamed(AppRouteNames.tracking),
-            trailing: const _StatusPill('Ditinjau', AppTheme.warnBg, AppTheme.warn),
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => context.pushNamed(AppRouteNames.myRequests),
-              child: const Text('Lihat semua'),
-            ),
-          ),
+          const _AnnouncementCarousel(),
+          const _HomeRequestsSection(),
         ],
       ),
     );
   }
 }
 
+class _HomeRequestsSection extends ConsumerWidget {
+  const _HomeRequestsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(residentSessionProvider).asData?.value;
+    final requestsAsync = ref.watch(residentRequestsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Permohonan Anda'),
+        if (session == null)
+          SapaListTile(
+            icon: Icons.mark_email_unread_outlined,
+            title: 'Verifikasi email',
+            subtitle: 'Riwayat permohonan akan tampil setelah email tersimpan.',
+            onTap: () => context.pushNamed(AppRouteNames.settings),
+          )
+        else
+          requestsAsync.when(
+            loading: () => const Card(
+              child: Padding(
+                padding: EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Memuat permohonan...'),
+                  ],
+                ),
+              ),
+            ),
+            error: (_, _) => SapaListTile(
+              icon: Icons.inbox_outlined,
+              title: 'Riwayat belum bisa dimuat',
+              subtitle: 'Coba lagi saat koneksi tersedia.',
+              onTap: () => context.pushNamed(AppRouteNames.myRequests),
+            ),
+            data: (items) {
+              if (items.isEmpty) {
+                return SapaListTile(
+                  icon: Icons.inbox_outlined,
+                  title: 'Belum ada permohonan',
+                  subtitle: 'Permohonan baru akan tampil di sini.',
+                  onTap: () => context.pushNamed(AppRouteNames.myRequests),
+                );
+              }
+              final latest = items.first;
+              final colors = _homeStatusColors(latest.status);
+              return SapaListTile(
+                icon: Icons.hourglass_top_outlined,
+                title: latest.referenceCode,
+                subtitle:
+                    '${latest.letterType} · ${_homeDate(latest.createdAt)}',
+                onTap: () => context.pushNamed(AppRouteNames.myRequests),
+                trailing: _StatusPill(latest.statusLabel, colors.$1, colors.$2),
+              );
+            },
+          ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+            child: const Text('Lihat semua'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Static fallback shown while loading or on error.
+class _FallbackBanner extends StatelessWidget {
+  const _FallbackBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          key: const Key('home-banner-fallback'),
+          height: 176,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [AppTheme.sky500, AppTheme.g700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                bottom: -16,
+                child: Opacity(
+                  opacity: 0.16,
+                  child: Image.asset(
+                    'assets/images/logo.webp',
+                    height: 138,
+                    width: 138,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.bottomLeft,
+                child: SizedBox(
+                  width: 250,
+                  child: Text(
+                    'Gampong Blang Digital',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  'Banner informasi gampong',
+                  style: TextStyle(
+                    color: Color(0xFFE8F3ED),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [_Dot(active: true)],
+        ),
+      ],
+    );
+  }
+}
+
+class _BannerCarousel extends StatefulWidget {
+  const _BannerCarousel({required this.slides});
+
+  final List<BannerSlide> slides;
+
+  @override
+  State<_BannerCarousel> createState() => _BannerCarouselState();
+}
+
+class _BannerCarouselState extends State<_BannerCarousel> {
+  late final PageController _pageController;
+  int _current = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    if (widget.slides.length > 1) {
+      _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+        final next = (_current + 1) % widget.slides.length;
+        _pageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          key: const Key('home-banner-carousel'),
+          height: 176,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.slides.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (_, i) => _BannerCard(slide: widget.slides[i]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            widget.slides.length,
+            (i) => _Dot(active: i == _current),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _BannerCard extends StatelessWidget {
-  const _BannerCard();
+  const _BannerCard({required this.slide});
+
+  final BannerSlide slide;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 176,
+        width: double.infinity,
+        child: slide.imageUrl != null
+            ? CachedApiImage(
+                url: slide.imageUrl,
+                cacheKey: slide.imageFileId,
+                height: 176,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                fallback: _gradientBox(),
+              )
+            : _gradientBox(),
+      ),
+    );
+  }
+
+  Widget _gradientBox() => Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [AppTheme.sky500, AppTheme.g700],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+  );
+}
+
+class _AnnouncementSlide {
+  const _AnnouncementSlide({
+    required this.badge,
+    required this.title,
+    required this.body,
+  });
+
+  final String badge;
+  final String title;
+  final String body;
+}
+
+const _announcementPlaceholders = [
+  _AnnouncementSlide(
+    badge: 'PENGUMUMAN',
+    title: 'Fitur pengumuman sedang dikembangkan',
+    body: 'Informasi resmi dari Pemerintah Gampong Blang akan tampil di sini.',
+  ),
+];
+
+class _AnnouncementCarousel extends StatefulWidget {
+  const _AnnouncementCarousel();
+
+  @override
+  State<_AnnouncementCarousel> createState() => _AnnouncementCarouselState();
+}
+
+class _AnnouncementCarouselState extends State<_AnnouncementCarousel> {
+  late final PageController _pageController;
+  int _current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('home-announcement-carousel'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Pengumuman'),
+        SizedBox(
+          height: 168,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _announcementPlaceholders.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (_, i) =>
+                _AnnouncementCard(slide: _announcementPlaceholders[i]),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _announcementPlaceholders.length,
+            (i) => _Dot(active: i == _current),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnnouncementCard extends StatelessWidget {
+  const _AnnouncementCard({required this.slide});
+
+  final _AnnouncementSlide slide;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 176,
-      padding: const EdgeInsets.all(18),
+      key: const Key('home-announcement-card'),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: AppTheme.g800,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [AppTheme.deepGreen, AppTheme.villageGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -128,18 +452,35 @@ class _BannerCard extends StatelessWidget {
               color: AppTheme.accentYellow,
               borderRadius: BorderRadius.circular(999),
             ),
-            child: const Text(
-              'PENGUMUMAN',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+            child: Text(
+              slide.badge,
+              style: const TextStyle(
+                color: AppTheme.ink900,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Gotong Royong Jumat\n07.00 WIB · Dusun Kuini',
-            style: TextStyle(
+          Text(
+            slide.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            slide.body,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFCDEBDD),
+              fontSize: 12,
               height: 1.25,
             ),
           ),
@@ -150,8 +491,13 @@ class _BannerCard extends StatelessWidget {
 }
 
 class _PrimaryActionCard extends StatelessWidget {
-  const _PrimaryActionCard({super.key, required this.onTap});
+  const _PrimaryActionCard({
+    super.key,
+    required this.subtitle,
+    required this.onTap,
+  });
 
+  final String subtitle;
   final VoidCallback onTap;
 
   @override
@@ -165,9 +511,9 @@ class _PrimaryActionCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
-            children: const [
-              _PrimaryIcon(),
-              SizedBox(width: 14),
+            children: [
+              const _PrimaryIcon(),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,15 +526,18 @@ class _PrimaryActionCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      '10 jenis surat keterangan resmi',
-                      style: TextStyle(color: Color(0xFFCDEBDD), fontSize: 13),
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFFCDEBDD),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.white),
+              const Icon(Icons.chevron_right, color: Colors.white),
             ],
           ),
         ),
@@ -264,7 +613,11 @@ class _FeatureTile extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 11.5, color: AppTheme.ink500, height: 1.4),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: AppTheme.ink500,
+                  height: 1.4,
+                ),
               ),
             ],
           ),
@@ -291,6 +644,18 @@ class _Dot extends StatelessWidget {
       ),
     );
   }
+}
+
+(Color, Color) _homeStatusColors(String status) {
+  return switch (status) {
+    'SENT' || 'GENERATED' || 'APPROVED' => (AppTheme.okBg, AppTheme.ok),
+    'REJECTED' => (AppTheme.dangerBg, AppTheme.danger),
+    _ => (AppTheme.warnBg, AppTheme.warn),
+  };
+}
+
+String _homeDate(DateTime value) {
+  return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 }
 
 class _StatusPill extends StatelessWidget {

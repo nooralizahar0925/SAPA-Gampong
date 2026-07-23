@@ -1,8 +1,10 @@
 import 'package:go_router/go_router.dart';
 
 import '../../data/mock/letter_seed.dart';
+import '../../data/models/letter_type.dart';
 import '../../features/demographics/demographics_screen.dart';
 import '../../features/feedback/feedback_screen.dart';
+import '../../features/feedback/my_feedback_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/letters/attachment_screen.dart';
 import '../../features/letters/letter_catalog_screen.dart';
@@ -40,6 +42,7 @@ class AppRouteNames {
   static const prayer = 'prayer';
   static const demographics = 'demographics';
   static const feedback = 'feedback';
+  static const myFeedback = 'myFeedback';
   static const verify = 'verify';
 }
 
@@ -80,11 +83,14 @@ class AppRouter {
         builder: (context, state) => const LetterCatalogScreen(),
       ),
       GoRoute(
-        path: '/layanan/surat/:code/form',
+        path: '/layanan/surat/form',
         name: AppRouteNames.letterForm,
-        builder: (context, state) => LetterFormScreen(
-          letterType: letterTypeByCode(state.pathParameters['code'] ?? 'L1'),
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is LetterType) return LetterFormScreen(letterType: extra);
+          // Fallback: should not happen in normal flow — return to catalog.
+          return const LetterCatalogScreen();
+        },
       ),
       GoRoute(
         path: '/layanan/surat/tujuan',
@@ -165,9 +171,19 @@ class AppRouter {
         builder: (context, state) => const FeedbackScreen(),
       ),
       GoRoute(
+        path: '/laporan-saya',
+        name: AppRouteNames.myFeedback,
+        builder: (context, state) => const MyFeedbackScreen(),
+      ),
+      GoRoute(
         path: '/verify',
         name: AppRouteNames.verify,
         builder: (context, state) => const VerificationScreen(),
+      ),
+      GoRoute(
+        path: '/verify/:token',
+        builder: (context, state) =>
+            VerificationScreen(initialToken: state.pathParameters['token']),
       ),
     ],
   );

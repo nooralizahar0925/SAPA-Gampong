@@ -32,7 +32,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/email-provider',
   tags: ['Settings'],
   summary: 'Get the current email provider selection and provider readiness',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   responses: {
     200: {
       description: 'Current email provider settings',
@@ -51,7 +51,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/email-provider',
   tags: ['Settings'],
   summary: 'Update the active email provider',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   body: UpdateEmailProviderBody,
   responses: {
     200: {
@@ -73,7 +73,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/email-provider/config',
   tags: ['Settings'],
   summary: 'Save email provider configuration values',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   body: UpdateEmailProviderConfigBody,
   responses: {
     200: {
@@ -94,7 +94,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/email-provider/test',
   tags: ['Settings'],
   summary: 'Send a test email using the selected provider',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   body: TestEmailProviderBody,
   responses: {
     200: {
@@ -116,7 +116,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/app',
   tags: ['Settings'],
   summary: 'Get contact, letterhead, and signatory settings',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   responses: {
     200: {
       description: 'Current application settings',
@@ -135,7 +135,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/app',
   tags: ['Settings'],
   summary: 'Update contact, letterhead, and signatory settings',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   body: UpdateAppSettingsBody,
   responses: {
     200: {
@@ -156,7 +156,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/letter-counters',
   tags: ['Settings'],
   summary: 'List letter-number counters for a year',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   query: LetterCountersQuery,
   responses: {
     200: {
@@ -177,7 +177,7 @@ defineRoute(settingsRouter, {
   fullPath: '/api/settings/letter-counters',
   tags: ['Settings'],
   summary: 'Set the last used number for a letter type and year',
-  auth: 'admin',
+  auth: { roles: ['admin'] },
   body: UpdateLetterCounterBody,
   responses: {
     200: {

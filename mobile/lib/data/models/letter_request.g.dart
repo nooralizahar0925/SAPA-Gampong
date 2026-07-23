@@ -46,12 +46,40 @@ Map<String, dynamic> _$CreatedRequestToJson(_CreatedRequest instance) =>
       'status': instance.status,
     };
 
+_TrackStatusHistory _$TrackStatusHistoryFromJson(Map<String, dynamic> json) =>
+    _TrackStatusHistory(
+      status: json['status'] as String,
+      at: DateTime.parse(json['at'] as String),
+      action: json['action'] as String?,
+      by: json['by'] as String?,
+      reason: json['reason'] as String?,
+      nomorSurat: json['nomor_surat'] as String?,
+    );
+
+Map<String, dynamic> _$TrackStatusHistoryToJson(_TrackStatusHistory instance) =>
+    <String, dynamic>{
+      'status': instance.status,
+      'at': instance.at.toIso8601String(),
+      'action': instance.action,
+      'by': instance.by,
+      'reason': instance.reason,
+      'nomor_surat': instance.nomorSurat,
+    };
+
 _TrackStatus _$TrackStatusFromJson(Map<String, dynamic> json) => _TrackStatus(
   referenceCode: json['reference_code'] as String,
   letterType: json['letter_type'] as String,
   status: json['status'] as String,
   statusLabel: json['status_label'] as String,
+  createdAt: json['created_at'] == null
+      ? null
+      : DateTime.parse(json['created_at'] as String),
   updatedAt: DateTime.parse(json['updated_at'] as String),
+  statusHistory:
+      (json['status_history'] as List<dynamic>?)
+          ?.map((e) => TrackStatusHistory.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$TrackStatusToJson(_TrackStatus instance) =>
@@ -60,5 +88,7 @@ Map<String, dynamic> _$TrackStatusToJson(_TrackStatus instance) =>
       'letter_type': instance.letterType,
       'status': instance.status,
       'status_label': instance.statusLabel,
+      'created_at': instance.createdAt?.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
+      'status_history': instance.statusHistory,
     };

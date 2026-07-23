@@ -26,7 +26,7 @@ registry.registerPath({
   method: 'post',
   path: '/api/uploads',
   tags: ['Uploads'],
-  summary: 'Upload an image or PDF attachment',
+  summary: 'Upload an image, PDF, or audio file',
   request: {
     body: {
       content: {

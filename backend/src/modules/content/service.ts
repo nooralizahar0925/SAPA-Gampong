@@ -46,6 +46,8 @@ const EMPTY_PRAYER_CONFIG = {
     maghrib: null,
     isya: null,
   },
+  adzan_file_id: null,
+  adzan_url: null,
   updated_at: null,
 };
 
@@ -71,6 +73,17 @@ async function assertFileExists(fileId: string | null | undefined): Promise<void
   if (!fileId) return;
   const file = await prisma.file.findUnique({ where: { id: fileId }, select: { id: true } });
   if (!file) throw ApiError.notFound('File tidak ditemukan');
+}
+
+async function assertAudioFile(fileId: string | null | undefined): Promise<void> {
+  if (!fileId) return;
+  const file = await prisma.file.findUnique({ where: { id: fileId }, select: { mime: true } });
+  if (!file) throw ApiError.notFound('File tidak ditemukan');
+  if (!file.mime.startsWith('audio/')) {
+    throw ApiError.validation('Data yang dikirim tidak valid', {
+      adzan_file_id: 'File audio azan harus berupa audio',
+    });
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -581,6 +594,8 @@ export async function getPrayerConfig() {
       maghrib: row.fallbackMaghrib,
       isya: row.fallbackIsya,
     },
+    adzan_file_id: row.adzanFileId,
+    adzan_url: fileUrl(row.adzanFileId),
     updated_at: row.updatedAt.toISOString(),
   };
 }
@@ -599,6 +614,7 @@ export async function updatePrayerConfig(input: {
   fallback_ashar?: string | null;
   fallback_maghrib?: string | null;
   fallback_isya?: string | null;
+  adzan_file_id?: string | null;
 }) {
   const existing = await prisma.prayerConfig.findUnique({ where: { id: SINGLETON_ID } });
 
@@ -611,6 +627,8 @@ export async function updatePrayerConfig(input: {
       );
     }
   }
+
+  if (isSupplied(input.adzan_file_id)) await assertAudioFile(input.adzan_file_id);
 
   // Split rather than upsert — see the note in updateProfile.
   if (existing) {
@@ -630,6 +648,7 @@ export async function updatePrayerConfig(input: {
         fallbackAshar: input.fallback_ashar,
         fallbackMaghrib: input.fallback_maghrib,
         fallbackIsya: input.fallback_isya,
+        adzanFileId: input.adzan_file_id,
       }),
     });
   } else {
@@ -650,6 +669,7 @@ export async function updatePrayerConfig(input: {
           fallbackAshar: input.fallback_ashar,
           fallbackMaghrib: input.fallback_maghrib,
           fallbackIsya: input.fallback_isya,
+          adzanFileId: input.adzan_file_id,
         }),
       },
     });

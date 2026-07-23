@@ -1,6 +1,6 @@
 import type { AdminUser } from '../api/client';
 
-const STORAGE_KEY = 'sapa-dashboard-session';
+const STORAGE_KEY = 'gampong-blang-digital-dashboard-session';
 const memoryStorage = new Map<string, string>();
 
 export type StoredSession = {
@@ -30,6 +30,10 @@ export function clearStoredSession() {
 
 export function isAuthenticated() {
   return Boolean(getStoredSession()?.token);
+}
+
+export function isSystemAdmin() {
+  return getStoredSession()?.user.role === 'admin';
 }
 
 type SafeStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'clear'>;

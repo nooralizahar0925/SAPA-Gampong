@@ -19,6 +19,7 @@ const FIXED_BLOCK_KEYS = new Set(['jumlah_penduduk', 'jenis_kelamin', 'total_pen
 type Entry = { id: number; label: string; value: string };
 
 type DraftBlock = Omit<DemographicBlock, 'data'> & { entries: Entry[] };
+type DraggedEntry = { blockKey: string; entryId: number };
 
 let entrySeq = 0;
 
@@ -44,21 +45,34 @@ function toKey(label: string): string {
 }
 
 function toDraft(block: DemographicBlock): DraftBlock {
-  const data = (block.data ?? {}) as Record<string, unknown>;
+  const data = block.data ?? {};
+  let entries: Entry[];
 
-  const entries: Entry[] = Object.entries(data)
-    .filter(([, value]) => typeof value === 'number')
-    .map(([key, value]) => ({ id: entrySeq++, label: humanize(key), value: String(value) }));
+  if (Array.isArray(data)) {
+    // New ordered-array format: [{label: "SD", value: 412}, ...]
+    entries = (data as Array<{ label: string; value: number }>).map((item) => ({
+      id: entrySeq++,
+      label: String(item.label ?? ''),
+      value: String(item.value ?? 0),
+    }));
+  } else {
+    // Legacy map format: {sd: 412, smp: 336, ...} — fixed blocks or old data
+    entries = Object.entries(data as Record<string, unknown>)
+      .filter(([, value]) => typeof value === 'number')
+      .map(([key, value]) => ({ id: entrySeq++, label: humanize(key), value: String(value) }));
+  }
 
   const { data: _data, ...rest } = block;
   return { ...rest, entries };
 }
 
 /**
- * Rebuilds `data`. Fixed blocks keep their original keys so the citizen app keeps
- * finding `value` / `laki_laki` / `perempuan`; open blocks derive keys from labels.
+ * Rebuilds `data`.
+ * Fixed blocks keep their original map format so the mobile app can read {value},
+ * {laki_laki, perempuan} by key. Non-fixed blocks use an ordered array so the mobile
+ * preserves both the admin-entered label text and display order.
  */
-function toData(block: DraftBlock, original: DemographicBlock | undefined): Record<string, number> {
+function toData(block: DraftBlock, original: DemographicBlock | undefined): unknown {
   if (FIXED_BLOCK_KEYS.has(block.key)) {
     const originalKeys = Object.keys((original?.data ?? {}) as Record<string, unknown>);
     const data: Record<string, number> = {};
@@ -71,23 +85,16 @@ function toData(block: DraftBlock, original: DemographicBlock | undefined): Reco
     return data;
   }
 
-  const data: Record<string, number> = {};
-
-  for (const entry of block.entries) {
-    if (!entry.label.trim()) continue;
-
-    let key = toKey(entry.label);
-    let suffix = 2;
-    while (key in data) key = `${toKey(entry.label)}_${suffix++}`;
-
-    data[key] = Number(entry.value) || 0;
-  }
-
-  return data;
+  // Non-fixed: ordered array — label and insertion order both preserved.
+  return block.entries
+    .filter((e) => e.label.trim())
+    .map((e) => ({ label: e.label.trim(), value: Number(e.value) || 0 }));
 }
 
 export function DemographicsTab() {
   const [blocks, setBlocks] = useState<DraftBlock[]>([]);
+  const [draggingEntry, setDraggingEntry] = useState<DraggedEntry | null>(null);
+  const [overEntry, setOverEntry] = useState<DraggedEntry | null>(null);
   const markDirty = useMarkDirty();
 
   const query = useQuery({
@@ -130,6 +137,45 @@ export function DemographicsTab() {
         entry.id === id ? { ...entry, [field]: next } : entry,
       ),
     }));
+  }
+
+  function moveEntry(blockKey: string, index: number, direction: -1 | 1) {
+    updateBlock(blockKey, (block) => {
+      const target = index + direction;
+      if (target < 0 || target >= block.entries.length) return block;
+
+      const entries = [...block.entries];
+      const [moved] = entries.splice(index, 1);
+      entries.splice(target, 0, moved);
+
+      return { ...block, entries };
+    });
+  }
+
+  function moveEntryTo(blockKey: string, entryId: number, targetEntryId: number) {
+    const currentBlock = blocks.find((block) => block.key === blockKey);
+    const from = currentBlock?.entries.findIndex((entry) => entry.id === entryId) ?? -1;
+    const to = currentBlock?.entries.findIndex((entry) => entry.id === targetEntryId) ?? -1;
+
+    if (from < 0 || to < 0 || from === to) return;
+
+    markDirty();
+    setBlocks((prev) =>
+      prev.map((block) => {
+        if (block.key !== blockKey) return block;
+
+        const entries = [...block.entries];
+        const currentFrom = entries.findIndex((entry) => entry.id === entryId);
+        const currentTo = entries.findIndex((entry) => entry.id === targetEntryId);
+
+        if (currentFrom < 0 || currentTo < 0 || currentFrom === currentTo) return block;
+
+        const [moved] = entries.splice(currentFrom, 1);
+        entries.splice(currentTo, 0, moved);
+
+        return { ...block, entries };
+      }),
+    );
   }
 
   return (
@@ -190,6 +236,9 @@ export function DemographicsTab() {
                   <table className="data-table">
                     <thead>
                       <tr>
+                        <th scope="col" className="col-drag">
+                          <span className="visually-hidden">Urutan</span>
+                        </th>
                         <th scope="col">Label</th>
                         <th scope="col" className="col-count">
                           Jumlah
@@ -200,47 +249,121 @@ export function DemographicsTab() {
                       </tr>
                     </thead>
                     <tbody>
-                      {block.entries.map((entry, index) => (
-                        <tr key={entry.id}>
-                          <td>
-                            <input
-                              className="cell-input"
-                              value={entry.label}
-                              placeholder="Misalnya SD/Sederajat"
-                              aria-label={`${block.label} · Label ${index + 1}`}
-                              onChange={(event) =>
-                                setEntry(block.key, entry.id, 'label', event.target.value)
+                      {block.entries.map((entry, index) => {
+                        const isDragging =
+                          draggingEntry?.blockKey === block.key &&
+                          draggingEntry.entryId === entry.id;
+                        const isDropTarget =
+                          overEntry?.blockKey === block.key &&
+                          overEntry.entryId === entry.id &&
+                          !isDragging;
+
+                        return (
+                          <tr
+                            key={entry.id}
+                            className={[
+                              'demographic-row',
+                              isDragging ? 'dragging' : '',
+                              isDropTarget ? 'drop-target' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            onDragOver={(event) => {
+                              if (draggingEntry?.blockKey !== block.key) return;
+                              event.preventDefault();
+                              event.dataTransfer.dropEffect = 'move';
+                              setOverEntry({ blockKey: block.key, entryId: entry.id });
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault();
+
+                              if (draggingEntry?.blockKey === block.key) {
+                                moveEntryTo(block.key, draggingEntry.entryId, entry.id);
                               }
-                            />
-                          </td>
-                          <td className="col-count">
-                            <input
-                              className="cell-input"
-                              type="number"
-                              value={entry.value}
-                              aria-label={`${block.label} · Jumlah ${index + 1}`}
-                              onChange={(event) =>
-                                setEntry(block.key, entry.id, 'value', event.target.value)
-                              }
-                            />
-                          </td>
-                          <td className="col-actions">
-                            <button
-                              className="ghost-button danger"
-                              type="button"
-                              aria-label={`Hapus ${entry.label || `baris ${index + 1}`}`}
-                              onClick={() =>
-                                updateBlock(block.key, (b) => ({
-                                  ...b,
-                                  entries: b.entries.filter((e) => e.id !== entry.id),
-                                }))
-                              }
-                            >
-                              <AppIcon name="x" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+
+                              setDraggingEntry(null);
+                              setOverEntry(null);
+                            }}
+                          >
+                            <td className="col-drag">
+                              <span
+                                className="demographic-drag-handle"
+                                draggable
+                                title={`Seret ${entry.label || `baris ${index + 1}`}`}
+                                aria-hidden="true"
+                                onDragStart={(event) => {
+                                  event.dataTransfer.effectAllowed = 'move';
+                                  event.dataTransfer.setData('text/plain', String(entry.id));
+                                  setDraggingEntry({ blockKey: block.key, entryId: entry.id });
+                                }}
+                                onDragEnd={() => {
+                                  setDraggingEntry(null);
+                                  setOverEntry(null);
+                                }}
+                              >
+                                <AppIcon name="filter" />
+                              </span>
+                            </td>
+                            <td>
+                              <input
+                                className="cell-input"
+                                value={entry.label}
+                                placeholder="Misalnya SD/Sederajat"
+                                aria-label={`${block.label} · Label ${index + 1}`}
+                                onChange={(event) =>
+                                  setEntry(block.key, entry.id, 'label', event.target.value)
+                                }
+                              />
+                            </td>
+                            <td className="col-count">
+                              <input
+                                className="cell-input"
+                                type="number"
+                                value={entry.value}
+                                aria-label={`${block.label} · Jumlah ${index + 1}`}
+                                onChange={(event) =>
+                                  setEntry(block.key, entry.id, 'value', event.target.value)
+                                }
+                              />
+                            </td>
+                            <td className="col-actions">
+                              <div className="demographic-row-actions">
+                                <button
+                                  className="ghost-button"
+                                  type="button"
+                                  aria-label={`Naikkan ${entry.label || `baris ${index + 1}`}`}
+                                  disabled={index === 0}
+                                  onClick={() => moveEntry(block.key, index, -1)}
+                                >
+                                  <AppIcon name="chevronUp" />
+                                </button>
+                                <button
+                                  className="ghost-button"
+                                  type="button"
+                                  aria-label={`Turunkan ${entry.label || `baris ${index + 1}`}`}
+                                  disabled={index === block.entries.length - 1}
+                                  onClick={() => moveEntry(block.key, index, 1)}
+                                >
+                                  <AppIcon name="chevronDown" />
+                                </button>
+                                <button
+                                  className="ghost-button danger"
+                                  type="button"
+                                  aria-label={`Hapus ${entry.label || `baris ${index + 1}`}`}
+                                  onClick={() =>
+                                    updateBlock(block.key, (b) => ({
+                                      ...b,
+                                      entries: b.entries.filter((e) => e.id !== entry.id),
+                                    }))
+                                  }
+                                >
+                                  <AppIcon name="x" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

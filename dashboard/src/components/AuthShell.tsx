@@ -18,7 +18,7 @@ export function AuthShell({ title, copy, children }: AuthShellProps) {
             <div className="login-crest">
               <img src={crestLogo} alt="Logo Pemerintah Aceh Jaya" className="login-crest-image" />
             </div>
-            <div className="login-brand-kicker">Pemerintah Gampong Blang</div>
+            <div className="login-brand-kicker">Gampong Blang Digital</div>
             <h1>
               Dashboard Administrasi
               <br />&amp; Publikasi Gampong

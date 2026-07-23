@@ -51,7 +51,8 @@ export const AdminUserPublic = registry.register(
     id: z.string(),
     name: z.string(),
     email: z.string().email(),
-    role: z.enum(['admin', 'approver']),
+    role: z.enum(['admin', 'operator']),
+    active: z.boolean(),
   }),
 );
 
@@ -63,5 +64,20 @@ export const LoginResponse = registry.register(
   }),
 );
 
+export const UpdateProfileBody = registry.register(
+  'UpdateProfileBody',
+  z
+    .object({
+      name: z.string().min(2, 'Nama minimal 2 karakter').max(120).optional(),
+      current_password: z.string().min(1, 'Kata sandi saat ini wajib diisi').optional(),
+      password: z.string().min(8, 'Kata sandi baru minimal 8 karakter').optional(),
+    })
+    .refine((body) => !body.password || Boolean(body.current_password), {
+      message: 'Kata sandi saat ini wajib diisi',
+      path: ['current_password'],
+    }),
+);
+
 export type LoginBodyType = z.infer<typeof LoginBody>;
 export type AdminUserPublicType = z.infer<typeof AdminUserPublic>;
+export type UpdateProfileBodyType = z.infer<typeof UpdateProfileBody>;

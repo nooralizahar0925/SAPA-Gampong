@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createBannerRequest,
   deleteBannerRequest,
@@ -10,51 +10,86 @@ import {
 } from '../../api/client';
 import { alertApiError, confirmDelete, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
+import { useMarkDirty, useRegisterSave } from './save-context';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
-/** Moves `index` one slot toward `direction`, returning the new id order. */
-function reordered(banners: BannerSlide[], index: number, direction: -1 | 1): string[] {
+type DraftBanner = BannerSlide & {
+  isNew?: boolean;
+  localId: string;
+};
+
+/** Moves `index` one slot toward `direction`, returning the new local list. */
+function reordered(banners: DraftBanner[], index: number, direction: -1 | 1): DraftBanner[] {
   const next = [...banners];
   const target = index + direction;
-  if (target < 0 || target >= next.length) return next.map((b) => b.id);
+  if (target < 0 || target >= next.length) return next;
 
   [next[index], next[target]] = [next[target], next[index]];
-  return next.map((b) => b.id);
+  return next.map((banner, order) => ({ ...banner, order }));
+}
+
+function sameOrder(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 export function BannerTab() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
+  const tempSeq = useRef(0);
   const [uploading, setUploading] = useState(false);
+  const [drafts, setDrafts] = useState<DraftBanner[]>([]);
+  const markDirty = useMarkDirty();
 
   const query = useQuery({
     queryKey: ['content', 'banners'],
     queryFn: listBannersRequest,
   });
 
+  useEffect(() => {
+    if (!query.data) return;
+    setDrafts(query.data.map((banner) => ({ ...banner, localId: banner.id })));
+  }, [query.data]);
+
   function invalidate() {
     return queryClient.invalidateQueries({ queryKey: ['content', 'banners'] });
   }
 
-  const reorderMutation = useMutation({
-    mutationFn: reorderBannersRequest,
-    onSuccess: invalidate,
-    onError: (error) => alertApiError(error, 'Urutan banner gagal disimpan.'),
-  });
+  useRegisterSave(async () => {
+    const original = query.data ?? [];
+    const originalIds = original.map((banner) => banner.id);
+    const keptOriginalIds = drafts.filter((banner) => !banner.isNew).map((banner) => banner.id);
+    const deletedIds = originalIds.filter((id) => !keptOriginalIds.includes(id));
+    const createdIds = new Map<string, string>();
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteBannerRequest,
-    onSuccess: async () => {
-      await invalidate();
-      toastSuccess('Banner dihapus');
-    },
-    onError: (error) => alertApiError(error, 'Banner gagal dihapus.'),
-  });
+    for (const id of deletedIds) {
+      await deleteBannerRequest(id);
+    }
 
-  const banners = query.data ?? [];
+    for (const [index, banner] of drafts.entries()) {
+      if (!banner.isNew) continue;
+      const created = await createBannerRequest({
+        image_file_id: banner.image_file_id,
+        order: index,
+        active: banner.active,
+      });
+      createdIds.set(banner.localId, created.id);
+    }
 
-  /** Upload then immediately create the slide, so one file pick adds one banner. */
+    const finalIds = drafts.map((banner) =>
+      banner.isNew ? createdIds.get(banner.localId)! : banner.id,
+    );
+
+    if (finalIds.length > 0 && !sameOrder(finalIds, originalIds)) {
+      await reorderBannersRequest(finalIds);
+    }
+
+    await invalidate();
+  }, [drafts, query.data]);
+
+  const banners = drafts;
+
+  /** Upload the file now, then stage the banner row until the header save is pressed. */
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
       alertApiError({ message: 'Banner harus berupa gambar (JPG, PNG, atau WebP).' });
@@ -69,9 +104,24 @@ export function BannerTab() {
     setUploading(true);
     try {
       const uploaded = await uploadFileRequest(file, 'photo');
-      await createBannerRequest({ image_file_id: uploaded.file_id, order: banners.length });
-      await invalidate();
-      toastSuccess('Banner ditambahkan');
+      const localId = `new-banner-${Date.now()}-${tempSeq.current++}`;
+      setDrafts((prev) => [
+        ...prev,
+        {
+          id: localId,
+          localId,
+          isNew: true,
+          image_file_id: uploaded.file_id,
+          image_url: uploaded.url,
+          link_url: null,
+          order: prev.length,
+          active: true,
+          start_at: null,
+          end_at: null,
+        },
+      ]);
+      markDirty();
+      toastSuccess('Banner siap disimpan');
     } catch (err) {
       alertApiError(err, 'Banner gagal diunggah.');
     } finally {
@@ -80,13 +130,25 @@ export function BannerTab() {
     }
   }
 
-  async function requestDelete(index: number, banner: BannerSlide) {
+  function moveBanner(index: number, direction: -1 | 1) {
+    markDirty();
+    setDrafts((prev) => reordered(prev, index, direction));
+  }
+
+  async function requestDelete(index: number, banner: DraftBanner) {
     const confirmed = await confirmDelete({
       title: `Hapus banner ${index + 1}?`,
       text: 'Banner ini tidak akan tampil lagi pada carousel beranda.',
     });
 
-    if (confirmed) deleteMutation.mutate(banner.id);
+    if (confirmed) {
+      markDirty();
+      setDrafts((prev) =>
+        prev
+          .filter((item) => item.localId !== banner.localId)
+          .map((item, order) => ({ ...item, order })),
+      );
+    }
   }
 
   return (
@@ -150,8 +212,8 @@ export function BannerTab() {
                     className="ghost-button"
                     type="button"
                     aria-label={`Naikkan banner ${index + 1}`}
-                    disabled={index === 0 || reorderMutation.isPending}
-                    onClick={() => reorderMutation.mutate(reordered(banners, index, -1))}
+                    disabled={index === 0}
+                    onClick={() => moveBanner(index, -1)}
                   >
                     <AppIcon name="chevronUp" />
                   </button>
@@ -159,8 +221,8 @@ export function BannerTab() {
                     className="ghost-button"
                     type="button"
                     aria-label={`Turunkan banner ${index + 1}`}
-                    disabled={index === banners.length - 1 || reorderMutation.isPending}
-                    onClick={() => reorderMutation.mutate(reordered(banners, index, 1))}
+                    disabled={index === banners.length - 1}
+                    onClick={() => moveBanner(index, 1)}
                   >
                     <AppIcon name="chevronDown" />
                   </button>
@@ -168,7 +230,6 @@ export function BannerTab() {
                     className="ghost-button danger"
                     type="button"
                     aria-label={`Hapus banner ${index + 1}`}
-                    disabled={deleteMutation.isPending}
                     onClick={() => void requestDelete(index, banner)}
                   >
                     <AppIcon name="x" />

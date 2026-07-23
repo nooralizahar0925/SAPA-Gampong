@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/sapa_scaffold.dart';
+import '../../data/models/letter_request.dart';
+import '../../data/providers/letter_providers.dart';
 
-class TrackingScreen extends StatefulWidget {
+class TrackingScreen extends ConsumerStatefulWidget {
   const TrackingScreen({super.key});
 
   @override
-  State<TrackingScreen> createState() => _TrackingScreenState();
+  ConsumerState<TrackingScreen> createState() => _TrackingScreenState();
 }
 
-class _TrackingScreenState extends State<TrackingScreen> {
-  final controller = TextEditingController(text: 'BLG-2K7F9');
-  bool searched = true;
+class _TrackingScreenState extends ConsumerState<TrackingScreen> {
+  final _controller = TextEditingController();
+  bool _loading = false;
+  TrackStatus? _status;
+  String? _error;
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -24,130 +29,303 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Widget build(BuildContext context) {
     return SapaScaffold(
       title: 'Lacak Permohonan',
-      subtitle: searched ? controller.text : 'Masukkan kode',
+      subtitle: _status != null ? _status!.referenceCode : 'Masukkan kode',
       leading: const SapaBackButton(),
       body: ListView(
         children: [
           TextField(
-            controller: controller,
+            controller: _controller,
+            textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               labelText: 'Kode Permohonan',
+              hintText: 'Contoh: BLG-A1B2',
               suffixIcon: IconButton(
-                onPressed: () => setState(() => searched = true),
-                icon: const Icon(Icons.search),
+                key: const Key('tracking-search'),
+                onPressed: _loading ? null : _search,
+                icon: _loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.search),
+              ),
+            ),
+            onSubmitted: (_) => _search(),
+          ),
+          const SizedBox(height: 16),
+          if (_loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          if (_error != null && !_loading) _ErrorCard(message: _error!),
+          if (_status != null && !_loading) _StatusResult(status: _status!),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _search() async {
+    final code = _controller.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _loading = true;
+      _status = null;
+      _error = null;
+    });
+
+    try {
+      final result = await ref.read(letterRepositoryProvider).track(code);
+      if (!mounted) return;
+      setState(() {
+        _status = result;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Kode tidak ditemukan. Periksa kembali kode permohonan Anda.';
+        _loading = false;
+      });
+    }
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('tracking-error'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.warnBg,
+        border: Border.all(color: AppTheme.warn.withAlpha(80)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppTheme.warn, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppTheme.warn,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          if (searched) ...[
-            // Summary card with status badge
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusResult extends StatelessWidget {
+  const _StatusResult({required this.status});
+
+  final TrackStatus status;
+
+  static const _steps = [
+    'Permohonan diajukan',
+    'Diterima di kantor keuchik',
+    'Ditinjau petugas',
+    'Disetujui Keuchik',
+    'Surat dibuat & ditandatangani',
+    'Surat dikirim ke email',
+  ];
+
+  static int _doneCount(String s) => switch (s) {
+    'SUBMITTED' || 'pending' => 0,
+    'IN_REVIEW' || 'under_review' => 2,
+    'NEEDS_INFO' => 2,
+    'APPROVED' || 'approved' => 3,
+    'GENERATED' || 'signed' => 4,
+    'SENT' || 'sent' => 6,
+    'REJECTED' => 1,
+    _ => 0,
+  };
+
+  static int _currentStep(String s) => switch (s) {
+    'SUBMITTED' || 'pending' => 0,
+    'IN_REVIEW' || 'under_review' => 2,
+    'NEEDS_INFO' => 2,
+    'APPROVED' || 'approved' => 3,
+    'GENERATED' || 'signed' => 4,
+    'SENT' || 'sent' => -1,
+    'REJECTED' => -1,
+    _ => 0,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final doneCount = _doneCount(status.status);
+    final currentStep = _currentStep(status.status);
+    final datesByStep = _datesByStep(status);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            controller.text,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+                    Expanded(
+                      child: Text(
+                        status.referenceCode,
+                        key: const Key('tracking-reference-code'),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppTheme.warnBg,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            'Sedang Ditinjau',
-                            style: TextStyle(
-                              color: AppTheme.warn,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Surat Keterangan Miskin',
-                      style: TextStyle(color: AppTheme.ink500),
+                    _StatusBadge(
+                      status: status.status,
+                      label: status.statusLabel,
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  status.letterType,
+                  style: const TextStyle(color: AppTheme.ink500),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Diperbarui: ${_fmt(status.updatedAt)}',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.ink500),
+                ),
+              ],
             ),
-            // Email info alert
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.g50,
-                border: Border.all(color: AppTheme.g300),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.mail_outline, size: 16, color: AppTheme.g700),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Surat jadi akan dikirim ke asra.roniasra@gmail.com',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.g700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SectionTitle('Riwayat Status'),
-            const _TimelineStep(
-              done: true,
-              title: 'Permohonan diajukan',
-              subtitle: '18 Jul 2026 · 09.41 WIB',
-            ),
-            const _TimelineStep(
-              done: true,
-              title: 'Diterima di kantor keuchik',
-              subtitle: '18 Jul 2026 · 11.00 WIB',
-            ),
-            const _TimelineStep(
-              isNow: true,
-              title: 'Ditinjau petugas',
-              subtitle: 'Sedang dalam peninjauan',
-            ),
-            const _TimelineStep(
-              title: 'Disetujui Keuchik',
-              subtitle: 'Menunggu persetujuan',
-            ),
-            const _TimelineStep(
-              title: 'Surat dibuat & ditandatangani',
-              subtitle: 'Menunggu',
-            ),
-            const _TimelineStep(
-              title: 'Surat dikirim ke email',
-              subtitle: 'Menunggu',
-              isLast: true,
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.phone_outlined, size: 18),
-              label: const Text('Hubungi Kantor Keuchik'),
-            ),
-          ],
-        ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        const SectionTitle('Riwayat Status'),
+        for (var i = 0; i < _steps.length; i++)
+          _TimelineStep(
+            done: i < doneCount,
+            isNow: i == currentStep,
+            isLast: i == _steps.length - 1,
+            title: _steps[i],
+            subtitle: i < doneCount
+                ? _doneSubtitle(datesByStep[i])
+                : i == currentStep
+                ? _fmt(datesByStep[i] ?? status.updatedAt)
+                : 'Menunggu',
+          ),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.phone_outlined, size: 18),
+          label: const Text('Hubungi Kantor Keuchik'),
+        ),
+      ],
+    );
+  }
+
+  static String _doneSubtitle(DateTime? at) =>
+      at == null ? 'Selesai' : _fmt(at);
+
+  static Map<int, DateTime> _datesByStep(TrackStatus status) {
+    final dates = <int, DateTime>{};
+    final createdAt = status.createdAt;
+    if (createdAt != null) dates[0] = createdAt;
+
+    for (final item in status.statusHistory) {
+      switch (item.status) {
+        case 'SUBMITTED':
+        case 'pending':
+          dates[0] ??= item.at;
+        case 'IN_REVIEW':
+        case 'under_review':
+        case 'NEEDS_INFO':
+          dates[2] = item.at;
+        case 'APPROVED':
+        case 'approved':
+          dates[3] = item.at;
+        case 'GENERATED':
+        case 'signed':
+          dates[4] = item.at;
+        case 'SENT':
+        case 'sent':
+          dates[5] = item.at;
+      }
+    }
+
+    final currentStep = _currentStep(status.status);
+    if (currentStep >= 0) {
+      dates[currentStep] ??= status.updatedAt;
+    } else if (status.status == 'SENT' || status.status == 'sent') {
+      dates[5] ??= status.updatedAt;
+    }
+
+    return dates;
+  }
+
+  static String _fmt(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year} · $h.$m WIB';
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status, required this.label});
+
+  final String status;
+  final String label;
+
+  bool get _positive =>
+      status == 'APPROVED' ||
+      status == 'GENERATED' ||
+      status == 'SENT' ||
+      status == 'approved' ||
+      status == 'signed' ||
+      status == 'sent';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: _positive ? AppTheme.okBg : AppTheme.warnBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: _positive ? AppTheme.ok : AppTheme.warn,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -173,8 +351,8 @@ class _TimelineStep extends StatelessWidget {
     final Color dotColor = isNow
         ? AppTheme.gold500
         : done
-            ? AppTheme.villageGreen
-            : AppTheme.ink300;
+        ? AppTheme.villageGreen
+        : AppTheme.ink300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,12 +366,12 @@ class _TimelineStep extends StatelessWidget {
                 color: isNow
                     ? AppTheme.warnBg
                     : done
-                        ? AppTheme.okBg
-                        : AppTheme.g50,
+                    ? AppTheme.okBg
+                    : AppTheme.g50,
                 shape: BoxShape.circle,
                 border: Border.all(color: dotColor, width: 2),
               ),
-              child: isNow || done
+              child: (isNow || done)
                   ? Icon(
                       isNow ? Icons.access_time : Icons.check,
                       size: 12,

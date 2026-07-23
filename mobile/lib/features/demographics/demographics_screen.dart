@@ -1,288 +1,464 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/sapa_scaffold.dart';
-import '../../data/mock/village_seed.dart';
+import '../../data/models/demographic_block.dart';
+import '../../data/providers/content_providers.dart';
 
-class DemographicsScreen extends StatelessWidget {
+class DemographicsScreen extends ConsumerWidget {
   const DemographicsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final male = demographics['male']!;
-    final female = demographics['female']!;
-    final total = demographics['total']!;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final blocksAsync = ref.watch(demographicsProvider);
 
     return SapaScaffold(
       title: 'Demografi',
       subtitle: 'Data umum Gampong Blang',
       leading: const SapaBackButton(),
-      body: ListView(
-        children: [
-          // Info alert
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.sky100,
-              border: Border.all(color: AppTheme.sky500),
-              borderRadius: BorderRadius.circular(10),
+      body: blocksAsync.when(
+        loading: () => _buildBody(state: const _LoadingState()),
+        error: (err, stack) => _buildBody(state: const _ErrorState()),
+        data: (blocks) {
+          final visible = blocks.where((b) => b.visible).toList()
+            ..sort((a, b) => a.order.compareTo(b.order));
+          return visible.isEmpty
+              ? _buildBody(state: const _EmptyState())
+              : _buildBody(blocks: visible);
+        },
+      ),
+    );
+  }
+
+  static Widget _buildBody({
+    List<DemographicBlock> blocks = const [],
+    Widget? state,
+  }) {
+    return ListView(
+      children: [
+        const _InfoBanner(),
+        const SizedBox(height: 14),
+        if (state != null)
+          state
+        else
+          for (final block in blocks) ...[
+            _buildBlock(block),
+            const SizedBox(height: 12),
+          ],
+        const _DevNote(),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  static Widget _buildBlock(DemographicBlock block) {
+    switch (block.type) {
+      case 'number':
+        return _NumberCard(block: block);
+      case 'split':
+        return _SplitCard(block: block);
+      case 'bar':
+        return _BarCard(block: block);
+      case 'pie':
+        return _PieCard(block: block);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+// ── Data-driven block renderers ───────────────────────────────────────────────
+
+class _NumberCard extends StatelessWidget {
+  const _NumberCard({required this.block});
+
+  final DemographicBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = block.numberValue;
+    final display = value != null ? '$value' : '—';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                block.label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Text(
+              display,
+              key: Key('demo-number-${block.key}'),
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 28,
+                color: AppTheme.g800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitCard extends StatelessWidget {
+  const _SplitCard({required this.block});
+
+  final DemographicBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = block.entries;
+
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    final total = entries.fold<int>(0, (s, e) => s + e.$2);
+    final firstFrac = total > 0 ? entries.first.$2 / total : 0.5;
+    const colors = [AppTheme.g700, AppTheme.g200];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              block.label,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 16),
+            Row(
               children: [
-                Icon(Icons.info_outline, size: 18, color: AppTheme.sky500),
-                SizedBox(width: 10),
+                _DonutChart(
+                  key: Key('demo-split-${block.key}'),
+                  firstFraction: firstFrac,
+                  total: total,
+                ),
+                const SizedBox(width: 24),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Data agregat',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.sky500,
-                          fontSize: 13,
+                      for (var i = 0; i < entries.length; i++) ...[
+                        _LegendRow(
+                          color: colors[i % colors.length],
+                          label: entries[i].$1,
+                          value: '${entries[i].$2}',
+                          pct: total > 0
+                              ? '${(entries[i].$2 / total * 100).toStringAsFixed(1)}%'
+                              : '—',
                         ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Statistik umum, tidak memuat data pribadi warga. Sumber: RPJM Gampong Blang.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.sky500,
-                          height: 1.4,
-                        ),
-                      ),
+                        if (i < entries.length - 1) const SizedBox(height: 12),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Population card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Jumlah Penduduk',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _DonutChart(
-                        male: male,
-                        female: female,
-                        total: total,
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _LegendRow(
-                              color: AppTheme.g700,
-                              label: 'Laki-laki',
-                              value: '$male',
-                              pct:
-                                  '${(male / total * 100).toStringAsFixed(1)}%',
-                            ),
-                            const SizedBox(height: 12),
-                            _LegendRow(
-                              color: AppTheme.g200,
-                              label: 'Perempuan',
-                              value: '$female',
-                              pct:
-                                  '${(female / total * 100).toStringAsFixed(1)}%',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  const Divider(height: 1),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Jumlah Keluarga (KK)',
-                        style: TextStyle(
-                          color: AppTheme.ink500,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${demographics['kk']}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 17,
-                          color: AppTheme.ink900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+class _BarCard extends StatelessWidget {
+  const _BarCard({required this.block});
+
+  final DemographicBlock block;
+
+  static const _barColors = [
+    AppTheme.g800,
+    AppTheme.g600,
+    AppTheme.g500,
+    AppTheme.g400,
+    AppTheme.g300,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = block.entries;
+
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    final maxValue = entries.fold<int>(0, (m, e) => math.max(m, e.$2));
+    final bars = [
+      for (var i = 0; i < entries.length; i++)
+        _Bar(entries[i].$1, entries[i].$2, _barColors[i % _barColors.length]),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              block.label,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 20),
+            _BarChart(
+              key: Key('demo-bar-${block.key}'),
+              bars: bars,
+              maxValue: maxValue > 0 ? maxValue : 1,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Education bar chart
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+class _PieCard extends StatelessWidget {
+  const _PieCard({required this.block});
+
+  final DemographicBlock block;
+
+  static const _hbarColors = [
+    AppTheme.g700,
+    AppTheme.g600,
+    AppTheme.g500,
+    AppTheme.g400,
+    AppTheme.g300,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = block.entries;
+
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    final maxValue = entries.fold<int>(0, (m, e) => math.max(m, e.$2));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              block.label,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 16),
+            for (var i = 0; i < entries.length; i++)
+              _HBar(
+                key: Key('demo-pie-${block.key}-$i'),
+                label: entries[i].$1,
+                value: entries[i].$2,
+                max: maxValue > 0 ? maxValue : 1,
+                color: _hbarColors[i % _hbarColors.length],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Loading / empty / error states ────────────────────────────────────────────
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _StateCard(
+      key: Key('demo-loading-state'),
+      icon: Icons.sync,
+      title: 'Memuat data demografi',
+      body: 'Mengambil data terbaru dari dashboard.',
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _StateCard(
+      key: Key('demo-error-state'),
+      icon: Icons.cloud_off_outlined,
+      title: 'Data demografi belum dapat dimuat',
+      body:
+          'Periksa koneksi aplikasi ke backend, lalu buka kembali halaman ini.',
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _StateCard(
+      key: Key('demo-empty-state'),
+      icon: Icons.bar_chart_outlined,
+      title: 'Belum ada data demografi',
+      body:
+          'Tambahkan blok statistik dari dashboard agar tampil di aplikasi warga.',
+    );
+  }
+}
+
+class _StateCard extends StatelessWidget {
+  const _StateCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.g50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppTheme.g700, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Tingkat Pendidikan',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppTheme.ink900,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Total tercatat: 507 jiwa',
-                    style: TextStyle(fontSize: 12, color: AppTheme.ink500),
-                  ),
-                  const SizedBox(height: 20),
-                  _BarChart(
-                    bars: const [
-                      _Bar('SD', 193, AppTheme.g800),
-                      _Bar('SLTP', 54, AppTheme.g600),
-                      _Bar('SLTA', 110, AppTheme.g500),
-                      _Bar('D1–D3', 60, AppTheme.g400),
-                      _Bar('S-1', 90, AppTheme.g300),
-                    ],
-                    maxValue: 200,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Livelihood horizontal bars
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Mata Pencaharian',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 16),
-                  const _HBar('Buruh Tani', 371, 1088, AppTheme.g700),
-                  const _HBar('Swasta', 117, 1088, AppTheme.g600),
-                  const _HBar('Dagang', 90, 1088, AppTheme.g500),
-                  const _HBar('Tani', 85, 1088, AppTheme.g400),
-                  const _HBar('PNS / TNI / Polri', 70, 1088, AppTheme.g300),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Religion stacked bar
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Agama',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 14),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1514,
-                          child: Container(height: 14, color: AppTheme.g700),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Container(
-                            height: 14,
-                            color: AppTheme.sky500,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      color: AppTheme.ink500,
+                      height: 1.45,
+                      fontSize: 12.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _ReligionLegend(
-                        color: AppTheme.g700,
-                        label: 'Islam',
-                        value: '1.514',
-                      ),
-                      const SizedBox(width: 20),
-                      _ReligionLegend(
-                        color: AppTheme.sky500,
-                        label: 'Kristen',
-                        value: '3',
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Dev note
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.g50,
-              border: Border.all(color: AppTheme.g200),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'Catatan: distribusi umur (0–17 … 65+) belum tersedia pada RPJM. Blok statistik bersifat data-driven — admin dapat menambah atau menyembunyikannya kapan saja.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.g700,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
-              ),
+// ── Static chrome ─────────────────────────────────────────────────────────────
+
+class _InfoBanner extends StatelessWidget {
+  const _InfoBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.sky100,
+        border: Border.all(color: AppTheme.sky500),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 18, color: AppTheme.sky500),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Data agregat',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.sky500,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Statistik umum, tidak memuat data pribadi warga. Sumber: RPJM Gampong Blang.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.sky500,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
         ],
       ),
     );
   }
 }
 
-// ── Donut chart ──────────────────────────────────────────────────────────────
+class _DevNote extends StatelessWidget {
+  const _DevNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.g50,
+        border: Border.all(color: AppTheme.g200),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Text(
+        'Catatan: blok statistik bersifat data-driven — admin dapat menambah atau menyembunyikannya kapan saja.',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.g700,
+          fontWeight: FontWeight.w600,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Donut chart ───────────────────────────────────────────────────────────────
 
 class _DonutChart extends StatelessWidget {
   const _DonutChart({
-    required this.male,
-    required this.female,
+    super.key,
+    required this.firstFraction,
     required this.total,
   });
 
-  final int male;
-  final int female;
+  final double firstFraction;
   final int total;
 
   @override
@@ -291,7 +467,7 @@ class _DonutChart extends StatelessWidget {
       width: 110,
       height: 110,
       child: CustomPaint(
-        painter: _DonutPainter(maleFraction: male / total),
+        painter: _DonutPainter(firstFraction: firstFraction),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -322,14 +498,15 @@ class _DonutChart extends StatelessWidget {
     );
   }
 
-  static String _fmt(int v) =>
-      v >= 1000 ? '${(v / 1000).toStringAsFixed(1).replaceAll('.', ',')}K' : '$v';
+  static String _fmt(int v) => v >= 1000
+      ? '${(v / 1000).toStringAsFixed(1).replaceAll('.', ',')}K'
+      : '$v';
 }
 
 class _DonutPainter extends CustomPainter {
-  const _DonutPainter({required this.maleFraction});
+  const _DonutPainter({required this.firstFraction});
 
-  final double maleFraction;
+  final double firstFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -353,15 +530,15 @@ class _DonutPainter extends CustomPainter {
     canvas.drawArc(rect, 0, 2 * math.pi, false, bgPaint);
 
     const startAngle = -math.pi / 2;
-    final sweepAngle = 2 * math.pi * maleFraction;
+    final sweepAngle = 2 * math.pi * firstFraction;
     canvas.drawArc(rect, startAngle, sweepAngle, false, fgPaint);
   }
 
   @override
-  bool shouldRepaint(_DonutPainter old) => old.maleFraction != maleFraction;
+  bool shouldRepaint(_DonutPainter old) => old.firstFraction != firstFraction;
 }
 
-// ── Legend row ───────────────────────────────────────────────────────────────
+// ── Legend row ────────────────────────────────────────────────────────────────
 
 class _LegendRow extends StatelessWidget {
   const _LegendRow({
@@ -413,7 +590,7 @@ class _LegendRow extends StatelessWidget {
   }
 }
 
-// ── Education bar chart ───────────────────────────────────────────────────────
+// ── Vertical bar chart ────────────────────────────────────────────────────────
 
 class _Bar {
   const _Bar(this.label, this.value, this.color);
@@ -424,7 +601,7 @@ class _Bar {
 }
 
 class _BarChart extends StatelessWidget {
-  const _BarChart({required this.bars, required this.maxValue});
+  const _BarChart({super.key, required this.bars, required this.maxValue});
 
   final List<_Bar> bars;
   final int maxValue;
@@ -497,7 +674,13 @@ class _BarChart extends StatelessWidget {
 // ── Horizontal bar ────────────────────────────────────────────────────────────
 
 class _HBar extends StatelessWidget {
-  const _HBar(this.label, this.value, this.max, this.color);
+  const _HBar({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.color,
+  });
 
   final String label;
   final int value;
@@ -543,42 +726,6 @@ class _HBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Religion legend ───────────────────────────────────────────────────────────
-
-class _ReligionLegend extends StatelessWidget {
-  const _ReligionLegend({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  final Color color;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 11,
-          height: 11,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 7),
-        Text(
-          '$label ',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-        ),
-      ],
     );
   }
 }

@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
+import '../models/prayer_config.dart';
+import 'content_cache_service.dart';
+
 typedef PrayerLocationProvider = Future<PrayerLocation> Function();
 
 class PrayerLocation {
@@ -36,6 +39,7 @@ class PrayerTimes {
   final double? longitude;
   final bool fromFallback;
 
+  // Hard-coded fallback used before any config is available.
   static PrayerTimes fallback({DateTime? fetchedAt}) {
     return PrayerTimes(
       subuh: '04:58',
@@ -49,11 +53,30 @@ class PrayerTimes {
     );
   }
 
+  // Fallback built from the admin-configured times in PrayerConfig.
+  factory PrayerTimes.fromConfigFallback(
+    PrayerConfig config, {
+    DateTime? fetchedAt,
+  }) {
+    final ft = config.fallbackTimes;
+    return PrayerTimes(
+      subuh: ft.subuh ?? '04:58',
+      dhuhur: ft.dhuhur ?? '12:31',
+      ashar: ft.ashar ?? '15:52',
+      maghrib: ft.maghrib ?? '18:38',
+      isya: ft.isya ?? '19:49',
+      sourceLabel: 'Data Gampong Blang',
+      fetchedAt: fetchedAt ?? DateTime.now(),
+      fromFallback: true,
+    );
+  }
+
   factory PrayerTimes.fromAladhanJson(
     Map<String, dynamic> json, {
     required double latitude,
     required double longitude,
     DateTime? fetchedAt,
+    String sourceLabel = 'Internet · GPS Anda',
   }) {
     final data = json['data'];
     if (data is! Map<String, dynamic>) {
@@ -75,11 +98,43 @@ class PrayerTimes {
       ashar: _cleanTime(timings['Asr']),
       maghrib: _cleanTime(timings['Maghrib']),
       isya: _cleanTime(timings['Isha']),
-      sourceLabel: 'Internet · GPS Anda',
+      sourceLabel: sourceLabel,
       fetchedAt: fetchedAt ?? DateTime.now(),
       latitude: latitude,
       longitude: longitude,
     );
+  }
+
+  factory PrayerTimes.fromCacheJson(Map<String, Object?> json) {
+    return PrayerTimes(
+      subuh: json['subuh'] as String? ?? '04:58',
+      dhuhur: json['dhuhur'] as String? ?? '12:31',
+      ashar: json['ashar'] as String? ?? '15:52',
+      maghrib: json['maghrib'] as String? ?? '18:38',
+      isya: json['isya'] as String? ?? '19:49',
+      sourceLabel: json['source_label'] as String? ?? 'Internet',
+      fetchedAt:
+          DateTime.tryParse(json['fetched_at'] as String? ?? '') ??
+          DateTime.now(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      fromFallback: json['from_fallback'] as bool? ?? false,
+    );
+  }
+
+  Map<String, Object?> toCacheJson() {
+    return {
+      'subuh': subuh,
+      'dhuhur': dhuhur,
+      'ashar': ashar,
+      'maghrib': maghrib,
+      'isya': isya,
+      'source_label': sourceLabel,
+      'fetched_at': fetchedAt.toIso8601String(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'from_fallback': fromFallback,
+    };
   }
 
   static String _cleanTime(Object? value) {
@@ -94,21 +149,25 @@ class PrayerTimes {
 }
 
 class PrayerTimesService {
-  PrayerTimesService({Dio? dio, PrayerLocationProvider? locationProvider})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: 'https://api.aladhan.com/v1',
-              connectTimeout: const Duration(seconds: 15),
-              receiveTimeout: const Duration(seconds: 20),
-              headers: const {'Accept': 'application/json'},
-            ),
-          ),
-      _locationProvider = locationProvider ?? _determineLocation;
+  PrayerTimesService({
+    Dio? dio,
+    PrayerLocationProvider? locationProvider,
+    this.cache,
+  }) : _dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: 'https://api.aladhan.com/v1',
+               connectTimeout: const Duration(seconds: 15),
+               receiveTimeout: const Duration(seconds: 20),
+               headers: const {'Accept': 'application/json'},
+             ),
+           ),
+       _locationProvider = locationProvider ?? _determineLocation;
 
   final Dio _dio;
   final PrayerLocationProvider _locationProvider;
+  final ContentCacheService? cache;
 
   Future<PrayerTimes> fetchUsingGps({DateTime? date}) async {
     final location = await _locationProvider();
@@ -123,30 +182,92 @@ class PrayerTimesService {
     required double latitude,
     required double longitude,
     DateTime? date,
+    int aladhanMethod = 99,
+    String methodSettings = '20,null,18',
+    String timezone = 'Asia/Jakarta',
+    int school = 0,
   }) async {
     final requestedDate = date ?? DateTime.now();
     final formattedDate = DateFormat('dd-MM-yyyy').format(requestedDate);
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/timings/$formattedDate',
-      queryParameters: {
-        'latitude': latitude,
-        'longitude': longitude,
-        'method': 99,
-        'methodSettings': '20,null,18',
-        'timezonestring': 'Asia/Jakarta',
-        'school': 0,
-      },
-    );
+    final params = <String, Object>{
+      'latitude': latitude,
+      'longitude': longitude,
+      'method': aladhanMethod,
+      'timezonestring': timezone,
+      'school': school,
+    };
+    if (aladhanMethod == 99) params['methodSettings'] = methodSettings;
 
-    final data = response.data;
-    if (data == null) {
-      throw const FormatException('Response jadwal sholat kosong.');
-    }
-
-    return PrayerTimes.fromAladhanJson(
-      data,
+    final cacheKey = _prayerTimesCacheKey(
+      date: requestedDate,
       latitude: latitude,
       longitude: longitude,
+      aladhanMethod: aladhanMethod,
+      methodSettings: methodSettings,
+      timezone: timezone,
+      school: school,
+    );
+
+    Future<Object?> fetch() async {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/timings/$formattedDate',
+        queryParameters: params,
+      );
+
+      final data = response.data;
+      if (data == null) {
+        throw const FormatException('Response jadwal sholat kosong.');
+      }
+
+      return PrayerTimes.fromAladhanJson(
+        data,
+        latitude: latitude,
+        longitude: longitude,
+      ).toCacheJson();
+    }
+
+    final currentCache = cache;
+    if (currentCache == null) {
+      return PrayerTimes.fromCacheJson(_objectMap(await fetch()));
+    }
+    return currentCache.getOrFetch(
+      key: cacheKey,
+      fetch: fetch,
+      decode: (data) => PrayerTimes.fromCacheJson(_objectMap(data)),
+    );
+  }
+
+  // Fetch using village coordinates and method settings from PrayerConfig.
+  Future<PrayerTimes> fetchForVillageConfig(
+    PrayerConfig config, {
+    DateTime? date,
+  }) async {
+    if (config.lat == null || config.lng == null) {
+      throw const FormatException('Koordinat desa belum dikonfigurasi.');
+    }
+    final methodSettings =
+        '${config.fajrAngle.round()},null,${config.ishaAngle.round()}';
+
+    final times = await fetchForCoordinates(
+      latitude: config.lat!,
+      longitude: config.lng!,
+      date: date,
+      aladhanMethod: config.aladhanMethod,
+      methodSettings: methodSettings,
+      timezone: config.timezone,
+      school: config.school,
+    );
+
+    return PrayerTimes(
+      subuh: times.subuh,
+      dhuhur: times.dhuhur,
+      ashar: times.ashar,
+      maghrib: times.maghrib,
+      isya: times.isya,
+      sourceLabel: 'Internet · Koordinat Desa',
+      fetchedAt: times.fetchedAt,
+      latitude: times.latitude,
+      longitude: times.longitude,
     );
   }
 
@@ -194,4 +315,25 @@ class LocationPermissionException implements Exception {
 
   @override
   String toString() => message;
+}
+
+String _prayerTimesCacheKey({
+  required DateTime date,
+  required double latitude,
+  required double longitude,
+  required int aladhanMethod,
+  required String methodSettings,
+  required String timezone,
+  required int school,
+}) {
+  final day = DateFormat('yyyy-MM-dd').format(date);
+  final lat = latitude.toStringAsFixed(4);
+  final lng = longitude.toStringAsFixed(4);
+  return 'prayer-times:$day:$lat:$lng:$aladhanMethod:$methodSettings:$timezone:$school';
+}
+
+Map<String, Object?> _objectMap(Object? value) {
+  if (value is Map<String, Object?>) return value;
+  if (value is Map) return Map<String, Object?>.from(value);
+  return {};
 }

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/widgets/sapa_scaffold.dart';
+import '../../data/models/letter_type.dart';
+import '../../data/providers/letter_providers.dart';
 
-class ServicesScreen extends StatelessWidget {
+class ServicesScreen extends ConsumerWidget {
   const ServicesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final letterTypes = ref.watch(letterTypesProvider);
+
     return SapaScaffold(
       title: 'Layanan',
       subtitle: 'Administrasi dan informasi warga',
@@ -20,7 +25,7 @@ class ServicesScreen extends StatelessWidget {
             key: const Key('service-letter-request'),
             icon: Icons.description_outlined,
             title: 'Permohonan Pembuatan Surat',
-            subtitle: '10 jenis surat keterangan',
+            subtitle: letterTypeCountLabel(letterTypes, suffix: 'surat keterangan'),
             onTap: () => context.pushNamed(AppRouteNames.letterCatalog),
           ),
           SapaListTile(
@@ -71,4 +76,14 @@ class ServicesScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+String letterTypeCountLabel(
+  AsyncValue<List<LetterType>> value, {
+  required String suffix,
+}) {
+  return value.maybeWhen(
+    data: (types) => '${types.length} jenis $suffix',
+    orElse: () => 'Memuat jenis $suffix',
+  );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createMosqueRequest,
@@ -7,6 +7,7 @@ import {
   listMosquesRequest,
   updateMosqueRequest,
   updatePrayerConfigRequest,
+  uploadFileRequest,
   type Mosque,
 } from '../../api/client';
 import { alertApiError, confirmDelete, toastSuccess } from '../../lib/alerts';
@@ -65,7 +66,11 @@ export function MosqueTab() {
   const queryClient = useQueryClient();
   const markDirty = useMarkDirty();
   const [prayer, setPrayer] = useState<PrayerForm>(EMPTY_PRAYER);
+  const [adzanFileId, setAdzanFileId] = useState<string | null>(null);
+  const [adzanUrl, setAdzanUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftMosque | null>(null);
+  const [adzanUploading, setAdzanUploading] = useState(false);
+  const adzanInputRef = useRef<HTMLInputElement>(null);
 
   const prayerQuery = useQuery({
     queryKey: ['content', 'prayer-config'],
@@ -94,6 +99,8 @@ export function MosqueTab() {
       fallback_maghrib: data.fallback_times.maghrib ?? '',
       fallback_isya: data.fallback_times.isya ?? '',
     });
+    setAdzanFileId(data.adzan_file_id);
+    setAdzanUrl(data.adzan_url);
   }, [prayerQuery.data]);
 
   // Only the prayer settings ride the header save; the mosque table is immediate CRUD.
@@ -112,9 +119,43 @@ export function MosqueTab() {
         fallback_ashar: prayer.fallback_ashar || null,
         fallback_maghrib: prayer.fallback_maghrib || null,
         fallback_isya: prayer.fallback_isya || null,
+        adzan_file_id: adzanFileId,
       }),
-    [prayer],
+    [prayer, adzanFileId],
   );
+
+  async function handleAdzanUpload(file: File) {
+    if (!file.type.startsWith('audio/')) {
+      alertApiError({ message: 'Berkas harus berupa audio (MP3 atau M4A).' });
+      return;
+    }
+
+    const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+    if (file.size > MAX_AUDIO_BYTES) {
+      alertApiError({ message: 'Ukuran file audio maksimal 20 MB.' });
+      return;
+    }
+
+    setAdzanUploading(true);
+    try {
+      const uploaded = await uploadFileRequest(file, 'audio');
+      setAdzanFileId(uploaded.file_id);
+      setAdzanUrl(uploaded.url);
+      markDirty();
+      toastSuccess('Audio azan berhasil diunggah. Simpan perubahan untuk menerapkan.');
+    } catch (err) {
+      alertApiError(err, 'Audio azan gagal diunggah.');
+    } finally {
+      setAdzanUploading(false);
+      if (adzanInputRef.current) adzanInputRef.current.value = '';
+    }
+  }
+
+  async function removeAdzan() {
+    setAdzanFileId(null);
+    setAdzanUrl(null);
+    markDirty();
+  }
 
   function invalidateMosques() {
     return queryClient.invalidateQueries({ queryKey: ['content', 'mosques'] });
@@ -232,6 +273,69 @@ export function MosqueTab() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="detail-card adzan-card">
+          <div className="detail-card-head adzan-card-head">
+            <div>
+              <h2>Audio Azan</h2>
+              <small className="detail-card-note">
+                Diputar di aplikasi warga saat alarm azan aktif.
+              </small>
+            </div>
+            <span className={`adzan-status ${adzanUrl ? 'ready' : 'empty'}`}>
+              {adzanUrl ? 'Audio tersedia' : 'Belum diunggah'}
+            </span>
+          </div>
+
+          <div className="adzan-card-body">
+            <div className="adzan-media">
+              <span className="adzan-media-icon">
+                <AppIcon name="bell" />
+              </span>
+              <div className="adzan-media-copy">
+                <b>{adzanUrl ? 'Audio azan siap dipakai' : 'Belum ada audio azan'}</b>
+                <small>Format MP3, M4A, OGG, atau WAV. Maksimal 20 MB.</small>
+              </div>
+            </div>
+
+            {adzanUrl ? (
+              <div className="adzan-player">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <audio controls src={adzanUrl} className="adzan-audio" />
+                <button
+                  className="adzan-delete-button"
+                  type="button"
+                  onClick={() => void removeAdzan()}
+                >
+                  <AppIcon name="x" />
+                  Hapus
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <input
+            ref={adzanInputRef}
+            id="adzan-upload"
+            className="visually-hidden"
+            type="file"
+            accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void handleAdzanUpload(file);
+            }}
+          />
+
+          <button
+            className="secondary-button adzan-upload-button"
+            type="button"
+            disabled={adzanUploading}
+            onClick={() => adzanInputRef.current?.click()}
+          >
+            <AppIcon name="file" />
+            {adzanUploading ? 'Mengunggah...' : adzanUrl ? 'Ganti audio' : 'Unggah audio azan (MP3)'}
+          </button>
         </section>
 
         <section className="detail-card">

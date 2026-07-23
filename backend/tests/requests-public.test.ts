@@ -68,8 +68,16 @@ describe('public requests flow', () => {
       letter_type: 'L1',
       status: 'SUBMITTED',
       status_label: 'Menunggu diproses',
+      status_history: [
+        {
+          status: 'SUBMITTED',
+          action: 'submit',
+        },
+      ],
     });
+    expect(trackRes.body.created_at).toEqual(expect.any(String));
     expect(trackRes.body.updated_at).toEqual(expect.any(String));
+    expect(trackRes.body.status_history[0].at).toEqual(expect.any(String));
   });
 
   it('returns field-level validation when applicant_email is missing', async () => {

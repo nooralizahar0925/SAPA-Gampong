@@ -46,7 +46,7 @@ enum FeedbackStatus {
 
 enum AdminRole {
   admin
-  approver
+  operator
 }
 
 enum EmailProvider {
@@ -54,6 +54,13 @@ enum EmailProvider {
   mailgun
   gmail
   smtp
+}
+
+enum PushPlatform {
+  android
+  ios
+  web
+  unknown
 }
 
 enum DemographicBlockType {
@@ -80,6 +87,7 @@ model File {
   officials           Official[]
   villageStrengths    VillageStrength[]
   mosques             Mosque[]
+  prayerConfigs       PrayerConfig[]
 }
 
 model LetterRequest {
@@ -108,6 +116,7 @@ model LetterRequest {
 
   attachments RequestAttachment[]
   histories   RequestStatusHistory[]
+  pushTokens  RequestPushToken[]
 
   @@index([status])
   @@index([letterType])
@@ -143,12 +152,66 @@ model RequestAttachment {
   @@index([requestId])
 }
 
+model DeviceToken {
+  id        String       @id @default(cuid())
+  token     String       @unique
+  platform  PushPlatform @default(unknown)
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  requests RequestPushToken[]
+
+  @@index([active])
+}
+
+model RequestPushToken {
+  requestId     String
+  request       LetterRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  deviceTokenId String
+  deviceToken   DeviceToken   @relation(fields: [deviceTokenId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+
+  @@id([requestId, deviceTokenId])
+  @@index([deviceTokenId])
+}
+
+model ResidentEmailSession {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  otpHash          String?
+  otpExpiresAt     DateTime?
+  otpAttempts      Int       @default(0)
+  sessionTokenHash String?   @unique
+  sessionExpiresAt DateTime?
+  verifiedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([sessionTokenHash])
+  @@index([sessionExpiresAt])
+}
+
 model LetterNumberCounter {
   letterType LetterType
   year       Int
   lastNumber Int        @default(0)
 
   @@id([letterType, year])
+}
+
+model LetterTemplate {
+  id                  String     @id @default(cuid())
+  code                LetterType @unique
+  name                String
+  description         String
+  subjectIsApplicant  Boolean    @default(true)
+  requiredAttachments String[]
+  signatory           String
+  fields              Json
+  active              Boolean    @default(true)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 }
 
 model Feedback {
@@ -274,6 +337,10 @@ model PrayerConfig {
   fallbackMaghrib String?
   fallbackIsya    String?
 
+  // Audio azan uploaded by the admin and streamed by the mobile app.
+  adzanFileId String?
+  adzan       File?    @relation(fields: [adzanFileId], references: [id])
+
   updatedAt  DateTime @updatedAt
 }
 
@@ -294,7 +361,9 @@ model AdminUser {
   passwordResetTokenHash   String?   @unique
   passwordResetTokenExpiry DateTime?
   role                     AdminRole @default(admin)
+  active                   Boolean   @default(true)
   createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 }
 
 model AppConfig {
@@ -317,6 +386,8 @@ model AppConfig {
   keuchikName      String?
   secretaryTitle   String?
   secretaryName    String?
+
+  letterTemplatesSeeded Boolean @default(false)
 
   updatedAt           DateTime      @updatedAt
 }

@@ -46,7 +46,8 @@ void main() {
     await scrollTo(tester, find.byKey(const Key('service-verify')));
     await tester.tap(find.byKey(const Key('service-verify')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Surat TERVERIFIKASI'), findsOneWidget);
+    expect(find.text('Cek surat resmi'), findsOneWidget);
+    expect(find.byKey(const Key('verification-input')), findsOneWidget);
   });
 
   testWidgets('back arrow returns from profile to home', (tester) async {

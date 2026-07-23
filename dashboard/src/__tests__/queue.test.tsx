@@ -14,6 +14,7 @@ function renderApp(initialEntries: string[] = ['/requests']) {
       name: 'Admin Gampong',
       email: 'admin@gampongblang.id',
       role: 'admin',
+      active: true,
     },
   });
 

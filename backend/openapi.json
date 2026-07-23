@@ -1,13 +1,13 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "SAPA Gampong API",
+    "title": "Gampong Blang Digital API",
     "version": "0.1.0",
     "description": "API for Gampong Blang services: letter requests, authenticity verification, village content, and citizen feedback. Log in via POST /api/auth/login, copy the returned token, then use Authorize to try protected admin endpoints."
   },
   "servers": [
     {
-      "url": "http://localhost:8080",
+      "url": "http://localhost:8081",
       "description": "Active server"
     }
   ],
@@ -35,6 +35,14 @@
     {
       "name": "Feedback",
       "description": "Public citizen reports and the admin inbox"
+    },
+    {
+      "name": "Notifications",
+      "description": "Resident app push token registration"
+    },
+    {
+      "name": "Resident",
+      "description": "Resident email verification and personal history"
     },
     {
       "name": "Settings",
@@ -200,15 +208,19 @@
             "type": "string",
             "enum": [
               "admin",
-              "approver"
+              "operator"
             ]
+          },
+          "active": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "name",
           "email",
-          "role"
+          "role",
+          "active"
         ]
       },
       "LoginResponse": {
@@ -225,6 +237,24 @@
           "token",
           "user"
         ]
+      },
+      "UpdateProfileBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "current_password": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        }
       },
       "ContentIdParams": {
         "type": "object",
@@ -1032,6 +1062,18 @@
               "isya"
             ]
           },
+          "adzan_file_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "adzan_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "updated_at": {
             "type": [
               "string",
@@ -1049,6 +1091,8 @@
           "isha_angle",
           "school",
           "fallback_times",
+          "adzan_file_id",
+          "adzan_url",
           "updated_at"
         ]
       },
@@ -1129,6 +1173,13 @@
               "null"
             ],
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "adzan_file_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
           }
         }
       },
@@ -1252,7 +1303,8 @@
                     "KK",
                     "other",
                     "photo",
-                    "document"
+                    "document",
+                    "audio"
                   ]
                 }
               },
@@ -1395,7 +1447,8 @@
               "KK",
               "other",
               "photo",
-              "document"
+              "document",
+              "audio"
             ]
           },
           "mime": {
@@ -1637,6 +1690,137 @@
           "$ref": "#/components/schemas/LetterType"
         }
       },
+      "AdminLetterTemplate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LetterType"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "active",
+              "updated_at"
+            ]
+          }
+        ]
+      },
+      "AdminLetterTemplateListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AdminLetterTemplate"
+        }
+      },
+      "CreateLetterTemplateBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "subject_is_applicant": {
+            "type": "boolean"
+          },
+          "required_attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          "signatory": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LetterField"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "UpdateLetterTemplateBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "subject_is_applicant": {
+            "type": "boolean"
+          },
+          "required_attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          "signatory": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LetterField"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
       "VerifyResponse": {
         "anyOf": [
           {
@@ -1762,7 +1946,8 @@
                     "KK",
                     "other",
                     "photo",
-                    "document"
+                    "document",
+                    "audio"
                   ]
                 }
               },
@@ -1771,6 +1956,20 @@
                 "kind"
               ]
             }
+          },
+          "push_token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "push_platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ],
+            "default": "unknown"
           }
         },
         "required": [
@@ -1801,6 +2000,43 @@
           "id",
           "reference_code",
           "status"
+        ]
+      },
+      "RequestStatusHistoryItem": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "nomor_surat": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "at"
         ]
       },
       "TrackRequestResponse": {
@@ -1839,9 +2075,19 @@
           "status_label": {
             "type": "string"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "status_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestStatusHistoryItem"
+            }
           }
         },
         "required": [
@@ -1849,7 +2095,9 @@
           "letter_type",
           "status",
           "status_label",
-          "updated_at"
+          "created_at",
+          "updated_at",
+          "status_history"
         ]
       },
       "RequestQueueItem": {
@@ -2027,7 +2275,8 @@
               "KK",
               "other",
               "photo",
-              "document"
+              "document",
+              "audio"
             ]
           },
           "mime": {
@@ -2048,43 +2297,6 @@
           "mime",
           "size",
           "url"
-        ]
-      },
-      "RequestStatusHistoryItem": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED",
-              "IN_REVIEW",
-              "NEEDS_INFO",
-              "APPROVED",
-              "GENERATED",
-              "SENT",
-              "REJECTED"
-            ]
-          },
-          "at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "action": {
-            "type": "string"
-          },
-          "by": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "nomor_surat": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "at"
         ]
       },
       "RequestDetailResponse": {
@@ -2294,6 +2506,311 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "DeviceTokenBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ],
+            "default": "unknown"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "DeviceTokenResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "platform",
+          "active"
+        ]
+      },
+      "DeviceTokenDeletedResponse": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          }
+        },
+        "required": [
+          "active"
+        ]
+      },
+      "ResidentEmailBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResidentVerifyOtpBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "otp": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "email",
+          "otp"
+        ]
+      },
+      "ResidentOtpResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dev_otp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "expires_at"
+        ]
+      },
+      "ResidentSessionResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "email",
+          "token",
+          "expires_at"
+        ]
+      },
+      "ResidentMeResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "email",
+          "verified_at",
+          "expires_at"
+        ]
+      },
+      "ResidentRequestItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED"
+            ]
+          },
+          "status_label": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generated_pdf_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "decision_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "letter_type",
+          "status",
+          "status_label",
+          "created_at",
+          "updated_at",
+          "generated_pdf_url",
+          "decision_reason"
+        ]
+      },
+      "ResidentRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResidentRequestItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ResidentFeedbackItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "read",
+              "responded"
+            ]
+          },
+          "reply": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "replied_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "body",
+          "status",
+          "reply",
+          "replied_at",
+          "created_at"
+        ]
+      },
+      "ResidentFeedbackResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResidentFeedbackItem"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "EmailProviderEnum": {
@@ -2759,7 +3276,8 @@
               "KK",
               "other",
               "photo",
-              "document"
+              "document",
+              "audio"
             ]
           },
           "file": {
@@ -2800,6 +3318,115 @@
       "BinaryFileResponse": {
         "type": "string",
         "format": "binary"
+      },
+      "AdminUserListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "active",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "AdminUserListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AdminUserListItem"
+        }
+      },
+      "CreateAdminUserBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator"
+            ],
+            "default": "operator"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password"
+        ]
+      },
+      "UpdateAdminUserBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -2872,6 +3499,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AdminUserPublic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token is invalid or missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Update the current admin profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserPublic"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid profile payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -4516,6 +5195,569 @@
         }
       }
     },
+    "/api/settings/letter-templates": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "List all letter templates for dashboard management",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All letter templates, including inactive templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLetterTemplateListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Create a letter template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLetterTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created letter template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLetterTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid letter template payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Template code already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/letter-templates/{code}": {
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update a letter template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5",
+                "L6",
+                "L7",
+                "L8",
+                "L9",
+                "L10"
+              ]
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLetterTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated letter template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLetterTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid letter template payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Delete a letter template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5",
+                "L6",
+                "L7",
+                "L8",
+                "L9",
+                "L10"
+              ]
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted letter template"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/letter-templates/{code}/preview": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Render a PDF preview for a letter template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5",
+                "L6",
+                "L7",
+                "L8",
+                "L9",
+                "L10"
+              ]
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF preview for the selected template",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/device-tokens": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Register a resident app push token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered device token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Deactivate a resident app push token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device token deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTokenDeletedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/email/request-otp": {
+      "post": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Send an OTP to a resident email address",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidentEmailBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP email accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentOtpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/email/verify-otp": {
+      "post": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Verify resident email OTP and create a resident session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidentVerifyOtpBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resident email verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OTP payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Too many OTP attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/me": {
+      "get": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Get the current resident email session",
+        "responses": {
+          "200": {
+            "description": "Resident email session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentMeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/requests": {
+      "get": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "List letter requests for the verified resident email",
+        "responses": {
+          "200": {
+            "description": "Resident request history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentRequestsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/feedback": {
+      "get": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "List feedback reports for the verified resident email",
+        "responses": {
+          "200": {
+            "description": "Resident feedback history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentFeedbackResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/requests": {
       "post": {
         "tags": [
@@ -5516,7 +6758,7 @@
         "tags": [
           "Uploads"
         ],
-        "summary": "Upload an image or PDF attachment",
+        "summary": "Upload an image, PDF, or audio file",
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -5608,6 +6850,218 @@
           },
           "404": {
             "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/users": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "List dashboard user accounts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard user accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin role is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Create a dashboard user account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created dashboard user account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid user payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin role is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/users/{id}": {
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update a dashboard user account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated dashboard user account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid user payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin role is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already exists",
             "content": {
               "application/json": {
                 "schema": {

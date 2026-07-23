@@ -36,13 +36,32 @@ abstract class CreatedRequest with _$CreatedRequest {
 }
 
 @freezed
+abstract class TrackStatusHistory with _$TrackStatusHistory {
+  const factory TrackStatusHistory({
+    required String status,
+    required DateTime at,
+    String? action,
+    String? by,
+    String? reason,
+    @JsonKey(name: 'nomor_surat') String? nomorSurat,
+  }) = _TrackStatusHistory;
+
+  factory TrackStatusHistory.fromJson(Map<String, Object?> json) =>
+      _$TrackStatusHistoryFromJson(json);
+}
+
+@freezed
 abstract class TrackStatus with _$TrackStatus {
   const factory TrackStatus({
     @JsonKey(name: 'reference_code') required String referenceCode,
     @JsonKey(name: 'letter_type') required String letterType,
     required String status,
     @JsonKey(name: 'status_label') required String statusLabel,
+    @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
+    @JsonKey(name: 'status_history')
+    @Default([])
+    List<TrackStatusHistory> statusHistory,
   }) = _TrackStatus;
 
   factory TrackStatus.fromJson(Map<String, Object?> json) =>

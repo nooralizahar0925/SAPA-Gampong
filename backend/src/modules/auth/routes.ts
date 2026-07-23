@@ -9,12 +9,14 @@ import {
   LoginResponse,
   MessageResponse,
   ResetPasswordBody,
+  UpdateProfileBody,
 } from './schemas';
 import {
   findUserById,
   requestPasswordReset,
   resetPassword,
   signToken,
+  updateOwnProfile,
   verifyCredentials,
 } from './service';
 
@@ -57,6 +59,27 @@ defineRoute(authRouter, {
   },
   handler: async ({ req, res }) => {
     res.json(await findUserById(req.auth!.userId));
+  },
+});
+
+defineRoute(authRouter, {
+  method: 'patch',
+  path: '/me',
+  fullPath: '/api/auth/me',
+  tags: ['Auth'],
+  summary: 'Update the current admin profile',
+  auth: 'admin',
+  body: UpdateProfileBody,
+  responses: {
+    200: {
+      description: 'Updated current user',
+      content: { 'application/json': { schema: AdminUserPublic } },
+    },
+    400: errorResponse('Invalid profile payload'),
+    401: errorResponse('Token is invalid or missing'),
+  },
+  handler: async ({ req, body, res }) => {
+    res.json(await updateOwnProfile(req.auth!.userId, body));
   },
 });
 

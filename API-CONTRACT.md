@@ -3,6 +3,7 @@
 The HTTP contract shared by the **Mobile app** (consumer) and **Admin dashboard** (consumer), served by the **backend** in `backend/`. Agree changes here **before** implementing on either side.
 
 - Base URL (dev): `http://localhost:8080/api`
+- Base URL (production): `https://gampongblangdigital.com/api`
 - Base URL (staging): `https://<railway-app>.up.railway.app/api`
 - All request/response bodies are JSON unless stated (uploads are `multipart/form-data`).
 - All UI-facing text is **Bahasa Indonesia**.
@@ -97,17 +98,38 @@ Fields: `file` (binary), `kind` (`KTP|KK|other|photo|document`).
   "applicant_phone": "0812...",
   "keperluan": "Beasiswa",              // optional
   "subject_data": { "nama": "Budi", "nik": "1607...", "...": "..." },
-  "attachments": [ { "file_id": "f_01H...", "kind": "KTP" } ]
+  "attachments": [ { "file_id": "f_01H...", "kind": "KTP" } ],
+  "push_token": "fcm-device-token",      // optional, from Firebase Messaging
+  "push_platform": "android"             // optional: android|ios|web|unknown
 }
 ```
 Response `201`:
 ```json
 { "id": "req_01H...", "reference_code": "GB-2026-000123", "status": "SUBMITTED" }
 ```
+When `push_token` is supplied, the backend links that installed device to the request so later `SENT`, `REJECTED`, and `NEEDS_INFO` events can target the resident app.
 
 ### `GET /requests/track/:reference_code` (public) — resident tracking
 ```json
 { "reference_code": "GB-2026-000123", "letter_type": "L1", "status": "IN_REVIEW", "status_label": "Sedang diproses", "updated_at": "2026-07-02T03:00:00Z" }
+```
+
+### `POST /notifications/device-tokens` (public) — register resident push token
+```json
+{ "token": "fcm-device-token", "platform": "android" }
+```
+Response `200`:
+```json
+{ "id": "dt_01H...", "token": "fcm-device-token", "platform": "android", "active": true }
+```
+
+### `DELETE /notifications/device-tokens` (public) — deactivate resident push token
+```json
+{ "token": "fcm-device-token", "platform": "android" }
+```
+Response `200`:
+```json
+{ "active": false }
 ```
 
 ### `GET /requests` (admin) — queue

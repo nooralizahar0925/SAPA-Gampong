@@ -9,9 +9,12 @@ import '../modules/content/routes';
 import '../modules/feedback/routes';
 import '../modules/health/routes';
 import '../modules/letters/routes';
+import '../modules/notifications/routes';
+import '../modules/resident/routes';
 import '../modules/requests/routes';
 import '../modules/settings/routes';
 import '../modules/uploads/routes';
+import '../modules/users/routes';
 import '../modules/verify/routes';
 
 export function buildDocument() {
@@ -20,7 +23,7 @@ export function buildDocument() {
   return generator.generateDocument({
     openapi: '3.1.0',
     info: {
-      title: 'SAPA Gampong API',
+      title: 'Gampong Blang Digital API',
       version: '0.1.0',
       description:
         'API for Gampong Blang services: letter requests, authenticity verification, village content, and citizen feedback. ' +
@@ -34,6 +37,8 @@ export function buildDocument() {
       { name: 'Requests', description: 'Public request submission and status tracking' },
       { name: 'Content', description: 'Public village content with admin-managed writes' },
       { name: 'Feedback', description: 'Public citizen reports and the admin inbox' },
+      { name: 'Notifications', description: 'Resident app push token registration' },
+      { name: 'Resident', description: 'Resident email verification and personal history' },
       { name: 'Settings', description: 'Admin-managed application settings and provider selection' },
       { name: 'Uploads', description: 'Upload endpoints and signed file access' },
       { name: 'Verify', description: 'Public letter authenticity verification' },

@@ -296,12 +296,16 @@ Prove L1 end-to-end, then generalize to 7.
 - Deviation from the mock, deliberate: the mock's detail pane has a **subject line** ("Jalan rusak di Dusun Kuini"), but reports have no subject field — the warga only writes a body. Deriving a pseudo-title from the body just repeated the text shown directly beneath it, so the reporter's name heads the pane instead. Add a real subject field if the citizen form ever collects one.
 - [x] Steps: (1) backend test: create feedback -> appears in admin list as `new`; mark responded persists; (2) FAIL (11/12 red, routes 404); (3) implement API + inbox page; (4) PASS (119/119 backend, 58/58 dashboard); (5) commit `feat: feedback inbox`.
 
-### Task 19: Notification wiring (email primary, Firebase push)
+### Task 19: Notification wiring (email primary, Firebase push) ✅ Done
 **Files:** extend `backend/src/modules/notifications/*`, add device-token persistence + registration endpoints as needed; Test `backend/tests/notifications.test.ts`
 - **Transport decision:** mobile push uses **Firebase Cloud Messaging (FCM)**. The backend sends through Firebase Admin SDK; the mobile app registers FCM device tokens with this API.
 - **Design target:** store device tokens per installed app/device, support token register/unregister, deactivate invalid tokens reported by FCM, and keep the dispatcher transport-agnostic (`email` + `push`).
 - Events -> channels (brief Section 15): `SENT` (email+push->resident), `REJECTED` (push+optional email), `NEEDS_INFO` (push+optional email), new `SUBMITTED`/feedback (dashboard badge/internal admin surface, not Firebase). Handle email bounces/logging.
-- [ ] Steps: (1) test: transitioning to `SENT` enqueues a resident email + push payload; (2) FAIL; (3) implement dispatcher; (4) PASS; (5) commit `feat(api): notification dispatcher`.
+- [x] Steps: (1) test: transitioning to `SENT` enqueues a resident email + push payload; (2) FAIL; (3) implement dispatcher; (4) PASS; (5) commit pending.
+
+> **As-built (2026-07-22):** Added `DeviceToken` + `RequestPushToken`, public `POST/DELETE /api/notifications/device-tokens`, optional `push_token`/`push_platform` on `POST /api/requests`, and Firebase-backed push transport with no-op local/test fallback. `SENT` and `REJECTED` now dispatch resident push payloads to tokens linked to the request, and invalid FCM tokens are deactivated.
+
+> **iOS push caveat (2026-07-23):** backend FCM sending is ready, but iOS delivery will not work until Firebase has an APNs auth key/certificate from a paid Apple Developer Program account. Android delivery can be tested first with the current Firebase service account.
 
 ---
 

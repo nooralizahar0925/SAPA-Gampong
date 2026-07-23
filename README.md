@@ -1,6 +1,8 @@
-# SAPA Gampong — Monorepo
+# Gampong Blang Digital — Monorepo
 
-**SAPA Gampong** (Sistem Administrasi & Pelayanan Gampong) — the village app for **Gampong Blang**, Kec. Krueng Sabee, Kab. Aceh Jaya. This is the single monorepo for all code + planning docs.
+**Gampong Blang Digital** — the village app for **Gampong Blang**, Kec. Krueng Sabee, Kab. Aceh Jaya. This is the single monorepo for all code + planning docs.
+
+> Note: the folder/repo is still named `SAPA-Gampong` on disk and on GitHub — only the product name shown to users has changed.
 
 - **Git remote:** `git@github.com:nooralizahar0925/SAPA-Gampong.git`
 - **Default branch:** `main`

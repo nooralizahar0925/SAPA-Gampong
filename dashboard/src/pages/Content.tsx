@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DashboardFrame } from '../components/DashboardFrame';
@@ -49,6 +49,11 @@ export function ContentPage() {
   const [saveHandler, setSaveHandler] = useState<SaveHandler | null>(null);
   const [dirty, setDirty] = useState(false);
 
+  useEffect(() => {
+    setDirty(false);
+    setSaveHandler(null);
+  }, [activeTab]);
+
   const saveContext = useMemo(
     () => ({
       register: (handler: SaveHandler | null) => setSaveHandler(() => handler),
@@ -94,7 +99,7 @@ export function ContentPage() {
               className="primary-button"
               type="button"
               onClick={saveChanges}
-              disabled={saving || !saveHandler}
+              disabled={saving || !saveHandler || !dirty}
             >
               {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>

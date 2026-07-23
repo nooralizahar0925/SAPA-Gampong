@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sapa Gampong</string>
+	<string>Gampong Blang Digital</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -20,6 +20,8 @@
 	<string>APPL</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aplikasi menggunakan lokasi Anda untuk menampilkan jadwal sholat sesuai posisi saat ini.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi menggunakan kamera untuk memindai QR verifikasi keaslian surat.</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>

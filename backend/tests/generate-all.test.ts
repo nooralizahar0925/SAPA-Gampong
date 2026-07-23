@@ -181,8 +181,6 @@ const LETTER_FIXTURES: Array<{
     letterType: 'L10',
     applicantName: 'Fauzan',
     subjectData: {
-      nama_pemohon: 'Fauzan',
-      nomor_surat_permohonan: '005/PMH/VII/2026',
       tanggal_permohonan: '2026-07-01',
       perihal: 'izin usaha',
       tujuan_jabatan: 'Kepala Dinas Penanaman Modal',

@@ -1,37 +1,120 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/sapa_scaffold.dart';
-import '../../data/mock/village_seed.dart';
+import '../../data/models/verification_result.dart';
+import '../../data/providers/verification_providers.dart';
+import '../../data/repositories/verification_repository.dart';
 
-class VerificationScreen extends StatelessWidget {
-  const VerificationScreen({super.key});
+class VerificationScreen extends ConsumerStatefulWidget {
+  const VerificationScreen({super.key, this.initialToken});
 
-  static const _verifyUrl = 'blang.desa.id/verify/8f2c…a19d';
+  final String? initialToken;
+
+  @override
+  ConsumerState<VerificationScreen> createState() => _VerificationScreenState();
+}
+
+class _VerificationScreenState extends ConsumerState<VerificationScreen> {
+  late final TextEditingController _controller;
+  bool _loading = false;
+  VerificationResult? _result;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialToken ?? '');
+    if ((widget.initialToken ?? '').trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _verify());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SapaScaffold(
       title: 'Verifikasi Keaslian Surat',
-      subtitle: 'Pindai QR pada surat',
+      subtitle: 'Masukkan tautan QR atau token',
       leading: const SapaBackButton(),
       body: ListView(
         children: [
-          // Verified alert
-          const Card(
-            color: AppTheme.okBg,
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Row(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.verified, color: AppTheme.ok, size: 36),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Surat TERVERIFIKASI\nDiterbitkan secara sah oleh Pemerintah Gampong Blang.',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        height: 1.4,
+                  const Text(
+                    'Cek surat resmi',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Pindai QR pada surat, tempel tautan, atau masukkan token verifikasi untuk memastikan dokumen tercatat di arsip gampong.',
+                    style: TextStyle(color: AppTheme.ink500, height: 1.45),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      key: const Key('verification-scan'),
+                      onPressed: _loading ? null : _openScanner,
+                      icon: const Icon(Icons.qr_code_scanner_outlined),
+                      label: const Text('Pindai QR'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('verification-input'),
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: 'Tautan atau token verifikasi',
+                      hintText: 'https://.../verify/abcdef',
+                      suffixIcon: IconButton(
+                        key: const Key('verification-clear'),
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                _controller.clear();
+                                setState(() {
+                                  _result = null;
+                                  _error = null;
+                                });
+                              },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _verify(),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      key: const Key('verification-submit'),
+                      onPressed: _loading ? null : _verify,
+                      icon: _loading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.verified_outlined),
+                      label: Text(
+                        _loading ? 'Memeriksa...' : 'Verifikasi Surat',
                       ),
                     ),
                   ),
@@ -40,98 +123,337 @@ class VerificationScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // QR code placeholder
-          Center(
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppTheme.line, width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const _QrPlaceholder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: Text(
-              _verifyUrl,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.ink500,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SectionTitle('Detail Surat'),
-          const _VerifyRow('Nomor Surat', '400.10.4.4/017/2026'),
-          const _VerifyRow('Jenis Surat', 'Surat Keterangan Miskin'),
-          const _VerifyRow('Tanggal Terbit', '20 Juli 2026'),
-          const _VerifyRow('Penandatangan', '$keuchikName — Keuchik Gampong Blang'),
-          const _VerifyRow('Perihal', 'a.n. R*** (NIK 1607********0001)'),
-          const SizedBox(height: 14),
-          const FilledButton(onPressed: null, child: Text('Unduh Surat (PDF)')),
+          if (_error != null && !_loading) _MessageCard.invalid(_error!),
+          if (_result != null && !_loading)
+            _VerificationResultCard(result: _result!),
         ],
+      ),
+    );
+  }
+
+  Future<void> _verify() async {
+    final token = extractVerificationToken(_controller.text);
+    if (token.isEmpty) {
+      setState(() {
+        _result = null;
+        _error = 'Masukkan tautan QR atau token verifikasi terlebih dahulu.';
+      });
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _result = null;
+      _error = null;
+    });
+
+    try {
+      final result = await ref
+          .read(verificationRepositoryProvider)
+          .verify(token);
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Verifikasi belum bisa dilakukan. Periksa koneksi lalu coba lagi.';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openScanner() async {
+    final scanned = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const _QrScannerSheet(),
+    );
+    if (!mounted || scanned == null || scanned.trim().isEmpty) return;
+
+    _controller.text = scanned.trim();
+    await _verify();
+  }
+}
+
+class _QrScannerSheet extends StatefulWidget {
+  const _QrScannerSheet();
+
+  @override
+  State<_QrScannerSheet> createState() => _QrScannerSheetState();
+}
+
+class _QrScannerSheetState extends State<_QrScannerSheet> {
+  late final MobileScannerController _scanner;
+  bool _handled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanner = MobileScannerController(
+      formats: const [BarcodeFormat.qrCode],
+      detectionSpeed: DetectionSpeed.normal,
+      detectionTimeoutMs: 500,
+    );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_scanner.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      heightFactor: 0.86,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pindai QR Surat',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Tutup',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MobileScanner(
+                    controller: _scanner,
+                    onDetect: _onDetect,
+                    errorBuilder: (context, error) => Container(
+                      color: AppTheme.ink900,
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Kamera belum bisa dibuka. Pastikan izin kamera diberikan, atau gunakan input manual.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                    placeholderBuilder: (_) => const ColoredBox(
+                      color: AppTheme.ink900,
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const _ScannerFrame(),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text(
+                  'Arahkan kamera ke QR pada surat resmi. Hasil pindai akan langsung diverifikasi.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTheme.ink500, height: 1.45),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Input manual'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_handled) return;
+    final raw = capture.barcodes
+        .map((barcode) => barcode.rawValue)
+        .whereType<String>()
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .firstOrNull;
+    if (raw == null) return;
+
+    _handled = true;
+    Navigator.pop(context, raw);
+  }
+}
+
+class _ScannerFrame extends StatelessWidget {
+  const _ScannerFrame();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white, width: 2),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.gold500, width: 3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _QrPlaceholder extends StatelessWidget {
-  const _QrPlaceholder();
+class _VerificationResultCard extends StatelessWidget {
+  const _VerificationResultCard({required this.result});
+
+  final VerificationResult result;
 
   @override
   Widget build(BuildContext context) {
-    // Visual QR-like grid placeholder until qr_flutter is added
-    return CustomPaint(
-      painter: _QrGridPainter(),
-      size: const Size(160, 160),
+    final details = result.details;
+    if (details == null) {
+      return const _InvalidResultCard();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _MessageCard.valid(
+          'Surat terverifikasi. Dokumen ini tercatat resmi dan diterbitkan secara sah oleh Pemerintah Gampong Blang.',
+        ),
+        const SizedBox(height: 14),
+        const SectionTitle('Detail Surat'),
+        _VerifyRow('Nomor Surat', details.nomorSurat),
+        _VerifyRow('Jenis Surat', details.jenisSurat),
+        _VerifyRow('Tanggal Terbit', _formatIssuedDate(details.tanggalTerbit)),
+        _VerifyRow('Penandatangan', details.penandatangan),
+        _VerifyRow('Perihal', details.perihal),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.g50,
+            border: Border.all(color: AppTheme.g300),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            'Nama dan NIK sengaja disamarkan. Halaman ini hanya membuktikan keaslian surat, tanpa menampilkan data pribadi pemiliknya.',
+            style: TextStyle(
+              color: AppTheme.g700,
+              fontWeight: FontWeight.w600,
+              height: 1.45,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _QrGridPainter extends CustomPainter {
+class _InvalidResultCard extends StatelessWidget {
+  const _InvalidResultCard();
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.ink900
-      ..style = PaintingStyle.fill;
-
-    final cell = size.width / 10;
-
-    // Simple QR-like corner squares pattern
-    final corners = [
-      Rect.fromLTWH(cell, cell, cell * 3, cell * 3),
-      Rect.fromLTWH(cell * 6, cell, cell * 3, cell * 3),
-      Rect.fromLTWH(cell, cell * 6, cell * 3, cell * 3),
-    ];
-    for (final rect in corners) {
-      canvas.drawRect(rect, paint);
-      canvas.drawRect(
-        rect.deflate(cell * 0.6),
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill,
-      );
-      canvas.drawRect(rect.deflate(cell), paint);
-    }
-
-    // Random data cells simulation
-    final cells = [
-      [5, 2], [6, 2], [5, 4], [7, 3], [5, 5], [8, 5],
-      [5, 6], [7, 7], [6, 8], [8, 8], [5, 9], [7, 9],
-    ];
-    for (final c in cells) {
-      canvas.drawRect(
-        Rect.fromLTWH(c[0] * cell, c[1] * cell, cell * 0.8, cell * 0.8),
-        paint,
-      );
-    }
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageCard.invalid(
+          'Surat tidak terverifikasi. Kode QR tidak dikenali dalam arsip gampong, atau surat tersebut sudah dicabut.',
+        ),
+        SizedBox(height: 14),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text(
+              'Pastikan tautan QR terpindai dengan jelas. Jangan menerima dokumen sebagai surat resmi sebelum dikonfirmasi ke Kantor Keuchik Gampong Blang.',
+              style: TextStyle(
+                color: AppTheme.ink500,
+                fontWeight: FontWeight.w600,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
+}
+
+class _MessageCard extends StatelessWidget {
+  const _MessageCard.valid(this.message)
+    : color = AppTheme.okBg,
+      iconColor = AppTheme.ok,
+      icon = Icons.verified,
+      keyValue = 'verification-valid';
+
+  const _MessageCard.invalid(this.message)
+    : color = AppTheme.warnBg,
+      iconColor = AppTheme.warn,
+      icon = Icons.error_outline,
+      keyValue = 'verification-invalid';
+
+  final String message;
+  final Color color;
+  final Color iconColor;
+  final IconData icon;
+  final String keyValue;
 
   @override
-  bool shouldRepaint(_QrGridPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    return Card(
+      key: Key(keyValue),
+      color: color,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 34),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _VerifyRow extends StatelessWidget {
@@ -147,6 +469,7 @@ class _VerifyRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
@@ -154,6 +477,7 @@ class _VerifyRow extends StatelessWidget {
                 style: const TextStyle(color: AppTheme.ink500),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 value,
@@ -166,4 +490,25 @@ class _VerifyRow extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatIssuedDate(String isoDate) {
+  final parsed = DateTime.tryParse('${isoDate}T00:00:00Z');
+  if (parsed == null) return isoDate;
+
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+  return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
 }
