@@ -82,24 +82,14 @@ cd SAPA-Gampong
 
 If the VPS does not have GitHub SSH access yet, add an SSH deploy key first or clone with HTTPS.
 
-## 3. Copy Required Private Assets
+## 3. Check Repository Assets
 
-The backend reads the government logo from `../../Brief/logo.webp` at runtime for generated PDFs and email logos. Because `Brief/` is outside the repo, create it on the VPS:
+The backend reads the government logo from `backend/assets/logo.webp` for generated PDFs and email logos. This file is committed to Git, so no separate `Brief/` copy step is needed on staging.
 
-```bash
-mkdir -p /opt/gampong-blang/Brief
-```
-
-Copy the logo from your local machine:
+After cloning, check it exists:
 
 ```bash
-scp "../Brief/logo.webp" gbd@<VPS_PUBLIC_IP>:/opt/gampong-blang/Brief/logo.webp
-```
-
-Check it exists:
-
-```bash
-ls -lh /opt/gampong-blang/Brief/logo.webp
+ls -lh /opt/gampong-blang/SAPA-Gampong/backend/assets/logo.webp
 ```
 
 ## 4. Backend Environment
@@ -150,7 +140,7 @@ SMTP_PASS=
 SMTP_FROM_EMAIL=
 SMTP_FROM_NAME=
 
-FIREBASE_SERVICE_ACCOUNT_JSON=<PASTE_ONE_LINE_JSON_OR_LEAVE_EMPTY_FOR_NOW>
+FIREBASE_SERVICE_ACCOUNT_JSON=<PASTE_ONE_LINE_FIREBASE_SERVICE_ACCOUNT_JSON>
 
 SEED_ADMIN_EMAIL=<ADMIN_EMAIL>
 SEED_ADMIN_PASSWORD=<TEMP_ADMIN_PASSWORD_CHANGE_AFTER_LOGIN>
@@ -167,7 +157,47 @@ Important:
 - `PUBLIC_BASE_URL` must be the public HTTPS staging URL. It is used for file links, verification URLs, and OpenAPI.
 - `DASHBOARD_BASE_URL` is used in admin password reset emails.
 - `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are required when `NODE_ENV=production`.
+- `FIREBASE_SERVICE_ACCOUNT_JSON` must be one-line JSON, not a file path.
 - Keep `.env` out of Git.
+
+### Firebase Service Account Value
+
+Download the Firebase Admin SDK service account JSON from Firebase Console:
+
+```text
+Project settings -> Service accounts -> Firebase Admin SDK -> Generate new private key
+```
+
+Copy the JSON file to the VPS temporarily, for example:
+
+```bash
+scp firebase-service-account.json gbd@<VPS_PUBLIC_IP>:/tmp/firebase-service-account.json
+```
+
+Convert it to a one-line `.env` value:
+
+```bash
+node -e "const fs=require('fs'); const json=JSON.parse(fs.readFileSync('/tmp/firebase-service-account.json','utf8')); console.log('FIREBASE_SERVICE_ACCOUNT_JSON='+JSON.stringify(json));"
+```
+
+Paste the printed line into:
+
+```bash
+/opt/gampong-blang/SAPA-Gampong/backend/.env
+```
+
+Then remove the temporary JSON file:
+
+```bash
+rm /tmp/firebase-service-account.json
+```
+
+Validate the `.env` value can be parsed:
+
+```bash
+cd /opt/gampong-blang/SAPA-Gampong/backend
+node -e "require('dotenv').config(); JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON); console.log('Firebase service account JSON OK')"
+```
 
 ## 5. Install and Build Backend
 
@@ -491,4 +521,4 @@ sudo -u postgres psql -d gbd_staging -c '\dt'
 - Staging should use real HTTPS because email links, file URLs, Firebase web push, and QR verification all depend on public URLs.
 - `DOCS_ENABLED=true` is fine for staging. Set it to `false` for production if public docs are not desired.
 - iOS push notification is still blocked until a paid Apple Developer account exists.
-- Keep `/opt/gampong-blang/Brief/logo.webp` and `backend/storage/production` backed up. The repo alone is not enough to restore uploaded files or generated PDFs.
+- Keep `backend/storage/production` backed up. The repo alone is not enough to restore uploaded files or generated PDFs.

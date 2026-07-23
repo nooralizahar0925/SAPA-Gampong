@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 
 const templatesRoot = resolve(process.cwd(), 'templates', 'letters');
-const briefRoot = resolve(process.cwd(), '..', '..', 'Brief');
+const assetsRoot = resolve(process.cwd(), 'assets');
 
 export async function renderLetterTemplate(templateName: string, values: Record<string, string>) {
   const source = await readFile(resolve(templatesRoot, templateName), 'utf8');
@@ -27,8 +27,8 @@ async function expandPartials(source: string): Promise<string> {
   return expandPartials(rendered);
 }
 
-export async function readBriefAssetDataUrl(fileName: string) {
-  const absolutePath = resolve(briefRoot, fileName);
+export async function readAssetDataUrl(fileName: string) {
+  const absolutePath = resolve(assetsRoot, fileName);
   const buffer = await readFile(absolutePath);
   const mime = mimeFromExtension(extname(fileName).toLowerCase());
   return `data:${mime};base64,${buffer.toString('base64')}`;

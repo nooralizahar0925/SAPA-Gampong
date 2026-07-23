@@ -31,7 +31,7 @@ SAPA-Gampong/            (this folder = git root)
 
 Both clients talk to **one backend / one PostgreSQL database**. The backend (`backend/`) is the single source of truth; the mobile app and the admin dashboard are both HTTP clients of it.
 
-> **Note:** business/legal docs (Proposal, Invoice, Perjanjian, Timeline) and the `Brief/` live **outside this repo** in the parent `Apps Desa/` folder — intentionally kept out of version control (bank details / client PII).
+> **Note:** business/legal docs (Proposal, Invoice, Perjanjian, Timeline) and the full `Brief/` live **outside this repo** in the parent `Apps Desa/` folder — intentionally kept out of version control (bank details / client PII). The public app logo is committed inside each app that needs it.
 
 ## Source of truth for requirements
 

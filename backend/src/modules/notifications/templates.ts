@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import type { EmailAttachment } from '../../services/email.service';
 
 const emailTemplatesRoot = resolve(process.cwd(), 'templates', 'emails');
-const briefRoot = resolve(process.cwd(), '..', '..', 'Brief');
+const assetsRoot = resolve(process.cwd(), 'assets');
 const EMAIL_LOGO_CID = 'gampong-logo.png';
 
 export async function renderSentEmailHtml(input: {
@@ -134,7 +134,7 @@ export async function writeEmailPreviews() {
 }
 
 export async function buildEmailLogoAttachment(): Promise<EmailAttachment> {
-  const source = await readFile(resolve(briefRoot, 'logo.webp'));
+  const source = await readFile(resolve(assetsRoot, 'logo.webp'));
   const content = await sharp(source).png().toBuffer();
 
   return {

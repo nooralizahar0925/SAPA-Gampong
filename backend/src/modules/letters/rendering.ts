@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { getLetterTemplateDefinition } from './service';
-import { readBriefAssetDataUrl, renderLetterTemplate } from './template.service';
+import { readAssetDataUrl, renderLetterTemplate } from './template.service';
 
 type RenderLetterInput = {
   letterType: string;
@@ -83,7 +83,7 @@ export async function renderRequestLetterHtml(input: RenderLetterInput) {
     throw new Error(`Letter definition ${input.letterType} is missing`);
   }
 
-  const logoDataUrl = await readBriefAssetDataUrl('logo.webp');
+  const logoDataUrl = await readAssetDataUrl('logo.webp');
   const branding = await resolveBranding(definition.signatory);
 
   const templateValues = {
