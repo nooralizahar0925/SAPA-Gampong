@@ -7,7 +7,9 @@ import '../../data/models/letter_request.dart';
 import '../../data/providers/letter_providers.dart';
 
 class TrackingScreen extends ConsumerStatefulWidget {
-  const TrackingScreen({super.key});
+  const TrackingScreen({super.key, this.initialCode});
+
+  final String? initialCode;
 
   @override
   ConsumerState<TrackingScreen> createState() => _TrackingScreenState();
@@ -23,6 +25,16 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final initialCode = widget.initialCode?.trim();
+    if (initialCode != null && initialCode.isNotEmpty) {
+      _controller.text = initialCode;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+    }
   }
 
   @override
@@ -144,6 +156,11 @@ class _StatusResult extends StatelessWidget {
     'Surat dikirim ke email',
   ];
 
+  static const _canceledSteps = [
+    'Permohonan diajukan',
+    'Permohonan dibatalkan',
+  ];
+
   static int _doneCount(String s) => switch (s) {
     'SUBMITTED' || 'pending' => 0,
     'IN_REVIEW' || 'under_review' => 2,
@@ -152,6 +169,7 @@ class _StatusResult extends StatelessWidget {
     'GENERATED' || 'signed' => 4,
     'SENT' || 'sent' => 6,
     'REJECTED' => 1,
+    'CANCELED' => 1,
     _ => 0,
   };
 
@@ -163,6 +181,7 @@ class _StatusResult extends StatelessWidget {
     'GENERATED' || 'signed' => 4,
     'SENT' || 'sent' => -1,
     'REJECTED' => -1,
+    'CANCELED' => 1,
     _ => 0,
   };
 
@@ -171,6 +190,7 @@ class _StatusResult extends StatelessWidget {
     final doneCount = _doneCount(status.status);
     final currentStep = _currentStep(status.status);
     final datesByStep = _datesByStep(status);
+    final steps = status.status == 'CANCELED' ? _canceledSteps : _steps;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,12 +235,12 @@ class _StatusResult extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         const SectionTitle('Riwayat Status'),
-        for (var i = 0; i < _steps.length; i++)
+        for (var i = 0; i < steps.length; i++)
           _TimelineStep(
             done: i < doneCount,
             isNow: i == currentStep,
-            isLast: i == _steps.length - 1,
-            title: _steps[i],
+            isLast: i == steps.length - 1,
+            title: steps[i],
             subtitle: i < doneCount
                 ? _doneSubtitle(datesByStep[i])
                 : i == currentStep
@@ -263,6 +283,8 @@ class _StatusResult extends StatelessWidget {
         case 'SENT':
         case 'sent':
           dates[5] = item.at;
+        case 'CANCELED':
+          dates[1] = item.at;
       }
     }
 
@@ -311,18 +333,28 @@ class _StatusBadge extends StatelessWidget {
       status == 'signed' ||
       status == 'sent';
 
+  bool get _negative => status == 'REJECTED' || status == 'CANCELED';
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: _positive ? AppTheme.okBg : AppTheme.warnBg,
+        color: _positive
+            ? AppTheme.okBg
+            : _negative
+            ? AppTheme.dangerBg
+            : AppTheme.warnBg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: _positive ? AppTheme.ok : AppTheme.warn,
+          color: _positive
+              ? AppTheme.ok
+              : _negative
+              ? AppTheme.danger
+              : AppTheme.warn,
           fontSize: 11,
           fontWeight: FontWeight.w800,
         ),

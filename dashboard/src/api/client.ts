@@ -1,4 +1,4 @@
-import { clearStoredSession, getStoredSession } from '../auth/session';
+import { clearStoredSession, getStoredSession, notifyAuthRequired } from '../auth/session';
 
 export const API_BASE_URL =
   import.meta.env.MODE === 'test'
@@ -36,7 +36,8 @@ export type RequestStatus =
   | 'APPROVED'
   | 'GENERATED'
   | 'SENT'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'CANCELED';
 
 export type LetterFieldDefinition = {
   key: string;
@@ -241,9 +242,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
       envelope = null;
     }
 
-    if (response.status === 401) {
-      clearStoredSession();
-    }
+    if (response.status === 401) handleUnauthorized(path);
 
     throw new ApiClientError(
       response.status,
@@ -278,7 +277,7 @@ async function apiBlobRequest(path: string): Promise<Blob> {
       envelope = null;
     }
 
-    if (response.status === 401) clearStoredSession();
+    if (response.status === 401) handleUnauthorized(path);
 
     throw new ApiClientError(
       response.status,
@@ -296,6 +295,13 @@ export function loginRequest(input: { email: string; password: string }) {
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+function handleUnauthorized(path: string) {
+  clearStoredSession();
+  if (!path.startsWith('/auth/login')) {
+    notifyAuthRequired();
+  }
 }
 
 export function meRequest() {

@@ -30,6 +30,8 @@ class _PurposeScreenState extends State<PurposeScreen> {
   @override
   void initState() {
     super.initState();
+    _notesController.text = widget.flowDraft.keperluan ?? '';
+    _noteLen = _notesController.text.length;
     _notesController.addListener(
       () => setState(() => _noteLen = _notesController.text.length),
     );
@@ -45,7 +47,9 @@ class _PurposeScreenState extends State<PurposeScreen> {
   Widget build(BuildContext context) {
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
-      subtitle: 'Langkah 3 dari 5',
+      subtitle: widget.flowDraft.isCorrection
+          ? 'Perbaikan data'
+          : 'Langkah 3 dari 5',
       leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: ListView(
@@ -66,11 +70,13 @@ class _PurposeScreenState extends State<PurposeScreen> {
             spacing: 10,
             runSpacing: 10,
             children: _quickPicks
-                .map((label) => _QuickPick(
-                      label: label,
-                      selected: _selected == label,
-                      onTap: () => setState(() => _selected = label),
-                    ))
+                .map(
+                  (label) => _QuickPick(
+                    label: label,
+                    selected: _selected == label,
+                    onTap: () => setState(() => _selected = label),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 20),
@@ -156,9 +162,7 @@ class _QuickPick extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppTheme.g800 : Colors.white,
-          border: Border.all(
-            color: selected ? AppTheme.g800 : AppTheme.line,
-          ),
+          border: Border.all(color: selected ? AppTheme.g800 : AppTheme.line),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(

@@ -23,6 +23,7 @@ class LetterFlowDraft {
     this.falseStatementConfirmed = false,
     this.keperluan,
     this.referenceCode,
+    this.requestId,
   });
 
   final LetterType letterType;
@@ -34,12 +35,16 @@ class LetterFlowDraft {
   final bool falseStatementConfirmed;
   final String? keperluan;
   final String? referenceCode;
+  final String? requestId;
+
+  bool get isCorrection => requestId != null;
 
   LetterFlowDraft copyWith({
     List<Attachment>? attachments,
     bool? falseStatementConfirmed,
     String? keperluan,
     String? referenceCode,
+    String? requestId,
   }) {
     return LetterFlowDraft(
       letterType: letterType,
@@ -52,6 +57,7 @@ class LetterFlowDraft {
           falseStatementConfirmed ?? this.falseStatementConfirmed,
       keperluan: keperluan ?? this.keperluan,
       referenceCode: referenceCode ?? this.referenceCode,
+      requestId: requestId ?? this.requestId,
     );
   }
 
@@ -74,9 +80,14 @@ class LetterFlowDraft {
 }
 
 class LetterFormScreen extends ConsumerStatefulWidget {
-  const LetterFormScreen({super.key, required this.letterType});
+  const LetterFormScreen({
+    super.key,
+    required this.letterType,
+    this.initialDraft,
+  });
 
   final LetterType letterType;
+  final LetterFlowDraft? initialDraft;
 
   @override
   ConsumerState<LetterFormScreen> createState() => _LetterFormScreenState();
@@ -92,11 +103,16 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
   @override
   void initState() {
     super.initState();
+    final draft = widget.initialDraft;
+    applicantName.text = draft?.applicantName ?? '';
+    applicantPhone.text = draft?.applicantPhone ?? '';
     for (final field in widget.letterType.fields) {
+      final initialValue =
+          draft?.subjectData[field.key] ?? _defaultValue(field);
       if (field.type == FieldType.enumT) {
-        enumValues[field.key] = _defaultValue(field);
+        enumValues[field.key] = initialValue;
       } else {
-        values[field.key] = TextEditingController(text: _defaultValue(field));
+        values[field.key] = TextEditingController(text: initialValue);
       }
     }
   }
@@ -147,7 +163,9 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
 
     return SapaScaffold(
       title: widget.letterType.name,
-      subtitle: 'Langkah 2 dari 5',
+      subtitle: widget.initialDraft?.isCorrection == true
+          ? 'Perbaikan data'
+          : 'Langkah 2 dari 5',
       leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: ResidentEmailGate(
@@ -253,6 +271,10 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
         applicantEmail: session.email,
         applicantPhone: applicantPhone.text.trim(),
         subjectData: subjectData,
+        attachments: widget.initialDraft?.attachments ?? const [],
+        keperluan: widget.initialDraft?.keperluan,
+        referenceCode: widget.initialDraft?.referenceCode,
+        requestId: widget.initialDraft?.requestId,
       ),
     );
   }

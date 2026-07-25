@@ -4,9 +4,10 @@ import { defineRoute } from '../../openapi/define-route';
 import {
   DeviceTokenBody,
   DeviceTokenDeletedResponse,
+  DeviceTokenPreferencesBody,
   DeviceTokenResponse,
 } from './schemas';
-import { registerDeviceToken, unregisterDeviceToken } from './service';
+import { registerDeviceToken, unregisterDeviceToken, updateDeviceTokenPreferences } from './service';
 
 export const notificationsRouter = Router();
 
@@ -46,5 +47,24 @@ defineRoute(notificationsRouter, {
   handler: async ({ body, res }) => {
     await unregisterDeviceToken(body.token);
     res.json({ active: false });
+  },
+});
+
+defineRoute(notificationsRouter, {
+  method: 'patch',
+  path: '/device-tokens/preferences',
+  fullPath: '/api/notifications/device-tokens/preferences',
+  tags: ['Notifications'],
+  summary: 'Update resident app notification preferences for a device token',
+  body: DeviceTokenPreferencesBody,
+  responses: {
+    200: {
+      description: 'Updated device notification preferences',
+      content: { 'application/json': { schema: DeviceTokenResponse } },
+    },
+    400: errorResponse('Invalid device preference payload'),
+  },
+  handler: async ({ body, res }) => {
+    res.json(await updateDeviceTokenPreferences(body));
   },
 });

@@ -765,6 +765,7 @@ export const server = setupServer(
       GENERATED: 0,
       SENT: 0,
       REJECTED: 0,
+      CANCELED: 0,
     } as Record<string, number>;
 
     for (const item of queueItems) byStatus[item.status] += 1;

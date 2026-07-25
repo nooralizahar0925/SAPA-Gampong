@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../../core/widgets/cached_api_image.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/mosque.dart';
 import '../../data/models/prayer_config.dart';
+import '../../data/providers/app_preferences_providers.dart';
 import '../../data/providers/content_providers.dart';
 import '../../data/services/prayer_times_service.dart';
 
@@ -20,9 +23,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
   bool _loading = false;
   PrayerTimes _prayerTimes = PrayerTimes.fallback();
   String? _errorMessage;
-  bool _alarmOn = false;
 
   String? _adzanUrl;
+  PrayerConfig? _config;
 
   @override
   void initState() {
@@ -40,28 +43,59 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
 
       // Upgrade fallback to admin-configured times.
       setState(() {
+        _config = config;
         _prayerTimes = PrayerTimes.fromConfigFallback(config);
         _adzanUrl = config.adzanUrl;
         _loading = false;
       });
 
-      // If village coordinates are configured, auto-fetch live times.
-      if (config.lat != null && config.lng != null) {
-        await _fetchForVillage(config);
-      }
+      await _fetchPreferredSchedule(config);
     } catch (_) {
       // Keep hard-coded fallback on any config error.
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _fetchForVillage(PrayerConfig config) async {
+  Future<void> _fetchPreferredSchedule(
+    PrayerConfig config, {
+    bool showGpsError = false,
+  }) async {
     if (!mounted) return;
     setState(() {
       _loading = true;
       _errorMessage = null;
     });
 
+    final service = ref.read(prayerTimesServiceProvider);
+    try {
+      final times = await service.fetchUsingGpsForConfig(config);
+      if (!mounted) return;
+      setState(() {
+        _prayerTimes = times;
+        _loading = false;
+      });
+      unawaited(_syncAlarmSchedule());
+    } catch (gpsError) {
+      if (config.lat != null && config.lng != null) {
+        await _fetchForVillageFallback(config, gpsError, showGpsError);
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _errorMessage = showGpsError ? _friendlyError(gpsError) : null;
+          _loading = false;
+        });
+        unawaited(_syncAlarmSchedule());
+      }
+    }
+  }
+
+  Future<void> _fetchForVillageFallback(
+    PrayerConfig config,
+    Object gpsError,
+    bool showGpsError,
+  ) async {
     try {
       final service = ref.read(prayerTimesServiceProvider);
       final times = await service.fetchForVillageConfig(config);
@@ -70,74 +104,47 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
         _prayerTimes = times;
         _loading = false;
       });
+      unawaited(_syncAlarmSchedule());
     } catch (_) {
-      // Village fetch failed; config fallback already set, just stop loading.
-      if (mounted) setState(() => _loading = false);
+      // Village fetch failed too; config fallback already set.
+      if (mounted) {
+        setState(() {
+          _errorMessage = showGpsError ? _friendlyError(gpsError) : null;
+          _loading = false;
+        });
+        unawaited(_syncAlarmSchedule());
+      }
     }
   }
 
-  Future<void> _toggleAlarm(bool value) async {
-    if (value) {
-      final url = _adzanUrl;
-      if (url == null || url.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Audio azan belum dikonfigurasi oleh admin gampong.'),
-          ),
-        );
-        return;
-      }
-      final service = ref.read(notificationServiceProvider);
-      await service.scheduleDaily(prayerTimes: _prayerTimes, adzanUrl: url);
-      if (!mounted) return;
-      setState(() => _alarmOn = true);
-      final next = service.lastSchedule;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            next == null
-                ? 'Alarm azan aktif.'
-                : 'Alarm azan aktif untuk ${next.prayerName}.',
-          ),
-        ),
-      );
-    } else {
-      await ref.read(notificationServiceProvider).cancel();
-      if (!mounted) return;
-      setState(() => _alarmOn = false);
+  Future<void> _syncAlarmSchedule() async {
+    final preferences = await ref.read(appPreferencesProvider.future);
+    final notifications = ref.read(notificationServiceProvider);
+    if (!preferences.adzanAlarmEnabled) {
+      await notifications.cancel();
+      return;
     }
+
+    final url = _adzanUrl;
+    if (url == null || url.isEmpty) return;
+
+    await notifications.scheduleDaily(prayerTimes: _prayerTimes, adzanUrl: url);
   }
 
   Future<void> _loadFromGps() async {
     if (_loading) return;
 
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final service = ref.read(prayerTimesServiceProvider);
-      final nextTimes = await service.fetchUsingGps();
-      if (!mounted) return;
-
-      setState(() {
-        _prayerTimes = nextTimes;
-        _loading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = _friendlyError(error);
-        _loading = false;
-      });
-    }
+    await _fetchPreferredSchedule(
+      _config ?? const PrayerConfig(),
+      showGpsError: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final activePrayer = _activePrayer(_prayerTimes);
+    final preferences = ref.watch(appPreferencesProvider);
+    final alarmEnabled = preferences.value?.adzanAlarmEnabled ?? false;
 
     return SapaScaffold(
       title: 'Jadwal Sholat',
@@ -169,28 +176,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
           ),
           _PrayerRow('Isya', _prayerTimes.isya, active: activePrayer == 'Isya'),
           const SizedBox(height: 12),
-          Card(
-            color: AppTheme.deepGreen,
-            child: SwitchListTile(
-              key: const Key('prayer-adzan-toggle'),
-              value: _alarmOn,
-              onChanged: (value) => _toggleAlarm(value),
-              title: const Text(
-                'Aktifkan Alarm Suara Azan',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              subtitle: Text(
-                _alarmOn
-                    ? 'Audio azan akan diputar saat waktu sholat berikutnya.'
-                    : _adzanUrl != null
-                    ? 'Aktifkan untuk menjadwalkan audio azan.'
-                    : 'Audio belum dikonfigurasi admin',
-                style: const TextStyle(color: Color(0xFFCDEBDD)),
-              ),
-            ),
+          _AdzanAlarmStatusCard(
+            enabled: alarmEnabled,
+            hasAudio: _adzanUrl != null && _adzanUrl!.isNotEmpty,
           ),
           const SizedBox(height: 12),
           _PrayerSourceCard(
@@ -209,6 +197,65 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
   static String _friendlyError(Object error) {
     if (error is LocationPermissionException) return error.message;
     return 'Belum bisa mengambil jadwal dari GPS/internet. Data contoh tetap ditampilkan.';
+  }
+}
+
+class _AdzanAlarmStatusCard extends StatelessWidget {
+  const _AdzanAlarmStatusCard({required this.enabled, required this.hasAudio});
+
+  final bool enabled;
+  final bool hasAudio;
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = enabled && hasAudio;
+    final title = ready
+        ? 'Alarm Suara Azan Aktif'
+        : enabled
+        ? 'Alarm Suara Azan Belum Siap'
+        : 'Alarm Suara Azan Nonaktif';
+
+    return Card(
+      key: const Key('prayer-adzan-status'),
+      color: ready ? AppTheme.deepGreen : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: ready ? Colors.white.withAlpha(32) : AppTheme.g50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                ready
+                    ? Icons.notifications_active_outlined
+                    : Icons.notifications_off_outlined,
+                color: ready ? Colors.white : AppTheme.villageGreen,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: ready ? Colors.white : AppTheme.ink900,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

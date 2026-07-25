@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { registry } from '../../openapi/registry';
 import { uploadKindValues } from '../../services/storage.service';
+import { PushPlatformSchema } from '../requests/schemas';
 
 export const FeedbackStatusSchema = z.enum(['new', 'read', 'responded']);
 
@@ -17,6 +18,8 @@ export const CreateFeedbackBody = registry.register(
     phone: z.string().trim().optional(),
     body: z.string().trim().min(1, 'Isi laporan wajib diisi'),
     attachments: z.array(FeedbackAttachmentInput).default([]),
+    push_token: z.string().trim().min(1).optional(),
+    push_platform: PushPlatformSchema.default('unknown'),
   }),
 );
 

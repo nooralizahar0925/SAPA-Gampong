@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import { registry } from '../../openapi/registry';
 import { LETTER_TYPE_CODES } from '../letters/data';
-import { FeedbackStatusSchema } from '../feedback/schemas';
-import { RequestStatusSchema } from '../requests/schemas';
+import { FeedbackDetailAttachment, FeedbackStatusSchema } from '../feedback/schemas';
+import {
+  RequestAttachmentInput,
+  RequestDetailAttachment,
+  RequestStatusSchema,
+} from '../requests/schemas';
 
 export const ResidentEmailBody = registry.register(
   'ResidentEmailBody',
@@ -54,6 +58,12 @@ export const ResidentRequestItem = registry.register(
     letter_type: z.enum(LETTER_TYPE_CODES),
     status: RequestStatusSchema,
     status_label: z.string(),
+    applicant_name: z.string(),
+    applicant_email: z.string().email(),
+    applicant_phone: z.string().nullable(),
+    keperluan: z.string().nullable(),
+    subject_data: z.record(z.unknown()),
+    attachments: z.array(RequestDetailAttachment),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
     generated_pdf_url: z.string().url().nullable(),
@@ -68,15 +78,34 @@ export const ResidentRequestsResponse = registry.register(
   }),
 );
 
+export const ResidentRequestParams = z.object({
+  id: z.string().min(1),
+});
+
+export const ResidentRequestCorrectionBody = registry.register(
+  'ResidentRequestCorrectionBody',
+  z.object({
+    applicant_name: z.string().trim().min(1, 'Nama pemohon wajib diisi'),
+    applicant_phone: z.string().trim().optional(),
+    keperluan: z.string().trim().optional(),
+    subject_data: z.record(z.unknown()),
+    attachments: z.array(RequestAttachmentInput),
+  }),
+);
+
 export const ResidentFeedbackItem = registry.register(
   'ResidentFeedbackItem',
   z.object({
     id: z.string(),
     reference_code: z.string(),
+    name: z.string(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
     body: z.string(),
     status: FeedbackStatusSchema,
     reply: z.string().nullable(),
     replied_at: z.string().datetime().nullable(),
+    attachments: z.array(FeedbackDetailAttachment),
     created_at: z.string().datetime(),
   }),
 );
@@ -90,3 +119,6 @@ export const ResidentFeedbackResponse = registry.register(
 
 export type ResidentEmailBodyType = z.infer<typeof ResidentEmailBody>;
 export type ResidentVerifyOtpBodyType = z.infer<typeof ResidentVerifyOtpBody>;
+export type ResidentRequestCorrectionBodyType = z.infer<
+  typeof ResidentRequestCorrectionBody
+>;

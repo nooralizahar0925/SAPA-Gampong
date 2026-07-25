@@ -178,6 +178,24 @@ class PrayerTimesService {
     );
   }
 
+  Future<PrayerTimes> fetchUsingGpsForConfig(
+    PrayerConfig config, {
+    DateTime? date,
+  }) async {
+    final location = await _locationProvider();
+    final methodSettings =
+        '${config.fajrAngle.round()},null,${config.ishaAngle.round()}';
+    return fetchForCoordinates(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      date: date,
+      aladhanMethod: config.aladhanMethod,
+      methodSettings: methodSettings,
+      timezone: config.timezone,
+      school: config.school,
+    );
+  }
+
   Future<PrayerTimes> fetchForCoordinates({
     required double latitude,
     required double longitude,

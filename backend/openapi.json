@@ -1269,6 +1269,701 @@
           "blocks"
         ]
       },
+      "VerifyResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            },
+            "required": [
+              "valid"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "nomor_surat": {
+                "type": "string"
+              },
+              "jenis_surat": {
+                "type": "string"
+              },
+              "tanggal_terbit": {
+                "type": "string"
+              },
+              "penandatangan": {
+                "type": "string"
+              },
+              "perihal": {
+                "type": "string"
+              },
+              "revoked": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            },
+            "required": [
+              "valid",
+              "nomor_surat",
+              "jenis_surat",
+              "tanggal_terbit",
+              "penandatangan",
+              "perihal",
+              "revoked"
+            ]
+          }
+        ]
+      },
+      "RevokeResponse": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "CreateRequestBody": {
+        "type": "object",
+        "properties": {
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "applicant_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applicant_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "applicant_phone": {
+            "type": "string"
+          },
+          "keperluan": {
+            "type": "string"
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "file_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "KTP",
+                    "KK",
+                    "other",
+                    "photo",
+                    "document",
+                    "audio"
+                  ]
+                }
+              },
+              "required": [
+                "file_id",
+                "kind"
+              ]
+            }
+          },
+          "push_token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "push_platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ],
+            "default": "unknown"
+          }
+        },
+        "required": [
+          "letter_type",
+          "applicant_name",
+          "applicant_email",
+          "subject_data",
+          "attachments"
+        ]
+      },
+      "CreateRequestResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "status"
+        ]
+      },
+      "RequestStatusHistoryItem": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED",
+              "CANCELED"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "nomor_surat": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "at"
+        ]
+      },
+      "TrackRequestResponse": {
+        "type": "object",
+        "properties": {
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED",
+              "CANCELED"
+            ]
+          },
+          "status_label": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestStatusHistoryItem"
+            }
+          }
+        },
+        "required": [
+          "reference_code",
+          "letter_type",
+          "status",
+          "status_label",
+          "created_at",
+          "updated_at",
+          "status_history"
+        ]
+      },
+      "RequestQueueItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "applicant_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED",
+              "CANCELED"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "letter_type",
+          "applicant_name",
+          "status",
+          "created_at",
+          "email"
+        ]
+      },
+      "ListRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestQueueItem"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ]
+      },
+      "RequestPeriod": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "month": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "count"
+        ]
+      },
+      "RequestCountsResponse": {
+        "type": "object",
+        "properties": {
+          "by_status": {
+            "type": "object",
+            "properties": {
+              "SUBMITTED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "IN_REVIEW": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "NEEDS_INFO": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "APPROVED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "GENERATED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "SENT": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "REJECTED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "CANCELED": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pending": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestPeriod"
+            }
+          }
+        },
+        "required": [
+          "by_status",
+          "total",
+          "pending",
+          "periods"
+        ]
+      },
+      "RequestDetailAttachment": {
+        "type": "object",
+        "properties": {
+          "file_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "KTP",
+              "KK",
+              "other",
+              "photo",
+              "document",
+              "audio"
+            ]
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "file_id",
+          "kind",
+          "mime",
+          "size",
+          "url"
+        ]
+      },
+      "RequestDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference_code": {
+            "type": "string"
+          },
+          "letter_type": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5",
+              "L6",
+              "L7",
+              "L8",
+              "L9",
+              "L10"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "IN_REVIEW",
+              "NEEDS_INFO",
+              "APPROVED",
+              "GENERATED",
+              "SENT",
+              "REJECTED",
+              "CANCELED"
+            ]
+          },
+          "applicant_name": {
+            "type": "string"
+          },
+          "applicant_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "applicant_phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keperluan": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestDetailAttachment"
+            }
+          },
+          "status_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestStatusHistoryItem"
+            }
+          },
+          "nomor_surat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generated_pdf_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generated_pdf_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "verification_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verification_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "decision_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decided_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reference_code",
+          "letter_type",
+          "status",
+          "applicant_name",
+          "applicant_email",
+          "applicant_phone",
+          "keperluan",
+          "subject_data",
+          "attachments",
+          "status_history",
+          "nomor_surat",
+          "decision_reason",
+          "decided_by",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PatchRequestStatusBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject",
+              "in_review",
+              "needs_info"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "nomor_surat": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "GenerateRequestResponse": {
+        "type": "object",
+        "properties": {
+          "pdf_id": {
+            "type": "string"
+          },
+          "pdf_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "verification_token": {
+            "type": "string"
+          },
+          "nomor_surat": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pdf_id",
+          "pdf_url",
+          "verification_token",
+          "nomor_surat"
+        ]
+      },
+      "SendRequestResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SENT"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "CreateFeedbackBody": {
         "type": "object",
         "properties": {
@@ -1314,6 +2009,20 @@
               ]
             },
             "default": []
+          },
+          "push_token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "push_platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ],
+            "default": "unknown"
           }
         },
         "required": [
@@ -1821,693 +2530,6 @@
           }
         }
       },
-      "VerifyResponse": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "valid": {
-                "type": "boolean",
-                "enum": [
-                  false
-                ]
-              }
-            },
-            "required": [
-              "valid"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "valid": {
-                "type": "boolean",
-                "enum": [
-                  true
-                ]
-              },
-              "nomor_surat": {
-                "type": "string"
-              },
-              "jenis_surat": {
-                "type": "string"
-              },
-              "tanggal_terbit": {
-                "type": "string"
-              },
-              "penandatangan": {
-                "type": "string"
-              },
-              "perihal": {
-                "type": "string"
-              },
-              "revoked": {
-                "type": "boolean",
-                "enum": [
-                  false
-                ]
-              }
-            },
-            "required": [
-              "valid",
-              "nomor_surat",
-              "jenis_surat",
-              "tanggal_terbit",
-              "penandatangan",
-              "perihal",
-              "revoked"
-            ]
-          }
-        ]
-      },
-      "RevokeResponse": {
-        "type": "object",
-        "properties": {
-          "revoked": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          }
-        },
-        "required": [
-          "revoked"
-        ]
-      },
-      "CreateRequestBody": {
-        "type": "object",
-        "properties": {
-          "letter_type": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5",
-              "L6",
-              "L7",
-              "L8",
-              "L9",
-              "L10"
-            ]
-          },
-          "applicant_name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "applicant_email": {
-            "type": "string",
-            "format": "email"
-          },
-          "applicant_phone": {
-            "type": "string"
-          },
-          "keperluan": {
-            "type": "string"
-          },
-          "subject_data": {
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "file_id": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "kind": {
-                  "type": "string",
-                  "enum": [
-                    "KTP",
-                    "KK",
-                    "other",
-                    "photo",
-                    "document",
-                    "audio"
-                  ]
-                }
-              },
-              "required": [
-                "file_id",
-                "kind"
-              ]
-            }
-          },
-          "push_token": {
-            "type": "string",
-            "minLength": 1
-          },
-          "push_platform": {
-            "type": "string",
-            "enum": [
-              "android",
-              "ios",
-              "web",
-              "unknown"
-            ],
-            "default": "unknown"
-          }
-        },
-        "required": [
-          "letter_type",
-          "applicant_name",
-          "applicant_email",
-          "subject_data",
-          "attachments"
-        ]
-      },
-      "CreateRequestResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "reference_code": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "reference_code",
-          "status"
-        ]
-      },
-      "RequestStatusHistoryItem": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED",
-              "IN_REVIEW",
-              "NEEDS_INFO",
-              "APPROVED",
-              "GENERATED",
-              "SENT",
-              "REJECTED"
-            ]
-          },
-          "at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "action": {
-            "type": "string"
-          },
-          "by": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "nomor_surat": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "at"
-        ]
-      },
-      "TrackRequestResponse": {
-        "type": "object",
-        "properties": {
-          "reference_code": {
-            "type": "string"
-          },
-          "letter_type": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5",
-              "L6",
-              "L7",
-              "L8",
-              "L9",
-              "L10"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED",
-              "IN_REVIEW",
-              "NEEDS_INFO",
-              "APPROVED",
-              "GENERATED",
-              "SENT",
-              "REJECTED"
-            ]
-          },
-          "status_label": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status_history": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestStatusHistoryItem"
-            }
-          }
-        },
-        "required": [
-          "reference_code",
-          "letter_type",
-          "status",
-          "status_label",
-          "created_at",
-          "updated_at",
-          "status_history"
-        ]
-      },
-      "RequestQueueItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "reference_code": {
-            "type": "string"
-          },
-          "letter_type": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5",
-              "L6",
-              "L7",
-              "L8",
-              "L9",
-              "L10"
-            ]
-          },
-          "applicant_name": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED",
-              "IN_REVIEW",
-              "NEEDS_INFO",
-              "APPROVED",
-              "GENERATED",
-              "SENT",
-              "REJECTED"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          }
-        },
-        "required": [
-          "id",
-          "reference_code",
-          "letter_type",
-          "applicant_name",
-          "status",
-          "created_at",
-          "email"
-        ]
-      },
-      "ListRequestsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestQueueItem"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "page": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page"
-        ]
-      },
-      "RequestPeriod": {
-        "type": "object",
-        "properties": {
-          "year": {
-            "type": "integer"
-          },
-          "month": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 12
-          },
-          "count": {
-            "type": "integer",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "year",
-          "month",
-          "count"
-        ]
-      },
-      "RequestCountsResponse": {
-        "type": "object",
-        "properties": {
-          "by_status": {
-            "type": "object",
-            "properties": {
-              "SUBMITTED": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "IN_REVIEW": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "NEEDS_INFO": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "APPROVED": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "GENERATED": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "SENT": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "REJECTED": {
-                "type": "integer",
-                "minimum": 0
-              }
-            }
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "pending": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "periods": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestPeriod"
-            }
-          }
-        },
-        "required": [
-          "by_status",
-          "total",
-          "pending",
-          "periods"
-        ]
-      },
-      "RequestDetailAttachment": {
-        "type": "object",
-        "properties": {
-          "file_id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "KTP",
-              "KK",
-              "other",
-              "photo",
-              "document",
-              "audio"
-            ]
-          },
-          "mime": {
-            "type": "string"
-          },
-          "size": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "url": {
-            "type": "string",
-            "format": "uri"
-          }
-        },
-        "required": [
-          "file_id",
-          "kind",
-          "mime",
-          "size",
-          "url"
-        ]
-      },
-      "RequestDetailResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "reference_code": {
-            "type": "string"
-          },
-          "letter_type": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5",
-              "L6",
-              "L7",
-              "L8",
-              "L9",
-              "L10"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "SUBMITTED",
-              "IN_REVIEW",
-              "NEEDS_INFO",
-              "APPROVED",
-              "GENERATED",
-              "SENT",
-              "REJECTED"
-            ]
-          },
-          "applicant_name": {
-            "type": "string"
-          },
-          "applicant_email": {
-            "type": "string",
-            "format": "email"
-          },
-          "applicant_phone": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "keperluan": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "subject_data": {
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestDetailAttachment"
-            }
-          },
-          "status_history": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestStatusHistoryItem"
-            }
-          },
-          "nomor_surat": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "generated_pdf_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "generated_pdf_url": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uri"
-          },
-          "verification_token": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "verification_url": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uri"
-          },
-          "decision_reason": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "decided_by": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "reference_code",
-          "letter_type",
-          "status",
-          "applicant_name",
-          "applicant_email",
-          "applicant_phone",
-          "keperluan",
-          "subject_data",
-          "attachments",
-          "status_history",
-          "nomor_surat",
-          "decision_reason",
-          "decided_by",
-          "created_at",
-          "updated_at"
-        ]
-      },
-      "PatchRequestStatusBody": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": [
-              "approve",
-              "reject",
-              "in_review",
-              "needs_info"
-            ]
-          },
-          "reason": {
-            "type": "string"
-          },
-          "subject_data": {
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "nomor_surat": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "action"
-        ]
-      },
-      "GenerateRequestResponse": {
-        "type": "object",
-        "properties": {
-          "pdf_id": {
-            "type": "string"
-          },
-          "pdf_url": {
-            "type": "string",
-            "format": "uri"
-          },
-          "verification_token": {
-            "type": "string"
-          },
-          "nomor_surat": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "pdf_id",
-          "pdf_url",
-          "verification_token",
-          "nomor_surat"
-        ]
-      },
-      "SendRequestResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "SENT"
-            ]
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
       "DeviceTokenBody": {
         "type": "object",
         "properties": {
@@ -2530,6 +2552,27 @@
           "token"
         ]
       },
+      "DeviceTokenPreferencesBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DeviceTokenBody"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "letter_status_notifications": {
+                "type": "boolean"
+              },
+              "feedback_status_notifications": {
+                "type": "boolean"
+              },
+              "announcement_notifications": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
       "DeviceTokenResponse": {
         "type": "object",
         "properties": {
@@ -2550,13 +2593,25 @@
           },
           "active": {
             "type": "boolean"
+          },
+          "letter_status_notifications": {
+            "type": "boolean"
+          },
+          "feedback_status_notifications": {
+            "type": "boolean"
+          },
+          "announcement_notifications": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "token",
           "platform",
-          "active"
+          "active",
+          "letter_status_notifications",
+          "feedback_status_notifications",
+          "announcement_notifications"
         ]
       },
       "DeviceTokenDeletedResponse": {
@@ -2697,11 +2752,41 @@
               "APPROVED",
               "GENERATED",
               "SENT",
-              "REJECTED"
+              "REJECTED",
+              "CANCELED"
             ]
           },
           "status_label": {
             "type": "string"
+          },
+          "applicant_name": {
+            "type": "string"
+          },
+          "applicant_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "applicant_phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keperluan": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestDetailAttachment"
+            }
           },
           "created_at": {
             "type": "string",
@@ -2731,6 +2816,12 @@
           "letter_type",
           "status",
           "status_label",
+          "applicant_name",
+          "applicant_email",
+          "applicant_phone",
+          "keperluan",
+          "subject_data",
+          "attachments",
           "created_at",
           "updated_at",
           "generated_pdf_url",
@@ -2751,6 +2842,57 @@
           "items"
         ]
       },
+      "ResidentRequestCorrectionBody": {
+        "type": "object",
+        "properties": {
+          "applicant_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applicant_phone": {
+            "type": "string"
+          },
+          "keperluan": {
+            "type": "string"
+          },
+          "subject_data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "file_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "KTP",
+                    "KK",
+                    "other",
+                    "photo",
+                    "document",
+                    "audio"
+                  ]
+                }
+              },
+              "required": [
+                "file_id",
+                "kind"
+              ]
+            }
+          }
+        },
+        "required": [
+          "applicant_name",
+          "subject_data",
+          "attachments"
+        ]
+      },
       "ResidentFeedbackItem": {
         "type": "object",
         "properties": {
@@ -2759,6 +2901,19 @@
           },
           "reference_code": {
             "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "body": {
             "type": "string"
@@ -2784,6 +2939,12 @@
             ],
             "format": "date-time"
           },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedbackDetailAttachment"
+            }
+          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -2792,10 +2953,14 @@
         "required": [
           "id",
           "reference_code",
+          "name",
+          "email",
+          "phone",
           "body",
           "status",
           "reply",
           "replied_at",
+          "attachments",
           "created_at"
         ]
       },
@@ -5580,6 +5745,45 @@
         }
       }
     },
+    "/api/notifications/device-tokens/preferences": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Update resident app notification preferences for a device token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenPreferencesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated device notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid device preference payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/resident/email/request-otp": {
       "post": {
         "tags": [
@@ -5728,6 +5932,147 @@
         }
       }
     },
+    "/api/resident/requests/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Cancel a resident letter request before office review starts",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resident request cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentRequestItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request can no longer be cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/requests/{id}/resubmit": {
+      "post": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Submit corrected data for a resident letter request that needs more information",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidentRequestCorrectionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resident request corrected and returned to office review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentRequestItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid correction payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request is not waiting for resident correction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/resident/feedback": {
       "get": {
         "tags": [
@@ -5817,7 +6162,8 @@
                 "APPROVED",
                 "GENERATED",
                 "SENT",
-                "REJECTED"
+                "REJECTED",
+                "CANCELED"
               ]
             },
             "required": false,

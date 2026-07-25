@@ -1,6 +1,7 @@
 import type { AdminUser } from '../api/client';
 
 const STORAGE_KEY = 'gampong-blang-digital-dashboard-session';
+export const AUTH_REQUIRED_EVENT = 'gampong-blang-digital-auth-required';
 const memoryStorage = new Map<string, string>();
 
 export type StoredSession = {
@@ -26,6 +27,11 @@ export function setStoredSession(session: StoredSession) {
 
 export function clearStoredSession() {
   getSafeStorage().removeItem(STORAGE_KEY);
+}
+
+export function notifyAuthRequired() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(AUTH_REQUIRED_EVENT));
 }
 
 export function isAuthenticated() {

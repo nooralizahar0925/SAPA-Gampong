@@ -40,6 +40,7 @@ const STATUS_FILTERS: Array<{ key: 'ALL' | RequestStatus; label: string }> = [
   { key: 'APPROVED', label: 'Disetujui' },
   { key: 'SENT', label: 'Terkirim' },
   { key: 'REJECTED', label: 'Ditolak' },
+  { key: 'CANCELED', label: 'Dibatalkan' },
 ];
 
 const ACTION_LABELS: Record<RequestStatus, string> = {
@@ -50,6 +51,7 @@ const ACTION_LABELS: Record<RequestStatus, string> = {
   GENERATED: 'Pratinjau',
   SENT: 'Detail',
   REJECTED: 'Alasan',
+  CANCELED: 'Detail',
 };
 
 const ACTION_TONES: Record<RequestStatus, string> = {
@@ -60,6 +62,7 @@ const ACTION_TONES: Record<RequestStatus, string> = {
   GENERATED: 'primary',
   SENT: 'tertiary',
   REJECTED: 'tertiary',
+  CANCELED: 'tertiary',
 };
 
 export function QueuePage() {

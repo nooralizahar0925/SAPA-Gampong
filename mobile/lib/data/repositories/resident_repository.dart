@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/network/dio_client.dart';
+import '../models/letter_request.dart';
 import '../models/resident_session.dart';
 import '../services/content_cache_service.dart';
 
@@ -57,6 +58,33 @@ class ResidentRepository {
       decode: (data) =>
           _objectMaps(data).map(ResidentFeedbackItem.fromJson).toList(),
     );
+  }
+
+  Future<ResidentRequestItem> cancelRequest({
+    required ResidentSession session,
+    required String id,
+  }) async {
+    final res = await _client.dio.post<Map<String, Object?>>(
+      '/resident/requests/$id/cancel',
+      options: _auth(session),
+    );
+    return ResidentRequestItem.fromJson(res.data ?? {});
+  }
+
+  Future<ResidentRequestItem> resubmitRequest({
+    required ResidentSession session,
+    required String id,
+    required LetterRequestDraft draft,
+  }) async {
+    final data = draft.toJson()
+      ..remove('letter_type')
+      ..remove('applicant_email');
+    final res = await _client.dio.post<Map<String, Object?>>(
+      '/resident/requests/$id/resubmit',
+      data: data,
+      options: _auth(session),
+    );
+    return ResidentRequestItem.fromJson(res.data ?? {});
   }
 
   Options _auth(ResidentSession session) {

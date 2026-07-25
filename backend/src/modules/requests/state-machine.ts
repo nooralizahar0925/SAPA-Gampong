@@ -10,6 +10,7 @@ const TRANSITIONS: Record<RequestStatus, readonly RequestAction[]> = {
   GENERATED: [],
   SENT: [],
   REJECTED: [],
+  CANCELED: [],
 };
 
 const TARGET_STATUS: Record<RequestAction, RequestStatus> = {

@@ -10,7 +10,11 @@ import { assignLetterNumber } from '../letters/number.service';
 import type { CreateRequestBodyType, PatchRequestStatusBodyType } from './schemas';
 import { canTransition, targetStatusFor } from './state-machine';
 import { revokeVerification } from '../verify/service';
-import { linkDeviceTokenToRequest, notifyRequestRejected } from '../notifications/service';
+import {
+  linkDeviceTokenToRequest,
+  notifyRequestRejected,
+  notifyRequestStatusChanged,
+} from '../notifications/service';
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'Menunggu diproses',
@@ -20,6 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
   GENERATED: 'Surat selesai dibuat',
   SENT: 'Surat telah dikirim',
   REJECTED: 'Ditolak',
+  CANCELED: 'Dibatalkan',
 };
 
 export async function createPublicRequest(input: CreateRequestBodyType) {
@@ -71,6 +76,12 @@ export async function createPublicRequest(input: CreateRequestBodyType) {
           requestId: created.id,
           token: input.push_token,
           platform: input.push_platform as PushPlatform,
+        });
+        await notifyRequestStatusChanged({
+          requestId: created.id,
+          referenceCode: created.reference_code,
+          letterType: input.letter_type,
+          status: 'SUBMITTED',
         });
       }
 
@@ -218,6 +229,7 @@ const ALL_STATUSES = [
   'GENERATED',
   'SENT',
   'REJECTED',
+  'CANCELED',
 ] as const;
 
 /**
@@ -371,6 +383,13 @@ export async function updateRequestStatus(
       referenceCode: found.referenceCode,
       letterType: found.letterType,
       reason: input.reason.trim(),
+    });
+  } else {
+    await notifyRequestStatusChanged({
+      requestId: found.id,
+      referenceCode: found.referenceCode,
+      letterType: found.letterType,
+      status: result.status,
     });
   }
 

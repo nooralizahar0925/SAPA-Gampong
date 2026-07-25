@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'data/providers/app_preferences_providers.dart';
 import 'data/providers/content_providers.dart';
 import 'data/providers/submission_queue_providers.dart';
 
@@ -19,9 +20,15 @@ class _AppState extends ConsumerState<App> {
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(submissionQueueProvider).retryPending());
-    Future.microtask(
-      () => ref.read(notificationServiceProvider).initializePush(),
-    );
+    Future.microtask(() async {
+      final preferences = await ref.read(appPreferencesProvider.future);
+      await ref
+          .read(notificationServiceProvider)
+          .initializePush(
+            preferences: preferences,
+            preferencesLoader: () => ref.read(appPreferencesProvider.future),
+          );
+    });
   }
 
   @override

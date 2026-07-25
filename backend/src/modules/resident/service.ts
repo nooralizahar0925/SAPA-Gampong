@@ -1,11 +1,18 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
+import { Prisma, type AttachmentKind } from '@prisma/client';
 import { env } from '../../config/env';
 import { ApiError } from '../../lib/errors';
 import { prisma } from '../../lib/prisma';
 import { EmailService } from '../../services/email.service';
 import { signedUrl } from '../../services/storage.service';
-import type { ResidentEmailBodyType, ResidentVerifyOtpBodyType } from './schemas';
+import { getLetterTemplateDefinition } from '../letters/service';
+import { notifyRequestStatusChanged } from '../notifications/service';
+import type {
+  ResidentEmailBodyType,
+  ResidentRequestCorrectionBodyType,
+  ResidentVerifyOtpBodyType,
+} from './schemas';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
@@ -19,6 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   GENERATED: 'Surat selesai dibuat',
   SENT: 'Surat telah dikirim',
   REJECTED: 'Ditolak',
+  CANCELED: 'Dibatalkan',
 };
 
 export async function requestResidentOtp(input: ResidentEmailBodyType) {
@@ -140,21 +148,139 @@ export async function listResidentRequests(req: Request) {
     where: { applicantEmail: resident.email },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 50,
+    include: { attachments: { include: { file: true } } },
   });
 
   return {
-    items: items.map((item) => ({
-      id: item.id,
-      reference_code: item.referenceCode,
-      letter_type: item.letterType,
-      status: item.status,
-      status_label: STATUS_LABELS[item.status] ?? item.status,
-      created_at: item.createdAt.toISOString(),
-      updated_at: item.updatedAt.toISOString(),
-      generated_pdf_url: item.generatedPdfId ? signedUrl(item.generatedPdfId) : null,
-      decision_reason: item.decisionReason,
-    })),
+    items: items.map(serializeResidentRequestItem),
   };
+}
+
+export async function cancelResidentRequest(req: Request, id: string) {
+  const resident = await requireResidentSession(req);
+  const found = await prisma.letterRequest.findUnique({
+    where: { id },
+    include: { histories: { orderBy: { createdAt: 'asc' } } },
+  });
+
+  if (!found || found.applicantEmail !== resident.email) {
+    throw ApiError.notFound('Permohonan tidak ditemukan');
+  }
+
+  if (found.status !== 'SUBMITTED') {
+    throw ApiError.conflict('Permohonan tidak dapat dibatalkan setelah ditinjau petugas');
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const request = await tx.letterRequest.update({
+      where: { id },
+      data: {
+        status: 'CANCELED',
+        decisionReason: 'Dibatalkan oleh warga',
+      },
+    });
+
+    await tx.requestStatusHistory.create({
+      data: {
+        requestId: found.id,
+        fromStatus: found.status,
+        toStatus: 'CANCELED',
+        action: 'cancel',
+        reason: 'Dibatalkan oleh warga',
+        actorName: 'Warga',
+      },
+    });
+
+    return request;
+  });
+
+  await notifyRequestStatusChanged({
+    requestId: found.id,
+    referenceCode: found.referenceCode,
+    letterType: found.letterType,
+    status: 'CANCELED',
+  });
+
+  return serializeResidentRequestItem(updated);
+}
+
+export async function resubmitResidentRequest(
+  req: Request,
+  id: string,
+  input: ResidentRequestCorrectionBodyType,
+) {
+  const resident = await requireResidentSession(req);
+  const found = await prisma.letterRequest.findUnique({
+    where: { id },
+    include: { attachments: { include: { file: true } } },
+  });
+
+  if (!found || found.applicantEmail !== resident.email) {
+    throw ApiError.notFound('Permohonan tidak ditemukan');
+  }
+
+  if (found.status !== 'NEEDS_INFO') {
+    throw ApiError.conflict('Perbaikan data hanya tersedia saat kantor meminta informasi tambahan');
+  }
+
+  const definition = await getLetterTemplateDefinition(found.letterType, true);
+  if (!definition) {
+    throw ApiError.validation('Data yang dikirim tidak valid', {
+      letter_type: 'Jenis surat tidak dikenal',
+    });
+  }
+
+  await validateResidentCorrectionAttachments(
+    definition.required_attachments,
+    input.attachments,
+  );
+
+  const subjectData = input.subject_data as Prisma.InputJsonObject;
+  const attachmentRows = input.attachments.map((attachment) => ({
+    fileId: attachment.file_id,
+    kind: attachment.kind as AttachmentKind,
+  }));
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.requestAttachment.deleteMany({ where: { requestId: found.id } });
+    const request = await tx.letterRequest.update({
+      where: { id: found.id },
+      data: {
+        status: 'IN_REVIEW',
+        applicantName: input.applicant_name,
+        applicantPhone: input.applicant_phone?.trim() || null,
+        keperluan: input.keperluan?.trim() || null,
+        subjectData,
+        decisionReason: null,
+        attachments: {
+          create: attachmentRows,
+        },
+      },
+      include: { attachments: { include: { file: true } } },
+    });
+
+    await tx.requestStatusHistory.create({
+      data: {
+        requestId: found.id,
+        fromStatus: found.status,
+        toStatus: 'IN_REVIEW',
+        action: 'resubmit',
+        actorName: 'Warga',
+        subjectData,
+      },
+    });
+
+    return request;
+  });
+
+  await notifyRequestStatusChanged({
+    requestId: found.id,
+    referenceCode: found.referenceCode,
+    letterType: found.letterType,
+    status: 'IN_REVIEW',
+  });
+
+  return serializeResidentRequestItem(updated);
 }
 
 export async function listResidentFeedback(req: Request) {
@@ -163,19 +289,109 @@ export async function listResidentFeedback(req: Request) {
     where: { email: resident.email },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 50,
+    include: { attachments: { include: { file: true } } },
   });
 
   return {
     items: items.map((item) => ({
       id: item.id,
       reference_code: item.referenceCode,
+      name: item.name,
+      email: item.email,
+      phone: item.phone,
       body: item.body,
       status: item.status,
       reply: item.reply,
       replied_at: item.repliedAt?.toISOString() ?? null,
+      attachments: item.attachments.map((attachment) => ({
+        file_id: attachment.fileId,
+        kind: attachment.kind,
+        mime: attachment.file.mime,
+        size: attachment.file.size,
+        original_name: attachment.file.originalName,
+        url: signedUrl(attachment.file.id),
+      })),
       created_at: item.createdAt.toISOString(),
     })),
   };
+}
+
+function serializeResidentRequestItem(item: {
+  id: string;
+  referenceCode: string;
+  letterType: string;
+  status: string;
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone: string | null;
+  keperluan: string | null;
+  subjectData: Prisma.JsonValue;
+  createdAt: Date;
+  updatedAt: Date;
+  generatedPdfId: string | null;
+  decisionReason: string | null;
+  attachments?: Array<{
+    kind: AttachmentKind;
+    fileId: string;
+    file: { id: string; mime: string; size: number };
+  }>;
+}) {
+  return {
+    id: item.id,
+    reference_code: item.referenceCode,
+    letter_type: item.letterType,
+    status: item.status,
+    status_label: STATUS_LABELS[item.status] ?? item.status,
+    applicant_name: item.applicantName,
+    applicant_email: item.applicantEmail,
+    applicant_phone: item.applicantPhone,
+    keperluan: item.keperluan,
+    subject_data: item.subjectData,
+    attachments: (item.attachments ?? []).map((attachment) => ({
+      file_id: attachment.fileId,
+      kind: attachment.kind,
+      mime: attachment.file.mime,
+      size: attachment.file.size,
+      url: signedUrl(attachment.file.id),
+    })),
+    created_at: item.createdAt.toISOString(),
+    updated_at: item.updatedAt.toISOString(),
+    generated_pdf_url: item.generatedPdfId ? signedUrl(item.generatedPdfId) : null,
+    decision_reason: item.decisionReason,
+  };
+}
+
+async function validateResidentCorrectionAttachments(
+  requiredKinds: readonly string[],
+  attachments: ResidentRequestCorrectionBodyType['attachments'],
+) {
+  const kinds = new Set(attachments.map((item) => item.kind));
+  const fields: Record<string, string> = {};
+
+  for (const kind of requiredKinds) {
+    if (!kinds.has(kind as AttachmentKind)) {
+      fields[`attachments.${kind}`] = `Attachment ${kind} is required`;
+    }
+  }
+
+  const uniqueFileIds = [...new Set(attachments.map((item) => item.file_id))];
+  if (uniqueFileIds.length > 0) {
+    const files = await prisma.file.findMany({
+      where: { id: { in: uniqueFileIds } },
+      select: { id: true },
+    });
+    const existingIds = new Set(files.map((file) => file.id));
+
+    attachments.forEach((attachment, index) => {
+      if (!existingIds.has(attachment.file_id)) {
+        fields[`attachments.${index}.file_id`] = 'Uploaded file was not found';
+      }
+    });
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw ApiError.validation('Data yang dikirim tidak valid', fields);
+  }
 }
 
 function normalizeEmail(email: string) {

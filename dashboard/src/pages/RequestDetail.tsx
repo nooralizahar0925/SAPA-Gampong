@@ -591,7 +591,7 @@ function buildTimeline(detail: RequestDetailResponse) {
     title: actionTitle(item.action, item.status),
     timestamp: `${formatLongDateTime(item.at)}${item.by ? ` · ${item.by}` : ''}${item.reason ? ` · ${item.reason}` : ''}`,
     kind:
-      index === collection.length - 1 && !['REJECTED', 'SENT', 'GENERATED', 'APPROVED'].includes(item.status)
+      index === collection.length - 1 && !['REJECTED', 'CANCELED', 'SENT', 'GENERATED', 'APPROVED'].includes(item.status)
         ? ('now' as const)
         : ('done' as const),
   }));

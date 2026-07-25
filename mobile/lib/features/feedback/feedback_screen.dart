@@ -326,6 +326,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           ),
         ),
         const SizedBox(height: 32),
+        OutlinedButton.icon(
+          onPressed: () => context.goNamed(AppRouteNames.myFeedback),
+          icon: const Icon(Icons.campaign_outlined),
+          label: const Text('Lihat Laporan Saya'),
+        ),
+        const SizedBox(height: 10),
         FilledButton(
           onPressed: () => context.goNamed(AppRouteNames.home),
           child: const Text('Kembali ke Beranda'),

@@ -7,6 +7,11 @@ import {
   setEmailTransportForTests,
   type EmailAttachment,
 } from '../src/services/email.service';
+import {
+  setPushTransportForTests,
+  type PushPayload,
+  type PushTransport,
+} from '../src/modules/notifications/service';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
@@ -107,6 +112,72 @@ describe('feedback module', () => {
         email: 'nurul@example.com',
         status: 'new',
       });
+    });
+
+    it('links a submitted feedback report to the resident push token', async () => {
+      const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+      const restorePush = setPushTransportForTests({
+        async sendToTokens(tokens, payload) {
+          sentPushes.push({ tokens, payload });
+          return { successCount: tokens.length, failureCount: 0, invalidTokens: [] };
+        },
+      } satisfies PushTransport);
+
+      const created = await submitFeedback({
+        push_token: 'feedback-token-1',
+        push_platform: 'android',
+      });
+
+      restorePush();
+
+      expect(created.status).toBe(201);
+      const saved = await testPrisma.feedbackPushToken.findFirst({
+        where: { feedbackId: created.body.id },
+        include: { deviceToken: true },
+      });
+      expect(saved?.deviceToken).toMatchObject({
+        token: 'feedback-token-1',
+        platform: 'android',
+        active: true,
+      });
+      expect(sentPushes).toHaveLength(1);
+      expect(sentPushes[0].payload).toMatchObject({
+        event: 'FEEDBACK_NEW',
+        title: 'Laporan diterima',
+        referenceCode: created.body.reference_code,
+      });
+    });
+
+    it('does not send feedback pushes to tokens with feedback notifications disabled', async () => {
+      await testPrisma.deviceToken.create({
+        data: {
+          token: 'feedback-muted-token',
+          platform: 'android',
+          feedbackStatusNotifications: false,
+        },
+      });
+      const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+      const restorePush = setPushTransportForTests({
+        async sendToTokens(tokens, payload) {
+          sentPushes.push({ tokens, payload });
+          return { successCount: tokens.length, failureCount: 0, invalidTokens: [] };
+        },
+      } satisfies PushTransport);
+
+      const created = await submitFeedback({
+        push_token: 'feedback-muted-token',
+        push_platform: 'android',
+      });
+
+      restorePush();
+
+      expect(created.status).toBe(201);
+      expect(sentPushes).toHaveLength(0);
+      const saved = await testPrisma.deviceToken.findUnique({
+        where: { token: 'feedback-muted-token' },
+      });
+      expect(saved?.feedbackStatusNotifications).toBe(false);
+      expect(saved?.active).toBe(true);
     });
 
     it('stores attachments and returns them with signed urls', async () => {
@@ -259,12 +330,27 @@ describe('feedback module', () => {
     it('emails the reply and marks the report responded', async () => {
       const sendMail = stubEmailTransport();
       const created = await submitFeedback();
+      const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+      const restorePush = setPushTransportForTests({
+        async sendToTokens(tokens, payload) {
+          sentPushes.push({ tokens, payload });
+          return { successCount: tokens.length, failureCount: 0, invalidTokens: [] };
+        },
+      } satisfies PushTransport);
+      const deviceToken = await testPrisma.deviceToken.create({
+        data: { token: 'feedback-reply-token', platform: 'ios' },
+      });
+      await testPrisma.feedbackPushToken.create({
+        data: { feedbackId: created.body.id, deviceTokenId: deviceToken.id },
+      });
       const token = await login();
 
       const res = await request(app)
         .post(`/api/feedback/${created.body.id}/reply`)
         .set('Authorization', `Bearer ${token}`)
         .send({ reply: 'Terima kasih, lokasi akan kami tinjau pekan ini.' });
+
+      restorePush();
 
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('responded');
@@ -285,6 +371,15 @@ describe('feedback module', () => {
           disposition: 'inline',
         }),
       ]);
+      expect(sentPushes).toHaveLength(1);
+      expect(sentPushes[0]).toMatchObject({
+        tokens: ['feedback-reply-token'],
+        payload: {
+          event: 'FEEDBACK_RESPONDED',
+          title: 'Laporan Anda dibalas',
+          referenceCode: created.body.reference_code,
+        },
+      });
     });
 
     it('does not mark the report responded when the email fails', async () => {

@@ -6,15 +6,20 @@ import {
   ResidentFeedbackResponse,
   ResidentMeResponse,
   ResidentOtpResponse,
+  ResidentRequestCorrectionBody,
+  ResidentRequestItem,
+  ResidentRequestParams,
   ResidentRequestsResponse,
   ResidentSessionResponse,
   ResidentVerifyOtpBody,
 } from './schemas';
 import {
+  cancelResidentRequest,
   getResidentMe,
   listResidentFeedback,
   listResidentRequests,
   requestResidentOtp,
+  resubmitResidentRequest,
   verifyResidentOtp,
 } from './service';
 
@@ -92,6 +97,50 @@ defineRoute(residentRouter, {
   },
   handler: async ({ req, res }) => {
     res.json(await listResidentRequests(req));
+  },
+});
+
+defineRoute(residentRouter, {
+  method: 'post',
+  path: '/requests/:id/cancel',
+  fullPath: '/api/resident/requests/{id}/cancel',
+  tags: ['Resident'],
+  summary: 'Cancel a resident letter request before office review starts',
+  params: ResidentRequestParams,
+  responses: {
+    200: {
+      description: 'Resident request cancelled',
+      content: { 'application/json': { schema: ResidentRequestItem } },
+    },
+    401: errorResponse('Resident email verification is required'),
+    404: errorResponse('Request not found'),
+    409: errorResponse('Request can no longer be cancelled'),
+  },
+  handler: async ({ params, req, res }) => {
+    res.json(await cancelResidentRequest(req, params.id));
+  },
+});
+
+defineRoute(residentRouter, {
+  method: 'post',
+  path: '/requests/:id/resubmit',
+  fullPath: '/api/resident/requests/{id}/resubmit',
+  tags: ['Resident'],
+  summary: 'Submit corrected data for a resident letter request that needs more information',
+  params: ResidentRequestParams,
+  body: ResidentRequestCorrectionBody,
+  responses: {
+    200: {
+      description: 'Resident request corrected and returned to office review',
+      content: { 'application/json': { schema: ResidentRequestItem } },
+    },
+    400: errorResponse('Invalid correction payload'),
+    401: errorResponse('Resident email verification is required'),
+    404: errorResponse('Request not found'),
+    409: errorResponse('Request is not waiting for resident correction'),
+  },
+  handler: async ({ params, body, req, res }) => {
+    res.json(await resubmitResidentRequest(req, params.id, body));
   },
 });
 

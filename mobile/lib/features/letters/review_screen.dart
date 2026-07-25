@@ -28,7 +28,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   Widget build(BuildContext context) {
     return SapaScaffold(
       title: 'Tinjau & Konfirmasi',
-      subtitle: 'Langkah 5 dari 5',
+      subtitle: widget.flowDraft.isCorrection
+          ? 'Perbaikan data'
+          : 'Langkah 5 dari 5',
       leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: ListView(
@@ -144,7 +146,11 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                   )
                 : const Icon(Icons.send_outlined),
-            label: const Text('Ajukan Permohonan'),
+            label: Text(
+              widget.flowDraft.isCorrection
+                  ? 'Kirim Perbaikan'
+                  : 'Ajukan Permohonan',
+            ),
           ),
           const SizedBox(height: 10),
           OutlinedButton(
@@ -175,9 +181,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     );
 
     try {
-      final result = await ref
-          .read(letterRepositoryProvider)
-          .submit(requestDraft);
+      final correctionId = widget.flowDraft.requestId;
+      final result = correctionId == null
+          ? await ref.read(letterRepositoryProvider).submit(requestDraft)
+          : await _resubmitCorrection(correctionId, requestDraft);
       if (!mounted) return;
       ref.invalidate(residentRequestsProvider);
       context.pushNamed(
@@ -190,10 +197,19 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     } catch (_) {
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
+      setState(() => _submitting = false);
+      if (widget.flowDraft.isCorrection) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Perbaikan belum bisa dikirim. Coba lagi.'),
+          ),
+        );
+        return;
+      }
+
       await ref
           .read(submissionQueueProvider)
           .enqueueLetter(requestDraft.toJson());
-      setState(() => _submitting = false);
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
@@ -202,6 +218,22 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         ),
       );
     }
+  }
+
+  Future<CreatedRequest> _resubmitCorrection(
+    String requestId,
+    LetterRequestDraft requestDraft,
+  ) async {
+    final session = await ref.read(residentSessionProvider.future);
+    if (session == null) throw StateError('Resident email session required');
+    final corrected = await ref
+        .read(residentRepositoryProvider)
+        .resubmitRequest(session: session, id: requestId, draft: requestDraft);
+    return CreatedRequest(
+      id: corrected.id,
+      referenceCode: corrected.referenceCode,
+      status: corrected.status,
+    );
   }
 }
 

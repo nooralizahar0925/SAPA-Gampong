@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sapa_gampong/data/models/mosque.dart';
 import 'package:sapa_gampong/data/models/prayer_config.dart';
+import 'package:sapa_gampong/data/providers/app_preferences_providers.dart';
 import 'package:sapa_gampong/data/providers/content_providers.dart';
+import 'package:sapa_gampong/data/services/app_preferences_service.dart';
 import 'package:sapa_gampong/data/services/notification_service.dart';
 import 'package:sapa_gampong/data/services/prayer_times_service.dart';
 import 'package:sapa_gampong/features/prayer/prayer_screen.dart';
@@ -37,6 +39,14 @@ class _FakePrayerTimesService extends PrayerTimesService {
       sourceLabel: 'Internet · Koordinat Desa',
       fetchedAt: DateTime.now(),
     );
+  }
+
+  @override
+  Future<PrayerTimes> fetchUsingGpsForConfig(
+    PrayerConfig config, {
+    DateTime? date,
+  }) async {
+    return fetchUsingGps(date: date);
   }
 
   @override
@@ -133,9 +143,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('shows config fallback times when no coordinates configured', (
-    tester,
-  ) async {
+  testWidgets('uses GPS times when location is available', (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -164,12 +172,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Config fallback times shown.
-    expect(find.text('05:02 WIB'), findsOneWidget);
-    expect(find.text('12:32 WIB'), findsOneWidget);
-
-    // Source label matches config fallback (no internet fetch happened).
-    expect(find.text('Data Gampong Blang'), findsOneWidget);
+    expect(find.text('04:50 WIB'), findsOneWidget);
+    expect(find.text('12:20 WIB'), findsOneWidget);
+    expect(find.text('Internet · GPS Anda'), findsOneWidget);
   });
 
   testWidgets('shows adzan audio as configured when config includes a URL', (
@@ -198,14 +203,12 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Aktifkan untuk menjadwalkan audio azan.'),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('prayer-adzan-status')), findsOneWidget);
+    expect(find.text('Alarm Suara Azan Nonaktif'), findsOneWidget);
     expect(find.text('Audio belum dikonfigurasi admin'), findsNothing);
   });
 
-  testWidgets('alarm toggle schedules adzan notification service', (
+  testWidgets('schedules adzan from persisted settings preference', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 1600);
@@ -226,24 +229,25 @@ void main() {
           prayerTimesServiceProvider.overrideWith(
             (_) => _FakePrayerTimesService(),
           ),
+          appPreferencesServiceProvider.overrideWithValue(
+            AppPreferencesService.memory(
+              initial: const AppPreferences(adzanAlarmEnabled: true),
+            ),
+          ),
           notificationServiceProvider.overrideWithValue(notifications),
         ],
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('prayer-adzan-toggle')));
-    await tester.pump();
 
     expect(notifications.scheduleCalls, 1);
     expect(
       notifications.scheduledAdzanUrl,
       'http://localhost:8080/api/uploads/audio-1',
     );
-    expect(
-      find.text('Audio azan akan diputar saat waktu sholat berikutnya.'),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('prayer-adzan-toggle')), findsNothing);
+    expect(find.text('Alarm Suara Azan Aktif'), findsOneWidget);
   });
 
   testWidgets('shows mosque data from backend provider', (tester) async {
@@ -284,41 +288,42 @@ void main() {
     );
   });
 
-  testWidgets(
-    'auto-fetches via village coords and shows updated source label',
-    (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('falls back to village coords when GPS is unavailable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
 
-      const config = PrayerConfig(
-        lat: 5.1234,
-        lng: 96.5678,
-        fallbackTimes: PrayerFallbackTimes(subuh: '05:02', dhuhur: '12:32'),
-      );
+    const config = PrayerConfig(
+      lat: 5.1234,
+      lng: 96.5678,
+      fallbackTimes: PrayerFallbackTimes(subuh: '05:02', dhuhur: '12:32'),
+    );
 
-      await tester.pumpWidget(
-        _wrap(
-          const PrayerScreen(),
-          overrides: [
-            prayerConfigProvider.overrideWith((_) async => config),
-            prayerTimesServiceProvider.overrideWith(
-              (_) => _FakePrayerTimesService(),
+    await tester.pumpWidget(
+      _wrap(
+        const PrayerScreen(),
+        overrides: [
+          prayerConfigProvider.overrideWith((_) async => config),
+          prayerTimesServiceProvider.overrideWith(
+            (_) => _FakePrayerTimesService(
+              gpsError: const LocationPermissionException(
+                'Layanan lokasi perangkat belum aktif.',
+              ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      // The fake service returned "Internet · Koordinat Desa" label.
-      expect(find.text('Internet · Koordinat Desa'), findsOneWidget);
-      // The fake service returned village times.
-      expect(find.text('04:45 WIB'), findsOneWidget);
-    },
-  );
+    expect(find.text('Internet · Koordinat Desa'), findsOneWidget);
+    expect(find.text('04:45 WIB'), findsOneWidget);
+  });
 
-  testWidgets('falls back to config times when village fetch fails', (
+  testWidgets('falls back to config times when GPS and village fetch fail', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 1600);
@@ -344,6 +349,9 @@ void main() {
           prayerConfigProvider.overrideWith((_) async => config),
           prayerTimesServiceProvider.overrideWith(
             (_) => _FakePrayerTimesService(
+              gpsError: const LocationPermissionException(
+                'Layanan lokasi perangkat belum aktif.',
+              ),
               villageError: Exception('Network error'),
             ),
           ),
@@ -359,14 +367,11 @@ void main() {
     expect(find.text('Data Gampong Blang'), findsOneWidget);
   });
 
-  testWidgets('GPS button triggers fetchUsingGps and shows updated times', (
-    tester,
-  ) async {
+  testWidgets('auto-fetches GPS and shows updated times', (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    // Config with no coordinates → auto-fetch skipped; then user taps GPS.
     await tester.pumpWidget(
       _wrap(
         const PrayerScreen(),
@@ -381,11 +386,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Tap GPS button.
-    await tester.tap(find.byKey(const Key('prayer-use-gps')));
-    await tester.pumpAndSettle();
-
-    // Fake GPS service returned these times.
     expect(find.text('04:50 WIB'), findsOneWidget);
     expect(find.text('Internet · GPS Anda'), findsOneWidget);
   });

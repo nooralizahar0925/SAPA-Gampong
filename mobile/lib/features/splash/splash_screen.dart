@@ -43,14 +43,11 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             children: [
               const Spacer(flex: 3),
-              Image.asset(
-                'assets/images/logo.webp',
-                height: 96,
-                width: 96,
-              ),
+              Image.asset('assets/images/logo.webp', height: 96, width: 96),
               const SizedBox(height: 24),
               const Text(
                 'Gampong Blang Digital',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -68,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 1.5,
                 ),
               ),
-              const Spacer(flex: 4),
+              const SizedBox(height: 28),
               AnimatedBuilder(
                 animation: _bar,
                 builder: (context, _) => ClipRRect(
@@ -81,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const Spacer(flex: 4),
             ],
           ),
         ),

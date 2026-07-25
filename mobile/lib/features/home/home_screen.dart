@@ -110,6 +110,13 @@ class _HomeRequestsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(residentSessionProvider).asData?.value;
     final requestsAsync = ref.watch(residentRequestsProvider);
+    final feedbackAsync = ref.watch(residentFeedbackProvider);
+    final requests = requestsAsync.asData?.value ?? const [];
+    final feedback = feedbackAsync.asData?.value ?? const [];
+    final loading =
+        (requestsAsync.isLoading && requests.isEmpty) ||
+        (feedbackAsync.isLoading && feedback.isEmpty);
+    final hasAnyError = requestsAsync.hasError || feedbackAsync.hasError;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,63 +126,196 @@ class _HomeRequestsSection extends ConsumerWidget {
           SapaListTile(
             icon: Icons.mark_email_unread_outlined,
             title: 'Verifikasi email',
-            subtitle: 'Riwayat permohonan akan tampil setelah email tersimpan.',
+            subtitle:
+                'Riwayat permohonan dan laporan akan tampil setelah email tersimpan.',
             onTap: () => context.pushNamed(AppRouteNames.settings),
           )
-        else
-          requestsAsync.when(
-            loading: () => const Card(
-              child: Padding(
-                padding: EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 10),
-                    Text('Memuat permohonan...'),
-                  ],
+        else if (loading)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 10),
+                  Text('Memuat riwayat...'),
+                ],
+              ),
+            ),
+          )
+        else if (requests.isEmpty && feedback.isEmpty)
+          SapaListTile(
+            icon: hasAnyError ? Icons.wifi_off_outlined : Icons.inbox_outlined,
+            title: hasAnyError
+                ? 'Riwayat belum bisa dimuat'
+                : 'Belum ada permohonan atau laporan',
+            subtitle: hasAnyError
+                ? 'Coba lagi saat koneksi tersedia.'
+                : 'Aktivitas baru akan tampil di sini.',
+            onTap: () => context.pushNamed(AppRouteNames.myRequests),
+          )
+        else ...[
+          if (requests.isNotEmpty)
+            Builder(
+              builder: (context) {
+                final latest = requests.first;
+                final colors = _homeStatusColors(latest.status);
+                return _HomeHistoryCard(
+                  key: const Key('home-latest-request'),
+                  icon: Icons.description_outlined,
+                  title: latest.referenceCode,
+                  subtitle:
+                      '${latest.letterType} · ${_homeDate(latest.createdAt)}',
+                  onTap: () => context.pushNamed(AppRouteNames.myRequests),
+                  badge: _StatusPill(
+                    key: const Key('home-latest-request-status'),
+                    latest.statusLabel,
+                    colors.$1,
+                    colors.$2,
+                  ),
+                );
+              },
+            ),
+          if (feedback.isNotEmpty)
+            Builder(
+              builder: (context) {
+                final latest = feedback.first;
+                final colors = _homeFeedbackStatusColors(latest.status);
+                return _HomeHistoryCard(
+                  key: const Key('home-latest-feedback'),
+                  icon: Icons.campaign_outlined,
+                  title: latest.referenceCode,
+                  subtitle: 'Laporan warga · ${_homeDate(latest.createdAt)}',
+                  onTap: () => context.pushNamed(AppRouteNames.myFeedback),
+                  badge: _StatusPill(
+                    key: const Key('home-latest-feedback-status'),
+                    _homeFeedbackStatusLabel(latest.status),
+                    colors.$1,
+                    colors.$2,
+                  ),
+                );
+              },
+            ),
+          if (hasAnyError)
+            const Padding(
+              padding: EdgeInsets.only(top: 2, left: 4, right: 4),
+              child: Text(
+                'Sebagian riwayat belum bisa disegarkan.',
+                style: TextStyle(
+                  color: AppTheme.ink500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            error: (_, _) => SapaListTile(
-              icon: Icons.inbox_outlined,
-              title: 'Riwayat belum bisa dimuat',
-              subtitle: 'Coba lagi saat koneksi tersedia.',
-              onTap: () => context.pushNamed(AppRouteNames.myRequests),
-            ),
-            data: (items) {
-              if (items.isEmpty) {
-                return SapaListTile(
-                  icon: Icons.inbox_outlined,
-                  title: 'Belum ada permohonan',
-                  subtitle: 'Permohonan baru akan tampil di sini.',
-                  onTap: () => context.pushNamed(AppRouteNames.myRequests),
-                );
-              }
-              final latest = items.first;
-              final colors = _homeStatusColors(latest.status);
-              return SapaListTile(
-                icon: Icons.hourglass_top_outlined,
-                title: latest.referenceCode,
-                subtitle:
-                    '${latest.letterType} · ${_homeDate(latest.createdAt)}',
-                onTap: () => context.pushNamed(AppRouteNames.myRequests),
-                trailing: _StatusPill(latest.statusLabel, colors.$1, colors.$2),
-              );
-            },
-          ),
+        ],
         const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () => context.pushNamed(AppRouteNames.myRequests),
-            child: const Text('Lihat semua'),
+        if (session != null)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+                child: const Text('Lihat surat'),
+              ),
+              TextButton(
+                onPressed: () => context.pushNamed(AppRouteNames.myFeedback),
+                child: const Text('Lihat laporan'),
+              ),
+            ],
+          )
+        else
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+              child: const Text('Lihat semua'),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _HomeHistoryCard extends StatelessWidget {
+  const _HomeHistoryCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget badge;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(alignment: Alignment.centerRight, child: badge),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF6F1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: AppTheme.villageGreen),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppTheme.ink500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -587,39 +727,47 @@ class _FeatureTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.g50,
-                  borderRadius: BorderRadius.circular(13),
+        child: SizedBox.expand(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppTheme.g50,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(icon, color: AppTheme.g700, size: 22),
                 ),
-                child: Icon(icon, color: AppTheme.g700, size: 22),
-              ),
-              const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14.5,
-                  letterSpacing: -0.2,
+                const SizedBox(height: 14),
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                    height: 1.15,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  color: AppTheme.ink500,
-                  height: 1.4,
+                const SizedBox(height: 5),
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppTheme.ink500,
+                      height: 1.35,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -654,12 +802,28 @@ class _Dot extends StatelessWidget {
   };
 }
 
+(Color, Color) _homeFeedbackStatusColors(String status) {
+  return switch (status) {
+    'responded' => (AppTheme.okBg, AppTheme.ok),
+    'read' => (AppTheme.warnBg, AppTheme.warn),
+    _ => (AppTheme.g50, AppTheme.g700),
+  };
+}
+
+String _homeFeedbackStatusLabel(String status) {
+  return switch (status) {
+    'responded' => 'Dibalas',
+    'read' => 'Dibaca',
+    _ => 'Baru',
+  };
+}
+
 String _homeDate(DateTime value) {
   return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill(this.text, this.bgColor, this.textColor);
+  const _StatusPill(this.text, this.bgColor, this.textColor, {super.key});
 
   final String text;
   final Color bgColor;

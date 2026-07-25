@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/mock/letter_seed.dart';
 import '../../data/models/letter_type.dart';
+import '../../data/models/resident_session.dart';
 import '../../features/demographics/demographics_screen.dart';
 import '../../features/feedback/feedback_screen.dart';
 import '../../features/feedback/my_feedback_screen.dart';
@@ -43,6 +44,7 @@ class AppRouteNames {
   static const demographics = 'demographics';
   static const feedback = 'feedback';
   static const myFeedback = 'myFeedback';
+  static const myFeedbackDetail = 'myFeedbackDetail';
   static const verify = 'verify';
 }
 
@@ -87,6 +89,12 @@ class AppRouter {
         name: AppRouteNames.letterForm,
         builder: (context, state) {
           final extra = state.extra;
+          if (extra is LetterFlowDraft) {
+            return LetterFormScreen(
+              letterType: extra.letterType,
+              initialDraft: extra,
+            );
+          }
           if (extra is LetterType) return LetterFormScreen(letterType: extra);
           // Fallback: should not happen in normal flow — return to catalog.
           return const LetterCatalogScreen();
@@ -143,7 +151,9 @@ class AppRouter {
       GoRoute(
         path: '/lacak',
         name: AppRouteNames.tracking,
-        builder: (context, state) => const TrackingScreen(),
+        builder: (context, state) => TrackingScreen(
+          initialCode: state.extra is String ? state.extra as String : null,
+        ),
       ),
       GoRoute(
         path: '/permohonan-saya',
@@ -174,6 +184,17 @@ class AppRouter {
         path: '/laporan-saya',
         name: AppRouteNames.myFeedback,
         builder: (context, state) => const MyFeedbackScreen(),
+      ),
+      GoRoute(
+        path: '/laporan-saya/detail',
+        name: AppRouteNames.myFeedbackDetail,
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is ResidentFeedbackItem) {
+            return MyFeedbackDetailScreen(item: extra);
+          }
+          return const MyFeedbackScreen();
+        },
       ),
       GoRoute(
         path: '/verify',

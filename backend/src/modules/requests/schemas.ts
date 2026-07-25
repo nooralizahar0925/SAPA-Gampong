@@ -12,6 +12,7 @@ export const RequestStatusSchema = z.enum([
   'GENERATED',
   'SENT',
   'REJECTED',
+  'CANCELED',
 ]);
 
 export const RequestAttachmentInput = z.object({

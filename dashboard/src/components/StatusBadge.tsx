@@ -12,6 +12,7 @@ const STATUS_META: Record<
   GENERATED: { label: 'Surat Dibuat', className: 'request-badge generated', icon: 'file' },
   SENT: { label: 'Terkirim', className: 'request-badge sent', icon: 'send' },
   REJECTED: { label: 'Ditolak', className: 'request-badge rejected', icon: 'x' },
+  CANCELED: { label: 'Dibatalkan', className: 'request-badge rejected', icon: 'x' },
 };
 
 export function StatusBadge({ status }: { status: RequestStatus }) {

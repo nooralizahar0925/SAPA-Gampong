@@ -10,6 +10,15 @@ export const DeviceTokenBody = registry.register(
   }),
 );
 
+export const DeviceTokenPreferencesBody = registry.register(
+  'DeviceTokenPreferencesBody',
+  DeviceTokenBody.extend({
+    letter_status_notifications: z.boolean().optional(),
+    feedback_status_notifications: z.boolean().optional(),
+    announcement_notifications: z.boolean().optional(),
+  }),
+);
+
 export const DeviceTokenResponse = registry.register(
   'DeviceTokenResponse',
   z.object({
@@ -17,6 +26,9 @@ export const DeviceTokenResponse = registry.register(
     token: z.string(),
     platform: PushPlatformSchema,
     active: z.boolean(),
+    letter_status_notifications: z.boolean(),
+    feedback_status_notifications: z.boolean(),
+    announcement_notifications: z.boolean(),
   }),
 );
 
@@ -28,3 +40,4 @@ export const DeviceTokenDeletedResponse = registry.register(
 );
 
 export type DeviceTokenBodyType = z.infer<typeof DeviceTokenBody>;
+export type DeviceTokenPreferencesBodyType = z.infer<typeof DeviceTokenPreferencesBody>;

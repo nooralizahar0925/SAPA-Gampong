@@ -83,6 +83,9 @@ describe('notification push wiring', () => {
       token: 'fcm-token-1',
       platform: 'android',
       active: true,
+      letter_status_notifications: true,
+      feedback_status_notifications: true,
+      announcement_notifications: false,
     });
 
     const removed = await request(app)
@@ -96,6 +99,37 @@ describe('notification push wiring', () => {
       where: { token: 'fcm-token-1' },
     });
     expect(saved?.active).toBe(false);
+  });
+
+  it('updates device notification preferences', async () => {
+    const updated = await request(app)
+      .patch('/api/notifications/device-tokens/preferences')
+      .send({
+        token: 'fcm-token-preferences',
+        platform: 'android',
+        letter_status_notifications: false,
+        feedback_status_notifications: false,
+        announcement_notifications: true,
+      });
+
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({
+      token: 'fcm-token-preferences',
+      platform: 'android',
+      active: true,
+      letter_status_notifications: false,
+      feedback_status_notifications: false,
+      announcement_notifications: true,
+    });
+
+    const saved = await testPrisma.deviceToken.findUnique({
+      where: { token: 'fcm-token-preferences' },
+    });
+    expect(saved).toMatchObject({
+      letterStatusNotifications: false,
+      feedbackStatusNotifications: false,
+      announcementNotifications: true,
+    });
   });
 
   it('links a public request to the submitted push token', async () => {
@@ -147,6 +181,120 @@ describe('notification push wiring', () => {
       platform: 'ios',
       active: true,
     });
+  });
+
+  it('sends resident push updates for request process status changes', async () => {
+    const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+    const restorePush = setPushTransportForTests({
+      async sendToTokens(tokens, payload) {
+        sentPushes.push({ tokens, payload });
+        return {
+          successCount: tokens.length,
+          failureCount: 0,
+          invalidTokens: [],
+        };
+      },
+    } satisfies PushTransport);
+
+    const created = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-001850',
+        letterType: 'L1',
+        status: 'SUBMITTED',
+        applicantName: 'Budi',
+        applicantEmail: 'budi@mail.com',
+        subjectData: { nama: 'Budi', nik: '1607010101010001' },
+      },
+    });
+    const deviceToken = await testPrisma.deviceToken.create({
+      data: { token: 'resident-process-token', platform: 'android' },
+    });
+    await testPrisma.requestPushToken.create({
+      data: { requestId: created.id, deviceTokenId: deviceToken.id },
+    });
+
+    const token = await login();
+    const inReview = await request(app)
+      .patch(`/api/requests/${created.id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ action: 'in_review' });
+    const approved = await request(app)
+      .patch(`/api/requests/${created.id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ action: 'approve' });
+
+    restorePush();
+
+    expect(inReview.status).toBe(200);
+    expect(approved.status).toBe(200);
+    expect(sentPushes).toHaveLength(2);
+    expect(sentPushes.map((item) => item.payload.event)).toEqual(['IN_REVIEW', 'APPROVED']);
+    expect(sentPushes[0]).toMatchObject({
+      tokens: ['resident-process-token'],
+      payload: {
+        title: 'Permohonan sedang ditinjau',
+        referenceCode: 'GB-2026-001850',
+        requestId: created.id,
+      },
+    });
+    expect(sentPushes[1].payload).toMatchObject({
+      title: 'Permohonan surat disetujui',
+      referenceCode: 'GB-2026-001850',
+      requestId: created.id,
+    });
+  });
+
+  it('does not send request pushes to tokens with letter notifications disabled', async () => {
+    const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+    const restorePush = setPushTransportForTests({
+      async sendToTokens(tokens, payload) {
+        sentPushes.push({ tokens, payload });
+        return {
+          successCount: tokens.length,
+          failureCount: 0,
+          invalidTokens: [],
+        };
+      },
+    } satisfies PushTransport);
+
+    const created = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-001851',
+        letterType: 'L1',
+        status: 'SUBMITTED',
+        applicantName: 'Budi',
+        applicantEmail: 'budi@mail.com',
+        subjectData: { nama: 'Budi', nik: '1607010101010001' },
+      },
+    });
+    const enabledToken = await testPrisma.deviceToken.create({
+      data: { token: 'resident-enabled-token', platform: 'android' },
+    });
+    const mutedToken = await testPrisma.deviceToken.create({
+      data: {
+        token: 'resident-muted-token',
+        platform: 'android',
+        letterStatusNotifications: false,
+      },
+    });
+    await testPrisma.requestPushToken.createMany({
+      data: [
+        { requestId: created.id, deviceTokenId: enabledToken.id },
+        { requestId: created.id, deviceTokenId: mutedToken.id },
+      ],
+    });
+
+    const token = await login();
+    const res = await request(app)
+      .patch(`/api/requests/${created.id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ action: 'in_review' });
+
+    restorePush();
+
+    expect(res.status).toBe(200);
+    expect(sentPushes).toHaveLength(1);
+    expect(sentPushes[0].tokens).toEqual(['resident-enabled-token']);
   });
 
   it('sends resident email and push when a generated letter is sent', async () => {

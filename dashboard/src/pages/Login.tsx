@@ -20,6 +20,7 @@ export function LoginPage() {
     password: 'admin123',
   });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const authReason = (location.state as { reason?: string } | null)?.reason;
 
   const mutation = useMutation({
     mutationFn: loginRequest,
@@ -110,6 +111,12 @@ export function LoginPage() {
             {mutation.error instanceof Error
               ? mutation.error.message
               : 'Tidak dapat memproses login saat ini.'}
+          </div>
+        ) : null}
+
+        {!mutation.isError && authReason === 'auth-required' ? (
+          <div className="info-box" role="status">
+            Sesi login berakhir. Silakan masuk kembali.
           </div>
         ) : null}
 

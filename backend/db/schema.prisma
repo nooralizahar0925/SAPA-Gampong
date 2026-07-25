@@ -28,6 +28,7 @@ enum RequestStatus {
   GENERATED
   SENT
   REJECTED
+  CANCELED
 }
 
 enum AttachmentKind {
@@ -153,14 +154,18 @@ model RequestAttachment {
 }
 
 model DeviceToken {
-  id        String       @id @default(cuid())
-  token     String       @unique
-  platform  PushPlatform @default(unknown)
-  active    Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id                           String       @id @default(cuid())
+  token                        String       @unique
+  platform                     PushPlatform @default(unknown)
+  active                       Boolean      @default(true)
+  letterStatusNotifications    Boolean      @default(true)
+  feedbackStatusNotifications  Boolean      @default(true)
+  announcementNotifications    Boolean      @default(false)
+  createdAt                    DateTime     @default(now())
+  updatedAt                    DateTime     @updatedAt
 
   requests RequestPushToken[]
+  feedback FeedbackPushToken[]
 
   @@index([active])
 }
@@ -234,8 +239,20 @@ model Feedback {
   createdAt DateTime @default(now())
 
   attachments FeedbackAttachment[]
+  pushTokens  FeedbackPushToken[]
 
   @@index([status])
+}
+
+model FeedbackPushToken {
+  feedbackId     String
+  feedback       Feedback    @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  deviceTokenId  String
+  deviceToken    DeviceToken @relation(fields: [deviceTokenId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+
+  @@id([feedbackId, deviceTokenId])
+  @@index([deviceTokenId])
 }
 
 model FeedbackAttachment {

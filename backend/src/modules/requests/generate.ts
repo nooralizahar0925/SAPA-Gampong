@@ -7,12 +7,14 @@ import { assignLetterNumber } from '../letters/number.service';
 import { renderRequestLetterHtml } from '../letters/rendering';
 import { PdfService } from '../../services/pdf.service';
 import { signedUrl, storeGeneratedPdf } from '../../services/storage.service';
+import { notifyRequestStatusChanged } from '../notifications/service';
 
 export async function generateApprovedRequest(id: string, adminUserId: string) {
   const found = await prisma.letterRequest.findUnique({
     where: { id },
     select: {
       id: true,
+      referenceCode: true,
       letterType: true,
       status: true,
       subjectData: true,
@@ -38,6 +40,7 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
       where: { id },
       select: {
         id: true,
+        referenceCode: true,
         status: true,
         letterType: true,
         subjectData: true,
@@ -67,6 +70,7 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
 
       return {
         id: current.id,
+        referenceCode: current.referenceCode,
         letterType: current.letterType,
         subjectData: current.subjectData as Record<string, unknown>,
         applicantName: current.applicantName,
@@ -114,6 +118,15 @@ export async function generateApprovedRequest(id: string, adminUserId: string) {
       },
     });
   });
+
+  if (found.status === 'APPROVED') {
+    await notifyRequestStatusChanged({
+      requestId: prepared.id,
+      referenceCode: prepared.referenceCode,
+      letterType: prepared.letterType,
+      status: 'GENERATED',
+    });
+  }
 
   return {
     pdf_id: stored.file.id,

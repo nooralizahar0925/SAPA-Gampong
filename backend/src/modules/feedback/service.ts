@@ -1,9 +1,13 @@
 import { randomInt } from 'node:crypto';
-import { Prisma, type AttachmentKind, type Feedback } from '@prisma/client';
+import { Prisma, type AttachmentKind, type Feedback, type PushPlatform } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import { signedUrl } from '../../services/storage.service';
-import { notifyFeedbackReply } from '../notifications/service';
+import {
+  linkDeviceTokenToFeedback,
+  notifyFeedbackReply,
+  notifyFeedbackStatusChanged,
+} from '../notifications/service';
 import type {
   CreateFeedbackBodyType,
   ListFeedbackQueryType,
@@ -48,6 +52,19 @@ export async function createPublicFeedback(input: CreateFeedbackBodyType) {
           attachments: { create: attachments },
         },
       });
+
+      if (input.push_token?.trim()) {
+        await linkDeviceTokenToFeedback({
+          feedbackId: created.id,
+          token: input.push_token,
+          platform: input.push_platform as PushPlatform,
+        });
+        await notifyFeedbackStatusChanged({
+          feedbackId: created.id,
+          referenceCode: created.referenceCode,
+          status: 'new',
+        });
+      }
 
       return {
         id: created.id,
@@ -136,6 +153,14 @@ export async function updateFeedback(id: string, input: UpdateFeedbackBodyType) 
     include: { attachments: { include: { file: true } } },
   });
 
+  if (input.status !== undefined && input.status !== found.status) {
+    await notifyFeedbackStatusChanged({
+      feedbackId: found.id,
+      referenceCode: found.referenceCode,
+      status: input.status,
+    });
+  }
+
   return serializeDetail(updated);
 }
 
@@ -155,6 +180,7 @@ export async function replyToFeedback(
   const reply = input.reply.trim();
 
   await notifyFeedbackReply({
+    feedbackId: found.id,
     reporterEmail: found.email,
     reporterName: found.name,
     referenceCode: found.referenceCode,

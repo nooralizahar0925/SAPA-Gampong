@@ -12,6 +12,7 @@ import 'package:sapa_gampong/data/models/resident_session.dart';
 import 'package:sapa_gampong/data/providers/content_providers.dart';
 import 'package:sapa_gampong/data/providers/letter_providers.dart';
 import 'package:sapa_gampong/data/providers/resident_providers.dart';
+import 'package:sapa_gampong/core/router/app_router.dart';
 import 'package:sapa_gampong/features/home/home_screen.dart';
 
 import '../support/resident_test_support.dart';
@@ -19,15 +20,56 @@ import '../support/resident_test_support.dart';
 GoRouter _makeRouter() => GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/layanan/surat', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/profil', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/demografis', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/jadwal-sholat', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/feedback', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/lacak', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/permohonan', builder: (_, __) => const Scaffold()),
-    GoRoute(path: '/pengaturan', builder: (_, __) => const Scaffold()),
+    GoRoute(
+      path: '/',
+      name: AppRouteNames.home,
+      builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/layanan/surat',
+      name: AppRouteNames.letterCatalog,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/profil',
+      name: AppRouteNames.profile,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/demografis',
+      name: AppRouteNames.demographics,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/jadwal-sholat',
+      name: AppRouteNames.prayer,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/pelaporan',
+      name: AppRouteNames.feedback,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/lacak',
+      name: AppRouteNames.tracking,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/permohonan-saya',
+      name: AppRouteNames.myRequests,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/laporan-saya',
+      name: AppRouteNames.myFeedback,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
+      path: '/pengaturan',
+      name: AppRouteNames.settings,
+      builder: (context, state) => const Scaffold(),
+    ),
   ],
 );
 
@@ -35,6 +77,8 @@ Future<Widget> _buildWithSlides(
   List<BannerSlide> slides, {
   ResidentSession? session,
   bool verified = false,
+  List<ResidentRequestItem> requests = const [],
+  List<ResidentFeedbackItem> feedback = const [],
 }) async {
   final residentService = await residentSessionService(
     session: session,
@@ -45,6 +89,8 @@ Future<Widget> _buildWithSlides(
       bannersProvider.overrideWith((_) async => slides),
       letterTypesProvider.overrideWith((_) async => _letterTypes),
       residentSessionServiceProvider.overrideWithValue(residentService),
+      residentRequestsProvider.overrideWith((_) async => requests),
+      residentFeedbackProvider.overrideWith((_) async => feedback),
     ],
     child: MaterialApp.router(routerConfig: _makeRouter()),
   );
@@ -198,6 +244,60 @@ void main() {
 
     expect(find.text('Permohonan Anda'), findsOneWidget);
     expect(find.text('Verifikasi email'), findsOneWidget);
-    expect(find.textContaining('permohonan akan tampil'), findsOneWidget);
+    expect(
+      find.textContaining('permohonan dan laporan akan tampil'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('permohonan section shows latest request and feedback', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      await _buildWithSlides(
+        [slide1],
+        verified: true,
+        requests: [
+          ResidentRequestItem(
+            id: 'req-1',
+            referenceCode: 'GB-2026-000001',
+            letterType: 'L1',
+            status: 'SUBMITTED',
+            statusLabel: 'Diajukan',
+            createdAt: DateTime(2026, 7, 23),
+            updatedAt: DateTime(2026, 7, 23),
+          ),
+        ],
+        feedback: [
+          ResidentFeedbackItem(
+            id: 'fb-1',
+            referenceCode: 'LPR-A1B2C',
+            name: 'Budi',
+            email: testResidentSession.email,
+            body: 'Lampu jalan mati.',
+            status: 'responded',
+            createdAt: DateTime(2026, 7, 24),
+            reply: 'Sudah diteruskan ke petugas.',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('home-latest-request')), findsOneWidget);
+    expect(find.byKey(const Key('home-latest-feedback')), findsOneWidget);
+    expect(find.text('GB-2026-000001'), findsOneWidget);
+    expect(find.text('LPR-A1B2C'), findsOneWidget);
+    expect(find.text('Dibalas'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('home-latest-request-status'))).dy,
+      lessThan(tester.getTopLeft(find.text('GB-2026-000001')).dy),
+    );
+    expect(find.text('Lihat surat'), findsOneWidget);
+    expect(find.text('Lihat laporan'), findsOneWidget);
   });
 }

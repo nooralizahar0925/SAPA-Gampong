@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,9 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/resident_email_gate.dart';
 import '../../core/widgets/sapa_scaffold.dart';
+import '../../data/providers/app_preferences_providers.dart';
+import '../../data/providers/content_providers.dart';
+import '../../data/services/prayer_times_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -15,12 +20,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool azanAlarm = true;
-  bool letterStatus = true;
-  bool villageAnnouncements = false;
-
   @override
   Widget build(BuildContext context) {
+    final preferences = ref.watch(appPreferencesProvider);
+    final values = preferences.value;
+
     return SapaScaffold(
       title: 'Pengaturan',
       subtitle: 'Preferensi aplikasi',
@@ -29,20 +33,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           const SectionTitle('Notifikasi'),
           _SettingsSwitch(
-            value: azanAlarm,
-            onChanged: (v) => setState(() => azanAlarm = v),
+            value: values?.adzanAlarmEnabled ?? false,
+            onChanged: (v) => unawaited(_setAzanAlarm(v)),
             title: 'Alarm Azan',
             subtitle: 'Pengingat lokal untuk lima waktu sholat',
           ),
           _SettingsSwitch(
-            value: letterStatus,
-            onChanged: (v) => setState(() => letterStatus = v),
+            value: values?.letterStatusNotifications ?? true,
+            onChanged: (v) => unawaited(_setLetterStatusNotifications(v)),
             title: 'Status Permohonan Surat',
-            subtitle: 'Pemberitahuan saat surat disetujui / dikirim',
+            subtitle: 'Pemberitahuan untuk semua proses surat',
           ),
           _SettingsSwitch(
-            value: villageAnnouncements,
-            onChanged: (v) => setState(() => villageAnnouncements = v),
+            value: values?.feedbackStatusNotifications ?? true,
+            onChanged: (v) => unawaited(_setFeedbackStatusNotifications(v)),
+            title: 'Status Laporan Warga',
+            subtitle: 'Pemberitahuan untuk proses laporan warga',
+          ),
+          _SettingsSwitch(
+            value: values?.villageAnnouncements ?? false,
+            onChanged: null,
             title: 'Pengumuman Gampong',
             subtitle: 'Info dan berita dari kantor keuchik',
           ),
@@ -90,18 +100,111 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
+
+  Future<void> _setAzanAlarm(bool enabled) async {
+    final notifier = ref.read(appPreferencesProvider.notifier);
+    final notifications = ref.read(notificationServiceProvider);
+
+    if (!enabled) {
+      await notifier.setAdzanAlarmEnabled(false);
+      await notifications.cancel();
+      return;
+    }
+
+    try {
+      final config = await ref.read(prayerConfigProvider.future);
+      final adzanUrl = config.adzanUrl;
+      if (adzanUrl == null || adzanUrl.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Audio azan belum dikonfigurasi oleh admin gampong.'),
+          ),
+        );
+        await notifier.setAdzanAlarmEnabled(false);
+        return;
+      }
+
+      var prayerTimes = PrayerTimes.fromConfigFallback(config);
+      final prayerService = ref.read(prayerTimesServiceProvider);
+      try {
+        prayerTimes = await prayerService.fetchUsingGpsForConfig(config);
+      } catch (_) {
+        if (config.lat != null && config.lng != null) {
+          prayerTimes = await prayerService.fetchForVillageConfig(config);
+        }
+      }
+
+      await notifications.scheduleDaily(
+        prayerTimes: prayerTimes,
+        adzanUrl: adzanUrl,
+      );
+      await notifier.setAdzanAlarmEnabled(true);
+
+      if (!mounted) return;
+      final next = notifications.lastSchedule;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next == null
+                ? 'Alarm azan aktif.'
+                : 'Alarm azan aktif untuk ${next.prayerName}.',
+          ),
+        ),
+      );
+    } catch (_) {
+      await notifier.setAdzanAlarmEnabled(false);
+      await notifications.cancel();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alarm azan belum bisa diaktifkan. Coba lagi nanti.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _setLetterStatusNotifications(bool enabled) async {
+    final notifier = ref.read(appPreferencesProvider.notifier);
+    await notifier.setLetterStatusNotifications(enabled);
+    await _syncPushPreferences();
+  }
+
+  Future<void> _setFeedbackStatusNotifications(bool enabled) async {
+    final notifier = ref.read(appPreferencesProvider.notifier);
+    await notifier.setFeedbackStatusNotifications(enabled);
+    await _syncPushPreferences();
+  }
+
+  Future<void> _syncPushPreferences() async {
+    try {
+      final preferences = await ref.read(appPreferencesProvider.future);
+      await ref
+          .read(notificationServiceProvider)
+          .syncDevicePreferences(preferences);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Preferensi notifikasi tersimpan, sinkron saat online.',
+          ),
+        ),
+      );
+    }
+  }
 }
 
 class _SettingsSwitch extends StatelessWidget {
   const _SettingsSwitch({
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     required this.title,
     required this.subtitle,
   });
 
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
   final String title;
   final String subtitle;
 

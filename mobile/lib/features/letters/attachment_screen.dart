@@ -38,7 +38,9 @@ class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
 
     return SapaScaffold(
       title: widget.flowDraft.letterType.name,
-      subtitle: 'Langkah 4 dari 5',
+      subtitle: widget.flowDraft.isCorrection
+          ? 'Perbaikan data'
+          : 'Langkah 4 dari 5',
       leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: ListView(
@@ -65,8 +67,7 @@ class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
                 uploaded: _uploaded.containsKey(kind),
                 uploading: _uploading.contains(kind),
                 fileSizeBytes: _fileSizes[kind],
-                onTap:
-                    (_uploading.contains(kind) || _uploaded.containsKey(kind))
+                onTap: _uploading.contains(kind)
                     ? null
                     : () => _pickAndUpload(kind),
               ),
@@ -81,8 +82,7 @@ class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
                 uploaded: _uploaded.containsKey(kind),
                 uploading: _uploading.contains(kind),
                 fileSizeBytes: _fileSizes[kind],
-                onTap:
-                    (_uploading.contains(kind) || _uploaded.containsKey(kind))
+                onTap: _uploading.contains(kind)
                     ? null
                     : () => _pickAndUpload(kind),
               ),
@@ -272,49 +272,77 @@ class _AttachmentTile extends StatelessWidget {
     }
 
     if (uploaded) {
-      return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppTheme.ok),
+      return Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppTheme.okBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.insert_drive_file_outlined,
-                color: AppTheme.ok,
-              ),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.ok),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.okBg,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  Text(
-                    '${_formatFileSize(fileSizeBytes ?? 0)} · terunggah',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.ok,
-                      fontWeight: FontWeight.w600,
+                  child: const Icon(
+                    Icons.insert_drive_file_outlined,
+                    color: AppTheme.ok,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _title,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '${_formatFileSize(fileSizeBytes ?? 0)} · terunggah',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.ok,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Ketuk untuk ganti berkas',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.ink500,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle, color: AppTheme.ok),
+                    SizedBox(height: 4),
+                    Icon(
+                      Icons.swap_horiz_outlined,
+                      color: AppTheme.ink500,
+                      size: 20,
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            const Icon(Icons.check_circle, color: AppTheme.ok),
-          ],
+          ),
         ),
       );
     }

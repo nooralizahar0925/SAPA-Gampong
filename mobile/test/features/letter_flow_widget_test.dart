@@ -90,5 +90,6 @@ Future<void> pumpApp(WidgetTester tester) async {
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(const ProviderScope(child: App()));
+  await tester.pump(const Duration(milliseconds: 2100));
   await tester.pumpAndSettle();
 }

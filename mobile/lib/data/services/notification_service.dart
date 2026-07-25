@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/network/dio_client.dart';
 import '../../firebase_options.dart';
+import 'app_preferences_service.dart';
 import 'content_cache_service.dart';
 import 'prayer_times_service.dart';
 
@@ -61,7 +62,10 @@ class NotificationService {
 
   PrayerAlarmSchedule? get lastSchedule => _lastSchedule;
 
-  Future<void> initializePush() async {
+  Future<void> initializePush({
+    AppPreferences? preferences,
+    Future<AppPreferences> Function()? preferencesLoader,
+  }) async {
     await _ensureInstanceLocalNotifications();
     if (kIsWeb) return;
     if (!await _ensureFirebase()) return;
@@ -71,8 +75,11 @@ class NotificationService {
     final messaging = _messaging ?? FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
     final token = await _readMessagingToken(messaging);
+    final startupPreferences =
+        preferences ??
+        (preferencesLoader == null ? null : await preferencesLoader());
     if (token != null) {
-      await _registerDeviceToken(token);
+      await _registerDeviceToken(token, preferences: startupPreferences);
     }
 
     await _foregroundMessages?.cancel();
@@ -81,10 +88,24 @@ class NotificationService {
     });
 
     await _tokenRefresh?.cancel();
-    _tokenRefresh = messaging.onTokenRefresh.listen((token) {
+    _tokenRefresh = messaging.onTokenRefresh.listen((token) async {
       _lastPushToken = token;
-      unawaited(_registerDeviceToken(token));
+      final latestPreferences = preferencesLoader == null
+          ? preferences
+          : await preferencesLoader();
+      await _registerDeviceToken(token, preferences: latestPreferences);
     });
+  }
+
+  Future<void> syncDevicePreferences(AppPreferences preferences) async {
+    if (kIsWeb) return;
+    if (!await _ensureFirebase()) return;
+
+    final token =
+        _lastPushToken ?? await _readMessagingToken(FirebaseMessaging.instance);
+    if (token == null) return;
+
+    await _syncDevicePreferences(token, preferences);
   }
 
   static Future<Map<String, Object?>?> residentPushTokenPayload() async {
@@ -167,6 +188,31 @@ class NotificationService {
         : ' ($referenceCode)';
 
     switch (event) {
+      case 'SUBMITTED':
+        return ResidentPushNotification(
+          title: 'Permohonan surat diterima',
+          body: 'Permohonan$suffix sudah tercatat dan menunggu diproses.',
+        );
+      case 'IN_REVIEW':
+        return ResidentPushNotification(
+          title: 'Permohonan sedang ditinjau',
+          body: 'Permohonan$suffix sedang ditinjau petugas.',
+        );
+      case 'NEEDS_INFO':
+        return ResidentPushNotification(
+          title: 'Permohonan perlu dilengkapi',
+          body: 'Permohonan$suffix membutuhkan informasi tambahan.',
+        );
+      case 'APPROVED':
+        return ResidentPushNotification(
+          title: 'Permohonan surat disetujui',
+          body: 'Permohonan$suffix sudah disetujui dan akan dibuatkan surat.',
+        );
+      case 'GENERATED':
+        return ResidentPushNotification(
+          title: 'Surat selesai dibuat',
+          body: 'Surat$suffix sudah dibuat dan menunggu pengiriman.',
+        );
       case 'SENT':
         return ResidentPushNotification(
           title: 'Surat Anda sudah dikirim',
@@ -177,10 +223,25 @@ class NotificationService {
           title: 'Permohonan surat ditolak',
           body: 'Permohonan$suffix ditolak. Silakan cek status permohonan.',
         );
-      case 'NEEDS_INFO':
+      case 'CANCELED':
         return ResidentPushNotification(
-          title: 'Permohonan perlu dilengkapi',
-          body: 'Permohonan$suffix membutuhkan informasi tambahan.',
+          title: 'Permohonan dibatalkan',
+          body: 'Permohonan$suffix telah dibatalkan.',
+        );
+      case 'FEEDBACK_NEW':
+        return ResidentPushNotification(
+          title: 'Laporan diterima',
+          body: 'Laporan$suffix sudah diterima kantor keuchik.',
+        );
+      case 'FEEDBACK_READ':
+        return ResidentPushNotification(
+          title: 'Laporan sedang ditinjau',
+          body: 'Laporan$suffix sedang ditinjau petugas.',
+        );
+      case 'FEEDBACK_RESPONDED':
+        return ResidentPushNotification(
+          title: 'Laporan Anda dibalas',
+          body: 'Laporan$suffix sudah mendapat balasan.',
         );
       default:
         return null;
@@ -250,16 +311,40 @@ class NotificationService {
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
-  Future<void> _registerDeviceToken(String token) async {
+  Future<void> _registerDeviceToken(
+    String token, {
+    AppPreferences? preferences,
+  }) async {
     _lastPushToken = token;
     try {
-      await _client.dio.post<Map<String, Object?>>(
-        '/notifications/device-tokens',
-        data: {'token': token, 'platform': _platformName()},
-      );
+      if (preferences == null) {
+        await _client.dio.post<Map<String, Object?>>(
+          '/notifications/device-tokens',
+          data: {'token': token, 'platform': _platformName()},
+        );
+      } else {
+        await _syncDevicePreferences(token, preferences);
+      }
     } on DioException {
       // Push registration should not block the resident app.
     }
+  }
+
+  Future<void> _syncDevicePreferences(
+    String token,
+    AppPreferences preferences,
+  ) {
+    return _client.dio.patch<Map<String, Object?>>(
+      '/notifications/device-tokens/preferences',
+      data: {
+        'token': token,
+        'platform': _platformName(),
+        'letter_status_notifications': preferences.letterStatusNotifications,
+        'feedback_status_notifications':
+            preferences.feedbackStatusNotifications,
+        'announcement_notifications': preferences.villageAnnouncements,
+      },
+    );
   }
 
   Future<void> _ensureInstanceLocalNotifications() {

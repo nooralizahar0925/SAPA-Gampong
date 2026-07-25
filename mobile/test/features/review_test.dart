@@ -5,13 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sapa_gampong/core/network/dio_client.dart';
 import 'package:sapa_gampong/data/models/attachment.dart';
+import 'package:sapa_gampong/data/models/letter_request.dart';
 import 'package:sapa_gampong/data/models/letter_type.dart';
+import 'package:sapa_gampong/data/models/resident_session.dart';
 import 'package:sapa_gampong/data/providers/letter_providers.dart';
+import 'package:sapa_gampong/data/providers/resident_providers.dart';
 import 'package:sapa_gampong/data/providers/submission_queue_providers.dart';
 import 'package:sapa_gampong/data/repositories/letter_repository.dart';
+import 'package:sapa_gampong/data/repositories/resident_repository.dart';
 import 'package:sapa_gampong/data/services/submission_queue_service.dart';
 import 'package:sapa_gampong/features/letters/letter_form_screen.dart';
 import 'package:sapa_gampong/features/letters/review_screen.dart';
+
+import '../support/resident_test_support.dart';
 
 const _type = LetterType(
   code: 'L1',
@@ -62,14 +68,47 @@ LetterRepository _fakeRepo({
   return LetterRepository(DioClient(dio: dio));
 }
 
+class _FakeResidentRepository extends ResidentRepository {
+  _FakeResidentRepository() : super(DioClient());
+
+  String? resubmittedId;
+
+  @override
+  Future<ResidentRequestItem> resubmitRequest({
+    required ResidentSession session,
+    required String id,
+    required LetterRequestDraft draft,
+  }) async {
+    resubmittedId = id;
+    return ResidentRequestItem(
+      id: id,
+      referenceCode: 'GB-2026-000001',
+      letterType: draft.letterType,
+      status: 'IN_REVIEW',
+      statusLabel: 'Sedang diproses',
+      createdAt: DateTime(2026, 7, 23),
+      updatedAt: DateTime(2026, 7, 25),
+    );
+  }
+}
+
+class _TestResidentSessionNotifier extends ResidentSessionNotifier {
+  @override
+  Future<ResidentSession?> build() async => testResidentSession;
+}
+
 Widget _buildApp(
   LetterFlowDraft draft, {
   LetterRepository? repo,
+  ResidentRepository? residentRepo,
   SubmissionQueueService? queue,
 }) {
   return ProviderScope(
     overrides: [
       if (repo != null) letterRepositoryProvider.overrideWithValue(repo),
+      residentSessionProvider.overrideWith(_TestResidentSessionNotifier.new),
+      if (residentRepo != null)
+        residentRepositoryProvider.overrideWithValue(residentRepo),
       if (queue != null) submissionQueueProvider.overrideWithValue(queue),
     ],
     child: MaterialApp.router(
@@ -77,17 +116,17 @@ Widget _buildApp(
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => ReviewScreen(flowDraft: draft),
+            builder: (context, state) => ReviewScreen(flowDraft: draft),
           ),
           GoRoute(
             path: '/layanan/surat/berhasil',
             name: 'success',
-            builder: (_, __) => const Scaffold(body: Text('berhasil')),
+            builder: (context, state) => const Scaffold(body: Text('berhasil')),
           ),
           GoRoute(
             path: '/layanan/surat/form',
             name: 'letterForm',
-            builder: (_, __) => const Scaffold(body: Text('form')),
+            builder: (context, state) => const Scaffold(body: Text('form')),
           ),
         ],
       ),
@@ -194,5 +233,33 @@ void main() {
       expect(queue.pending(), hasLength(1));
       expect(queue.pending().single.path, '/requests');
     });
+
+    testWidgets(
+      'correction submit updates existing request without offline queue',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final repository = _FakeResidentRepository();
+        final queue = MemorySubmissionQueueService(DioClient());
+        final correctionDraft = _baseDraft.copyWith(
+          falseStatementConfirmed: true,
+          requestId: 'req-correction',
+        );
+        await tester.pumpWidget(
+          _buildApp(correctionDraft, residentRepo: repository, queue: queue),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Kirim Perbaikan'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('review-submit')));
+        await tester.pumpAndSettle();
+
+        expect(repository.resubmittedId, 'req-correction');
+        expect(queue.pending(), isEmpty);
+        expect(find.text('berhasil'), findsOneWidget);
+      },
+    );
   });
 }

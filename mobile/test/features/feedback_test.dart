@@ -117,6 +117,7 @@ void main() {
     expect(repository.submittedDraft?.email, testResidentSession.email);
     expect(find.text('Laporan telah dikirim'), findsOneWidget);
     expect(find.text('LPR-A1B2C'), findsOneWidget);
+    expect(find.text('Lihat Laporan Saya'), findsOneWidget);
   });
 
   testWidgets('requires verified email before showing the form', (
