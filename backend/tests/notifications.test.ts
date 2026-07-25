@@ -244,6 +244,46 @@ describe('notification push wiring', () => {
     });
   });
 
+  it('keeps a saved status change successful when push delivery fails', async () => {
+    const restorePush = setPushTransportForTests({
+      async sendToTokens() {
+        throw new Error('FCM provider down');
+      },
+    } satisfies PushTransport);
+
+    const created = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-001852',
+        letterType: 'L1',
+        status: 'SUBMITTED',
+        applicantName: 'Budi',
+        applicantEmail: 'budi@mail.com',
+        subjectData: { nama: 'Budi', nik: '1607010101010001' },
+      },
+    });
+    const deviceToken = await testPrisma.deviceToken.create({
+      data: { token: 'resident-failing-token', platform: 'android' },
+    });
+    await testPrisma.requestPushToken.create({
+      data: { requestId: created.id, deviceTokenId: deviceToken.id },
+    });
+
+    const token = await login();
+    const res = await request(app)
+      .patch(`/api/requests/${created.id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ action: 'in_review' });
+
+    restorePush();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('IN_REVIEW');
+    const saved = await testPrisma.letterRequest.findUnique({
+      where: { id: created.id },
+    });
+    expect(saved?.status).toBe('IN_REVIEW');
+  });
+
   it('does not send request pushes to tokens with letter notifications disabled', async () => {
     const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
     const restorePush = setPushTransportForTests({

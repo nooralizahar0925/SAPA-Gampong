@@ -375,22 +375,26 @@ export async function updateRequestStatus(
     return serializeRequestDetail(updated);
   });
 
-  if (input.action === 'reject' && input.reason?.trim()) {
-    await notifyRequestRejected({
-      requestId: found.id,
-      applicantEmail: found.applicantEmail,
-      applicantName: found.applicantName,
-      referenceCode: found.referenceCode,
-      letterType: found.letterType,
-      reason: input.reason.trim(),
-    });
-  } else {
-    await notifyRequestStatusChanged({
-      requestId: found.id,
-      referenceCode: found.referenceCode,
-      letterType: found.letterType,
-      status: result.status,
-    });
+  try {
+    if (input.action === 'reject' && input.reason?.trim()) {
+      await notifyRequestRejected({
+        requestId: found.id,
+        applicantEmail: found.applicantEmail,
+        applicantName: found.applicantName,
+        referenceCode: found.referenceCode,
+        letterType: found.letterType,
+        reason: input.reason.trim(),
+      });
+    } else {
+      await notifyRequestStatusChanged({
+        requestId: found.id,
+        referenceCode: found.referenceCode,
+        letterType: found.letterType,
+        status: result.status,
+      });
+    }
+  } catch (error) {
+    logNotificationFailure('request status update', error);
   }
 
   return result;
@@ -406,6 +410,11 @@ function buildSubjectSchema(fields: readonly LetterField[]) {
   }
 
   return z.object(shape).strict();
+}
+
+function logNotificationFailure(context: string, error: unknown) {
+  if (env.NODE_ENV === 'test') return;
+  console.error(`Notification failed after ${context}`, error);
 }
 
 async function validateSubjectData(letterType: LetterType, subjectData: Record<string, unknown>) {

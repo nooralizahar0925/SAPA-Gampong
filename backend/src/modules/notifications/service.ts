@@ -414,11 +414,15 @@ export async function notifyFeedbackReply(input: {
   });
 
   if (input.feedbackId) {
-    await notifyFeedbackStatusChanged({
-      feedbackId: input.feedbackId,
-      referenceCode: input.referenceCode,
-      status: 'responded',
-    });
+    try {
+      await notifyFeedbackStatusChanged({
+        feedbackId: input.feedbackId,
+        referenceCode: input.referenceCode,
+        status: 'responded',
+      });
+    } catch (error) {
+      logNotificationFailure('feedback reply push', error);
+    }
   }
 }
 
@@ -436,7 +440,14 @@ async function dispatchResidentPush(requestId: string, payload: PushPayload) {
   const tokens = rows.map((row) => row.deviceToken.token);
   if (tokens.length === 0) return;
 
-  const result = await pushTransport.sendToTokens(tokens, payload);
+  let result: PushSendResult;
+  try {
+    result = await pushTransport.sendToTokens(tokens, payload);
+  } catch (error) {
+    logNotificationFailure(`request push ${requestId}`, error);
+    return;
+  }
+
   if (result.invalidTokens.length > 0) {
     await prisma.deviceToken.updateMany({
       where: { token: { in: result.invalidTokens } },
@@ -459,7 +470,14 @@ async function dispatchFeedbackPush(feedbackId: string, payload: PushPayload) {
   const tokens = rows.map((row) => row.deviceToken.token);
   if (tokens.length === 0) return;
 
-  const result = await pushTransport.sendToTokens(tokens, payload);
+  let result: PushSendResult;
+  try {
+    result = await pushTransport.sendToTokens(tokens, payload);
+  } catch (error) {
+    logNotificationFailure(`feedback push ${feedbackId}`, error);
+    return;
+  }
+
   if (result.invalidTokens.length > 0) {
     await prisma.deviceToken.updateMany({
       where: { token: { in: result.invalidTokens } },
@@ -494,6 +512,11 @@ function isInvalidFirebaseToken(code?: string) {
     code === 'messaging/invalid-registration-token' ||
     code === 'messaging/registration-token-not-registered'
   );
+}
+
+function logNotificationFailure(context: string, error: unknown) {
+  if (env.NODE_ENV === 'test') return;
+  console.error(`Notification failed during ${context}`, error);
 }
 
 function serializeDeviceToken(token: {

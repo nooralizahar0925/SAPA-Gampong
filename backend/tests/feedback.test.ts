@@ -382,6 +382,38 @@ describe('feedback module', () => {
       });
     });
 
+    it('keeps a saved reply successful when feedback push delivery fails', async () => {
+      const sendMail = stubEmailTransport();
+      const created = await submitFeedback();
+      const restorePush = setPushTransportForTests({
+        async sendToTokens() {
+          throw new Error('FCM provider down');
+        },
+      } satisfies PushTransport);
+      const deviceToken = await testPrisma.deviceToken.create({
+        data: { token: 'feedback-failing-push-token', platform: 'ios' },
+      });
+      await testPrisma.feedbackPushToken.create({
+        data: { feedbackId: created.body.id, deviceTokenId: deviceToken.id },
+      });
+      const token = await login();
+
+      const res = await request(app)
+        .post(`/api/feedback/${created.body.id}/reply`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ reply: 'Terima kasih, laporan akan kami tindak lanjuti.' });
+
+      restorePush();
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('responded');
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const saved = await testPrisma.feedback.findUnique({
+        where: { id: created.body.id },
+      });
+      expect(saved?.status).toBe('responded');
+    });
+
     it('does not mark the report responded when the email fails', async () => {
       const sendMail = vi.fn(async () => {
         throw new Error('provider down');
