@@ -6,6 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/network/dio_client.dart';
 import '../../firebase_options.dart';
@@ -59,6 +61,19 @@ class NotificationService {
 
   static String? _lastPushToken;
   static bool _localNotificationsReady = false;
+  static bool _timezoneReady = false;
+
+  static const _adzanAlarmChannelId = 'adzan_alarm_v1';
+  static const _adzanAlarmChannelName = 'Alarm azan';
+  static const _adzanSoundResource = 'adzan_short';
+  static const _adzanSoundFile = 'adzan_short.caf';
+  static const _adzanNotificationIds = <String, int>{
+    'Subuh': 51001,
+    'Dhuhur': 51002,
+    'Ashar': 51003,
+    'Maghrib': 51004,
+    'Isya': 51005,
+  };
 
   PrayerAlarmSchedule? get lastSchedule => _lastSchedule;
 
@@ -125,6 +140,8 @@ class NotificationService {
     DateTime? now,
   }) async {
     _timer?.cancel();
+    await _scheduleNativeAdzanAlarms(prayerTimes, now: now);
+
     _lastSchedule = nextPrayer(prayerTimes, now: now);
     final reference = now ?? DateTime.now();
     final delay = _lastSchedule!.scheduledAt.difference(reference);
@@ -168,6 +185,7 @@ class NotificationService {
     _timer?.cancel();
     _timer = null;
     _lastSchedule = null;
+    await _cancelNativeAdzanAlarms();
     await _audioPlayer.stop();
   }
 
@@ -309,6 +327,105 @@ class NotificationService {
     final hour = int.tryParse(parts.first) ?? 0;
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  Future<void> _scheduleNativeAdzanAlarms(
+    PrayerTimes prayerTimes, {
+    DateTime? now,
+  }) async {
+    if (kIsWeb) return;
+
+    try {
+      await _ensureInstanceLocalNotifications();
+      await _requestAdzanNotificationPermissions();
+      await _cancelNativeAdzanAlarms();
+      _ensureTimezone();
+
+      final reference = now ?? DateTime.now();
+      final slots = [
+        ('Subuh', prayerTimes.subuh),
+        ('Dhuhur', prayerTimes.dhuhur),
+        ('Ashar', prayerTimes.ashar),
+        ('Maghrib', prayerTimes.maghrib),
+        ('Isya', prayerTimes.isya),
+      ];
+
+      for (final slot in slots) {
+        final scheduledToday = _dateTimeFor(reference, slot.$2);
+        final scheduledAt = scheduledToday.isAfter(reference)
+            ? scheduledToday
+            : scheduledToday.add(const Duration(days: 1));
+
+        await _localNotifications.zonedSchedule(
+          id: _adzanNotificationIds[slot.$1]!,
+          title: 'Waktu ${slot.$1}',
+          body: 'Alarm azan ${slot.$1} aktif.',
+          scheduledDate: tz.TZDateTime.from(scheduledAt, tz.local),
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              _adzanAlarmChannelId,
+              _adzanAlarmChannelName,
+              channelDescription: 'Pengingat waktu sholat dengan suara azan',
+              importance: Importance.max,
+              priority: Priority.high,
+              sound: RawResourceAndroidNotificationSound(_adzanSoundResource),
+              audioAttributesUsage: AudioAttributesUsage.alarm,
+            ),
+            iOS: DarwinNotificationDetails(
+              sound: _adzanSoundFile,
+              presentAlert: true,
+              presentSound: true,
+              presentBanner: true,
+              presentList: true,
+            ),
+            macOS: DarwinNotificationDetails(
+              sound: _adzanSoundFile,
+              presentAlert: true,
+              presentSound: true,
+              presentBanner: true,
+              presentList: true,
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+          payload: 'adzan:${slot.$1}',
+        );
+      }
+    } catch (_) {
+      // Native alarms are best-effort; the in-app alarm timer still runs.
+    }
+  }
+
+  Future<void> _cancelNativeAdzanAlarms() async {
+    if (kIsWeb) return;
+
+    try {
+      for (final id in _adzanNotificationIds.values) {
+        await _localNotifications.cancel(id: id);
+      }
+    } catch (_) {
+      // Tests and some platforms may not have a native notification backend.
+    }
+  }
+
+  Future<void> _requestAdzanNotificationPermissions() async {
+    try {
+      final android = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestNotificationsPermission();
+      await android?.requestExactAlarmsPermission();
+    } catch (_) {
+      // Alarm scheduling should not block the prayer screen.
+    }
+  }
+
+  static void _ensureTimezone() {
+    if (_timezoneReady) return;
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+    _timezoneReady = true;
   }
 
   Future<void> _registerDeviceToken(
