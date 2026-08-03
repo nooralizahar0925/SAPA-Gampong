@@ -100,7 +100,7 @@ describe('resident email session', () => {
     expect(requestsRes.body.items).toHaveLength(1);
     expect(requestsRes.body.items[0]).toMatchObject({
       reference_code: 'GB-2026-000001',
-      status_label: 'Menunggu diproses',
+      status_label: 'Diajukan',
     });
 
     expect(feedbackRes.status).toBe(200);
@@ -236,7 +236,7 @@ describe('resident email session', () => {
     expect(res.body).toMatchObject({
       reference_code: 'GB-2026-000005',
       status: 'IN_REVIEW',
-      status_label: 'Sedang diproses',
+      status_label: 'Sedang Ditinjau',
       applicant_name: 'Warga Baru',
       decision_reason: null,
     });

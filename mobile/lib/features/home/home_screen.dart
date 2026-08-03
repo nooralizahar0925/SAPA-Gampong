@@ -103,11 +103,46 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _HomeRequestsSection extends ConsumerWidget {
+class _HomeRequestsSection extends ConsumerStatefulWidget {
   const _HomeRequestsSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeRequestsSection> createState() =>
+      _HomeRequestsSectionState();
+}
+
+class _HomeRequestsSectionState extends ConsumerState<_HomeRequestsSection>
+    with WidgetsBindingObserver {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(_refreshHistory());
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshHistory());
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshHistory());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(residentSessionProvider).asData?.value;
     final requestsAsync = ref.watch(residentRequestsProvider);
     final feedbackAsync = ref.watch(residentFeedbackProvider);
@@ -238,6 +273,23 @@ class _HomeRequestsSection extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  Future<void> _refreshHistory() async {
+    if (!mounted) return;
+    final session = ref.read(residentSessionProvider).asData?.value;
+    if (session == null) return;
+
+    ref.invalidate(residentRequestsProvider);
+    ref.invalidate(residentFeedbackProvider);
+    try {
+      await Future.wait([
+        ref.read(residentRequestsProvider.future),
+        ref.read(residentFeedbackProvider.future),
+      ]);
+    } catch (_) {
+      // Keep the cached history visible if staging/API is temporarily down.
+    }
   }
 }
 
@@ -797,7 +849,7 @@ class _Dot extends StatelessWidget {
 (Color, Color) _homeStatusColors(String status) {
   return switch (status) {
     'SENT' || 'GENERATED' || 'APPROVED' => (AppTheme.okBg, AppTheme.ok),
-    'REJECTED' => (AppTheme.dangerBg, AppTheme.danger),
+    'REJECTED' || 'CANCELED' => (AppTheme.dangerBg, AppTheme.danger),
     _ => (AppTheme.warnBg, AppTheme.warn),
   };
 }

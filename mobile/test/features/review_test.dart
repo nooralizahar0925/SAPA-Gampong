@@ -85,7 +85,7 @@ class _FakeResidentRepository extends ResidentRepository {
       referenceCode: 'GB-2026-000001',
       letterType: draft.letterType,
       status: 'IN_REVIEW',
-      statusLabel: 'Sedang diproses',
+      statusLabel: 'Sedang Ditinjau',
       createdAt: DateTime(2026, 7, 23),
       updatedAt: DateTime(2026, 7, 25),
     );

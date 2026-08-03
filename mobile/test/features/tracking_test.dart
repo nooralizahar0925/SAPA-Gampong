@@ -39,7 +39,7 @@ const _trackResponse = {
   'reference_code': 'BLG-TEST',
   'letter_type': 'Surat Keterangan Berdomisili',
   'status': 'IN_REVIEW',
-  'status_label': 'Sedang diproses',
+  'status_label': 'Sedang Ditinjau',
   'created_at': '2026-07-21T09:30:00Z',
   'updated_at': '2026-07-21T09:41:00Z',
   'status_history': [
@@ -74,7 +74,7 @@ Widget _buildApp(LetterRepository repo) => ProviderScope(
   overrides: [letterRepositoryProvider.overrideWithValue(repo)],
   child: MaterialApp.router(
     routerConfig: GoRouter(
-      routes: [GoRoute(path: '/', builder: (_, __) => const TrackingScreen())],
+      routes: [GoRoute(path: '/', builder: (_, _) => const TrackingScreen())],
     ),
   ),
 );
@@ -118,7 +118,7 @@ void main() {
 
       expect(find.byKey(const Key('tracking-reference-code')), findsOneWidget);
       expect(find.text('BLG-TEST'), findsAtLeastNWidgets(1));
-      expect(find.text('Sedang diproses'), findsOneWidget);
+      expect(find.text('Sedang Ditinjau'), findsOneWidget);
       expect(find.text('Surat Keterangan Berdomisili'), findsOneWidget);
     });
 

@@ -17,9 +17,20 @@ import 'package:sapa_gampong/features/letters/my_requests_screen.dart';
 import '../support/resident_test_support.dart';
 
 class _FakeResidentRepository extends ResidentRepository {
-  _FakeResidentRepository() : super(DioClient());
+  _FakeResidentRepository({this.requestResponses = const []})
+    : super(DioClient());
 
   String? canceledId;
+  final List<List<ResidentRequestItem>> requestResponses;
+  int requestCallCount = 0;
+
+  @override
+  Future<List<ResidentRequestItem>> requests(ResidentSession session) async {
+    requestCallCount += 1;
+    if (requestResponses.isEmpty) return const [];
+    final index = requestCallCount - 1;
+    return requestResponses[index.clamp(0, requestResponses.length - 1)];
+  }
 
   @override
   Future<ResidentRequestItem> cancelRequest({
@@ -88,6 +99,31 @@ Future<Widget> _wrap({
   );
 }
 
+Future<Widget> _wrapLiveRepository(_FakeResidentRepository repository) async {
+  final residentService = await residentSessionService(
+    session: testResidentSession,
+  );
+  return ProviderScope(
+    overrides: [
+      residentSessionServiceProvider.overrideWithValue(residentService),
+      residentRepositoryProvider.overrideWithValue(repository),
+      letterTypesProvider.overrideWith((_) async => [_letterType]),
+    ],
+    child: MaterialApp.router(
+      routerConfig: GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            name: AppRouteNames.myRequests,
+            builder: (_, state) => const MyRequestsScreen(),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 const _letterType = LetterType(
   code: 'L10',
   name: 'Surat Rekomendasi',
@@ -105,7 +141,7 @@ void main() {
     referenceCode: 'GB-2026-000001',
     letterType: 'L10',
     status: 'SUBMITTED',
-    statusLabel: 'Menunggu diproses',
+    statusLabel: 'Diajukan',
     createdAt: DateTime(2026, 7, 23),
     updatedAt: DateTime(2026, 7, 23),
   );
@@ -116,7 +152,7 @@ void main() {
     await tester.pumpWidget(await _wrap(requests: [submitted]));
     await tester.pumpAndSettle();
 
-    final badgeTop = tester.getTopLeft(find.text('Menunggu diproses')).dy;
+    final badgeTop = tester.getTopLeft(find.text('Diajukan')).dy;
     final codeTop = tester
         .getTopLeft(find.byKey(const Key('request-card-code-GB-2026-000001')))
         .dy;
@@ -146,6 +182,49 @@ void main() {
     expect(find.text('Permohonan telah dibatalkan.'), findsOneWidget);
   });
 
+  testWidgets('refreshes stale request status when app resumes', (
+    tester,
+  ) async {
+    final staleNeedsInfo = ResidentRequestItem(
+      id: 'req-4',
+      referenceCode: 'GB-2026-000004',
+      letterType: 'L10',
+      status: 'NEEDS_INFO',
+      statusLabel: 'Perlu Perbaikan',
+      createdAt: DateTime(2026, 7, 23),
+      updatedAt: DateTime(2026, 7, 24),
+    );
+    final liveRejected = ResidentRequestItem(
+      id: 'req-4',
+      referenceCode: 'GB-2026-000004',
+      letterType: 'L10',
+      status: 'REJECTED',
+      statusLabel: 'Ditolak',
+      createdAt: DateTime(2026, 7, 23),
+      updatedAt: DateTime(2026, 7, 25),
+      decisionReason: 'Data tidak sesuai.',
+    );
+    final repository = _FakeResidentRepository(
+      requestResponses: [
+        [staleNeedsInfo],
+        [liveRejected],
+      ],
+    );
+
+    await tester.pumpWidget(await _wrapLiveRepository(repository));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestCallCount, 1);
+    expect(find.text('Perlu Perbaikan'), findsOneWidget);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(repository.requestCallCount, greaterThanOrEqualTo(2));
+    expect(find.text('Ditolak'), findsOneWidget);
+    expect(find.text('Perlu Perbaikan'), findsNothing);
+  });
+
   testWidgets('request after review does not show cancel action', (
     tester,
   ) async {
@@ -157,7 +236,7 @@ void main() {
             referenceCode: 'GB-2026-000002',
             letterType: 'L10',
             status: 'IN_REVIEW',
-            statusLabel: 'Sedang diproses',
+            statusLabel: 'Sedang Ditinjau',
             createdAt: DateTime(2026, 7, 23),
             updatedAt: DateTime(2026, 7, 24),
           ),
@@ -180,7 +259,7 @@ void main() {
             referenceCode: 'GB-2026-000003',
             letterType: 'L10',
             status: 'NEEDS_INFO',
-            statusLabel: 'Perlu informasi tambahan',
+            statusLabel: 'Perlu Perbaikan',
             applicantName: 'Nurul',
             applicantEmail: testResidentSession.email,
             applicantPhone: '081234567890',

@@ -19,12 +19,12 @@ const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
 
 const STATUS_LABELS: Record<string, string> = {
-  SUBMITTED: 'Menunggu diproses',
-  IN_REVIEW: 'Sedang diproses',
-  NEEDS_INFO: 'Perlu informasi tambahan',
+  SUBMITTED: 'Diajukan',
+  IN_REVIEW: 'Sedang Ditinjau',
+  NEEDS_INFO: 'Perlu Perbaikan',
   APPROVED: 'Disetujui',
-  GENERATED: 'Surat selesai dibuat',
-  SENT: 'Surat telah dikirim',
+  GENERATED: 'Surat Dibuat',
+  SENT: 'Terkirim',
   REJECTED: 'Ditolak',
   CANCELED: 'Dibatalkan',
 };

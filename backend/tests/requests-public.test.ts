@@ -67,7 +67,7 @@ describe('public requests flow', () => {
       reference_code: createRes.body.reference_code,
       letter_type: 'L1',
       status: 'SUBMITTED',
-      status_label: 'Menunggu diproses',
+      status_label: 'Diajukan',
       status_history: [
         {
           status: 'SUBMITTED',

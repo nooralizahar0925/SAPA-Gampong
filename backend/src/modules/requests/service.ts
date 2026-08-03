@@ -17,12 +17,12 @@ import {
 } from '../notifications/service';
 
 const STATUS_LABELS: Record<string, string> = {
-  SUBMITTED: 'Menunggu diproses',
-  IN_REVIEW: 'Sedang diproses',
-  NEEDS_INFO: 'Perlu informasi tambahan',
+  SUBMITTED: 'Diajukan',
+  IN_REVIEW: 'Sedang Ditinjau',
+  NEEDS_INFO: 'Perlu Perbaikan',
   APPROVED: 'Disetujui',
-  GENERATED: 'Surat selesai dibuat',
-  SENT: 'Surat telah dikirim',
+  GENERATED: 'Surat Dibuat',
+  SENT: 'Terkirim',
   REJECTED: 'Ditolak',
   CANCELED: 'Dibatalkan',
 };

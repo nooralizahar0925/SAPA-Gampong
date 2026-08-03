@@ -4,7 +4,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   type LetterFieldDefinition,
   type LetterTypeDefinition,
+  type PatchRequestStatusInput,
   type RequestDetailResponse,
+  type RequestStatus,
   getRequestDetailRequest,
   listLetterTypesRequest,
   updateRequestStatusRequest,
@@ -13,6 +15,19 @@ import { AttachmentViewer } from '../components/AttachmentViewer';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { AppIcon } from '../components/AppIcon';
 import { StatusBadge, getStatusLabel } from '../components/StatusBadge';
+
+type RequestAction = PatchRequestStatusInput['action'];
+
+const ALLOWED_REQUEST_ACTIONS: Record<RequestStatus, readonly RequestAction[]> = {
+  SUBMITTED: ['in_review', 'reject'],
+  IN_REVIEW: ['approve', 'needs_info', 'reject'],
+  NEEDS_INFO: ['in_review', 'reject'],
+  APPROVED: [],
+  GENERATED: [],
+  SENT: [],
+  REJECTED: [],
+  CANCELED: [],
+};
 
 export function RequestDetailPage() {
   const { id = '' } = useParams();
@@ -51,7 +66,7 @@ export function RequestDetailPage() {
   }, [detail]);
 
   const decisionMutation = useMutation({
-    mutationFn: (input: { action: 'approve' | 'reject' | 'in_review' | 'needs_info' }) =>
+    mutationFn: (input: { action: RequestAction }) =>
       updateRequestStatusRequest(id, {
         action: input.action,
         subject_data: draftSubjectData,
@@ -124,6 +139,12 @@ export function RequestDetailPage() {
   const statusHistory = buildTimeline(detail);
   const orderedSubjectFields = getOrderedSubjectFields(letterType, detail);
   const nomorSuratParts = splitNomorSurat(draftNomorSurat);
+  const allowedActions = ALLOWED_REQUEST_ACTIONS[detail.status];
+  const canMarkInReview = allowedActions.includes('in_review');
+  const canApprove = allowedActions.includes('approve');
+  const canAskCorrection = allowedActions.includes('needs_info');
+  const canReject = allowedActions.includes('reject');
+  const hasDecisionActions = allowedActions.length > 0;
 
   return (
     <DashboardFrame
@@ -236,7 +257,7 @@ export function RequestDetailPage() {
                 </div>
               ) : null}
 
-              {detail.status === 'SUBMITTED' ? (
+              {canMarkInReview ? (
                 <div className="detail-inline-actions">
                   <button
                     className="table-action ghost"
@@ -249,55 +270,59 @@ export function RequestDetailPage() {
                 </div>
               ) : null}
 
-              <div className="field">
-                <label htmlFor="nomor-surat">Nomor Surat</label>
-                <div className="nomor-surat-grid">
-                  <input
-                    id="nomor-surat-prefix"
-                    className="field-input muted"
-                    value={nomorSuratParts.prefix}
-                    onChange={(event) =>
-                      setDraftNomorSurat(joinNomorSurat(event.target.value, nomorSuratParts.sequence, nomorSuratParts.year))
-                    }
-                    placeholder="400.10.4.4"
-                  />
-                  <input
-                    id="nomor-surat-seq"
-                    className="field-input focus-ring"
-                    value={nomorSuratParts.sequence}
-                    onChange={(event) =>
-                      setDraftNomorSurat(joinNomorSurat(nomorSuratParts.prefix, event.target.value, nomorSuratParts.year))
-                    }
-                    placeholder="017"
-                  />
-                  <input
-                    id="nomor-surat-year"
-                    className="field-input muted"
-                    value={nomorSuratParts.year}
-                    onChange={(event) =>
-                      setDraftNomorSurat(joinNomorSurat(nomorSuratParts.prefix, nomorSuratParts.sequence, event.target.value))
-                    }
-                    placeholder="2026"
-                  />
-                </div>
-                <div className="field-hint">
-                  Nomor urut dapat dikoreksi saat peninjauan sebelum masuk ke tahap pembuatan surat.
-                </div>
-              </div>
+              {hasDecisionActions ? (
+                <>
+                  <div className="field">
+                    <label htmlFor="nomor-surat">Nomor Surat</label>
+                    <div className="nomor-surat-grid">
+                      <input
+                        id="nomor-surat-prefix"
+                        className="field-input muted"
+                        value={nomorSuratParts.prefix}
+                        onChange={(event) =>
+                          setDraftNomorSurat(joinNomorSurat(event.target.value, nomorSuratParts.sequence, nomorSuratParts.year))
+                        }
+                        placeholder="400.10.4.4"
+                      />
+                      <input
+                        id="nomor-surat-seq"
+                        className="field-input focus-ring"
+                        value={nomorSuratParts.sequence}
+                        onChange={(event) =>
+                          setDraftNomorSurat(joinNomorSurat(nomorSuratParts.prefix, event.target.value, nomorSuratParts.year))
+                        }
+                        placeholder="017"
+                      />
+                      <input
+                        id="nomor-surat-year"
+                        className="field-input muted"
+                        value={nomorSuratParts.year}
+                        onChange={(event) =>
+                          setDraftNomorSurat(joinNomorSurat(nomorSuratParts.prefix, nomorSuratParts.sequence, event.target.value))
+                        }
+                        placeholder="2026"
+                      />
+                    </div>
+                    <div className="field-hint">
+                      Nomor urut dapat dikoreksi saat peninjauan sebelum masuk ke tahap pembuatan surat.
+                    </div>
+                  </div>
 
-              <div className="field">
-                <label htmlFor="decision-reason">Catatan / Alasan Keputusan</label>
-                <textarea
-                  id="decision-reason"
-                  className="field-textarea"
-                  value={decisionReason}
-                  onChange={(event) => setDecisionReason(event.target.value)}
-                  placeholder="Tambahkan alasan bila permohonan perlu perbaikan atau ditolak…"
-                />
-                <div className="field-hint">
-                  Gunakan untuk alasan perbaikan atau penolakan. Persetujuan bisa dikirim tanpa isi catatan ini.
-                </div>
-              </div>
+                  <div className="field">
+                    <label htmlFor="decision-reason">Catatan / Alasan Keputusan</label>
+                    <textarea
+                      id="decision-reason"
+                      className="field-textarea"
+                      value={decisionReason}
+                      onChange={(event) => setDecisionReason(event.target.value)}
+                      placeholder="Tambahkan alasan bila permohonan perlu perbaikan atau ditolak…"
+                    />
+                    <div className="field-hint">
+                      Gunakan untuk alasan perbaikan atau penolakan. Persetujuan bisa dikirim tanpa isi catatan ini.
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               {decisionError ? (
                 <div className="error-box" role="alert">
@@ -305,55 +330,65 @@ export function RequestDetailPage() {
                 </div>
               ) : null}
 
-              <div className="detail-inline-actions">
-                <button
-                  className="table-action primary strong"
-                  type="button"
-                  onClick={() => decisionMutation.mutate({ action: 'approve' })}
-                  disabled={decisionMutation.isPending}
-                >
-                  Setujui
-                </button>
-                <button
-                  className="table-action ghost"
-                  type="button"
-                  onClick={() => {
-                    if (!decisionReason.trim()) {
-                      setDecisionError('Alasan wajib diisi sebelum meminta perbaikan.');
-                      return;
-                    }
-                    decisionMutation.mutate({ action: 'needs_info' });
-                  }}
-                  disabled={decisionMutation.isPending}
-                >
-                  Minta Perbaikan
-                </button>
-                <button
-                  className="table-action danger"
-                  type="button"
-                  onClick={() => {
-                    if (!decisionReason.trim()) {
-                      setDecisionError('Alasan wajib diisi sebelum menolak permohonan.');
-                      return;
-                    }
-                    decisionMutation.mutate({ action: 'reject' });
-                  }}
-                  disabled={decisionMutation.isPending}
-                >
-                  Tolak Permohonan
-                </button>
-              </div>
-
-              <div className="warning-box">
-                <AppIcon name="warning" />
-                <div>
-                  <strong>Persetujuan manusia wajib</strong>
-                  <p>
-                    Permohonan hanya berpindah ke status disetujui setelah petugas menekan tombol
-                    persetujuan. Pembuatan PDF dilakukan pada langkah berikutnya.
-                  </p>
+              {hasDecisionActions ? (
+                <div className="detail-inline-actions">
+                  {canApprove ? (
+                    <button
+                      className="table-action primary strong"
+                      type="button"
+                      onClick={() => decisionMutation.mutate({ action: 'approve' })}
+                      disabled={decisionMutation.isPending}
+                    >
+                      Setujui
+                    </button>
+                  ) : null}
+                  {canAskCorrection ? (
+                    <button
+                      className="table-action ghost"
+                      type="button"
+                      onClick={() => {
+                        if (!decisionReason.trim()) {
+                          setDecisionError('Alasan wajib diisi sebelum meminta perbaikan.');
+                          return;
+                        }
+                        decisionMutation.mutate({ action: 'needs_info' });
+                      }}
+                      disabled={decisionMutation.isPending}
+                    >
+                      Minta Perbaikan
+                    </button>
+                  ) : null}
+                  {canReject ? (
+                    <button
+                      className="table-action danger"
+                      type="button"
+                      onClick={() => {
+                        if (!decisionReason.trim()) {
+                          setDecisionError('Alasan wajib diisi sebelum menolak permohonan.');
+                          return;
+                        }
+                        decisionMutation.mutate({ action: 'reject' });
+                      }}
+                      disabled={decisionMutation.isPending}
+                    >
+                      Tolak Permohonan
+                    </button>
+                  ) : null}
                 </div>
-              </div>
+              ) : null}
+
+              {canApprove ? (
+                <div className="warning-box">
+                  <AppIcon name="warning" />
+                  <div>
+                    <strong>Persetujuan manusia wajib</strong>
+                    <p>
+                      Permohonan hanya berpindah ke status disetujui setelah petugas menekan tombol
+                      persetujuan. Pembuatan PDF dilakukan pada langkah berikutnya.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
         </div>

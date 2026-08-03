@@ -38,6 +38,7 @@ const STATUS_FILTERS: Array<{ key: 'ALL' | RequestStatus; label: string }> = [
   { key: 'IN_REVIEW', label: 'Ditinjau' },
   { key: 'NEEDS_INFO', label: 'Perlu Perbaikan' },
   { key: 'APPROVED', label: 'Disetujui' },
+  { key: 'GENERATED', label: 'Surat Dibuat' },
   { key: 'SENT', label: 'Terkirim' },
   { key: 'REJECTED', label: 'Ditolak' },
   { key: 'CANCELED', label: 'Dibatalkan' },

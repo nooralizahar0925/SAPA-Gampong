@@ -113,4 +113,100 @@ describe('request queue and review flow', () => {
 
     expect(await screen.findByText(/disetujui/i)).toBeInTheDocument();
   });
+
+  it('shows only review-stage decision actions while in review', async () => {
+    renderApp(['/requests/req-1']);
+
+    expect(await screen.findByRole('button', { name: /^setujui$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /minta perbaikan/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tolak permohonan/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /tandai sedang ditinjau/i })).not.toBeInTheDocument();
+  });
+
+  it('hides approve and correction actions before review starts', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/requests/action-submitted', () =>
+        HttpResponse.json(requestDetailFixture({ id: 'action-submitted', status: 'SUBMITTED' })),
+      ),
+    );
+
+    renderApp(['/requests/action-submitted']);
+
+    expect(await screen.findByRole('button', { name: /tandai sedang ditinjau/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tolak permohonan/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^setujui$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /minta perbaikan/i })).not.toBeInTheDocument();
+  });
+
+  it('allows needs-info requests to be reopened or rejected only', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/requests/action-needs-info', () =>
+        HttpResponse.json(requestDetailFixture({ id: 'action-needs-info', status: 'NEEDS_INFO' })),
+      ),
+    );
+
+    renderApp(['/requests/action-needs-info']);
+
+    expect(await screen.findByRole('button', { name: /tandai sedang ditinjau/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tolak permohonan/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^setujui$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /minta perbaikan/i })).not.toBeInTheDocument();
+  });
+
+  it('hides decision actions after approval', async () => {
+    renderApp(['/requests/req-3']);
+
+    expect(await screen.findByRole('button', { name: /lanjut ke generate pdf/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^setujui$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /minta perbaikan/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /tolak permohonan/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /tandai sedang ditinjau/i })).not.toBeInTheDocument();
+  });
 });
+
+function requestDetailFixture({
+  id,
+  status,
+}: {
+  id: string;
+  status: 'SUBMITTED' | 'NEEDS_INFO';
+}) {
+  return {
+    id,
+    reference_code: 'BLG-ACTION',
+    letter_type: 'L4',
+    status,
+    applicant_name: 'Roni Asra',
+    applicant_email: 'asra.roniasra@gmail.com',
+    applicant_phone: '+62 812 3456 7890',
+    keperluan: 'Pengajuan Beasiswa S2',
+    subject_data: {
+      nama: 'Roni Asra',
+      nik: '1706221001990002',
+      pekerjaan: 'Nelayan',
+      alamat: 'Jl. Meunasah No. 12, Dusun Kuini, Gampong Blang',
+    },
+    attachments: [
+      {
+        file_id: 'file-1',
+        kind: 'KTP',
+        mime: 'image/jpeg',
+        size: 1200000,
+        url: 'https://example.test/files/file-1',
+      },
+    ],
+    status_history: [
+      {
+        status: 'SUBMITTED',
+        at: '2026-07-18T02:41:00.000Z',
+        action: 'submit',
+        by: 'Pemohon',
+      },
+    ],
+    nomor_surat: '400.10.4.4/017/2026',
+    decision_reason: status === 'NEEDS_INFO' ? 'Mohon lengkapi berkas.' : null,
+    decided_by: 'admin-1',
+    created_at: '2026-07-18T02:41:00.000Z',
+    updated_at: '2026-07-19T01:15:00.000Z',
+  };
+}

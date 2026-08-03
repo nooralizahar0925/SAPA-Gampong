@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,11 +14,45 @@ import '../../data/providers/letter_providers.dart';
 import '../../data/providers/resident_providers.dart';
 import 'letter_form_screen.dart';
 
-class MyRequestsScreen extends ConsumerWidget {
+class MyRequestsScreen extends ConsumerStatefulWidget {
   const MyRequestsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyRequestsScreen> createState() => _MyRequestsScreenState();
+}
+
+class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen>
+    with WidgetsBindingObserver {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(_refreshRequests());
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshRequests());
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshRequests());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final requestsAsync = ref.watch(residentRequestsProvider);
     return SapaScaffold(
       title: 'Permohonan Saya',
@@ -36,10 +72,7 @@ class MyRequestsScreen extends ConsumerWidget {
                       'Permohonan surat yang memakai email tersimpan akan tampil di sini.',
                 )
               : RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(residentRequestsProvider);
-                    await ref.read(residentRequestsProvider.future);
-                  },
+                  onRefresh: _refreshRequests,
                   child: ListView.separated(
                     itemCount: items.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -49,6 +82,16 @@ class MyRequestsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _refreshRequests() async {
+    if (!mounted) return;
+    ref.invalidate(residentRequestsProvider);
+    try {
+      await ref.read(residentRequestsProvider.future);
+    } catch (_) {
+      // Keep the cached history visible if staging/API is temporarily down.
+    }
   }
 }
 
