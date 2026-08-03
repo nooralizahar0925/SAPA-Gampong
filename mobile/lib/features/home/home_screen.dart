@@ -63,7 +63,7 @@ class HomeScreen extends ConsumerWidget {
             mainAxisSpacing: 12,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.18,
+            childAspectRatio: 1.05,
             children: [
               _FeatureTile(
                 key: const Key('home-profile'),

@@ -10,7 +10,24 @@
       "Bash(npx tsx *)",
       "Bash(echo \"exit=$?\")",
       "Bash(cp templates/letters/partials/styles.html /tmp/styles.bak)",
-      "Bash(cp templates/letters/partials/styles.html styles.bak.tmp)"
+      "Bash(cp templates/letters/partials/styles.html styles.bak.tmp)",
+      "Bash(node probe_cdp.js)",
+      "Bash(curl -s http://127.0.0.1:57192/json)",
+      "Bash(python3 -m json.tool)",
+      "Bash(ps -p 46043 -o pid,etime,command)",
+      "Bash(curl -s http://127.0.0.1:57192/json/list)",
+      "Bash(curl -s http://127.0.0.1:57192/json/version)",
+      "Bash(pkill -f \"flutter_tools.snapshot run -d chrome\")",
+      "Bash(pkill -f \"flutter_tools_chrome_device\")",
+      "Bash(curl -s http://127.0.0.1:63466/json/list)",
+      "Bash(node cdp_shot.js \"ws://127.0.0.1:63466/devtools/page/C42D8F5E039B309D504786453490B214\" \"./real-window.png\")",
+      "Bash(node cdp_shot.js \"ws://127.0.0.1:63466/devtools/page/C42D8F5E039B309D504786453490B214\" \"./real-window-2.png\")",
+      "Bash(lsof -iTCP:8092 -sTCP:LISTEN -P -n)",
+      "Bash(curl -s http://127.0.0.1:50639/json/list)",
+      "Bash(node cdp_shot_viewport.js \"ws://127.0.0.1:50639/devtools/page/535F4B0B50F0D9F1441D4F983A0C8C7A\" \"./fix-check.png\")",
+      "Bash(curl -s http://127.0.0.1:55035/json/list)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(p['id'],p['url']\\) for p in d]\")",
+      "Bash(node cdp_shot_viewport.js \"ws://127.0.0.1:55035/devtools/page/5413F34979D6C35A3A06B8A74A9EE249\" \"./fix-check-2.png\")"
     ]
   }
 }
