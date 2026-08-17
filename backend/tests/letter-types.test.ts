@@ -27,7 +27,6 @@ describe('GET /api/letter-types', () => {
     expect(l10.subject_is_applicant).toBe(true);
     expect(l10.fields.map((field: { key: string }) => field.key)).toEqual([
       'nama_pemohon',
-      'nomor_surat_permohonan',
       'tanggal_permohonan',
       'perihal',
       'tujuan_jabatan',
