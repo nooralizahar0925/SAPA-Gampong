@@ -49,8 +49,10 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$STAGING_SSH_KEY" > ~/.ssh/staging_key
+          printf '%s' "$STAGING_SSH_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > ~/.ssh/staging_key
+          printf '\n' >> ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
+          ssh-keygen -y -f ~/.ssh/staging_key > /dev/null
           PORT="${STAGING_PORT:-22}"
           ssh-keyscan -p "$PORT" "$STAGING_HOST" >> ~/.ssh/known_hosts
 

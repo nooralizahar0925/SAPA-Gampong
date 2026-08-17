@@ -28,7 +28,8 @@
       "Bash(curl -s http://127.0.0.1:55035/json/list)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(p['id'],p['url']\\) for p in d]\")",
       "Bash(node cdp_shot_viewport.js \"ws://127.0.0.1:55035/devtools/page/5413F34979D6C35A3A06B8A74A9EE249\" \"./fix-check-2.png\")",
-      "Bash(node cdp_shot_viewport.js \"ws://127.0.0.1:55035/devtools/page/5413F34979D6C35A3A06B8A74A9EE249\" \"./fix-check-3.png\")"
+      "Bash(node cdp_shot_viewport.js \"ws://127.0.0.1:55035/devtools/page/5413F34979D6C35A3A06B8A74A9EE249\" \"./fix-check-3.png\")",
+      "Bash(brew install *)"
     ]
   }
 }
