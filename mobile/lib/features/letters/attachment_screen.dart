@@ -49,12 +49,16 @@ class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
           StepHeader(step: 4, code: widget.flowDraft.letterType.code),
           const Text(
             'Unggah lampiran',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Pastikan foto jelas dan dokumen terbaca dengan baik.',
-            style: TextStyle(color: AppTheme.ink500),
+            style: TextStyle(color: AppTheme.g100),
           ),
           const SizedBox(height: 16),
           for (final kind in requiredKinds)
@@ -91,8 +95,8 @@ class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.g50,
-              border: Border.all(color: AppTheme.g300),
+              color: AppTheme.cardGold,
+              border: Border.all(color: AppTheme.gold500),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Row(

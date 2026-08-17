@@ -113,7 +113,7 @@ APP_CONFIG_ENCRYPTION_KEY=<LONG_RANDOM_ENCRYPTION_SECRET>
 
 PUBLIC_BASE_URL=https://gampongblangdigital.web.id
 DASHBOARD_BASE_URL=https://gampongblangdigital.web.id
-CORS_ORIGINS=https://gampongblangdigital.web.id
+CORS_ORIGINS=https://gampongblangdigital.web.id,http://localhost:8092,http://127.0.0.1:8092
 DOCS_ENABLED=true
 
 EMAIL_PROVIDER_DEFAULT=mailersend
@@ -421,47 +421,27 @@ Then check manually:
 
 ## 13. Repeat Deploy After New Code
 
-Run this every time you push a new staging build:
+The safest repeat deploy path is the guarded deploy script:
 
 ```bash
 sudo -iu gbd
 cd /opt/gampong-blang/SAPA-Gampong
-git fetch origin
-git checkout main
-git pull --ff-only origin main
-
-cd backend
-npm ci
-npx prisma generate
-npm run build
-npm run db:deploy
-
-cd ../dashboard
-npm ci
-cat > .env.production <<'EOF'
-VITE_API_BASE_URL=https://gampongblangdigital.web.id/api
-EOF
-npm run build
-
-cd ../mobile
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-flutter build web \
-  --base-href=/mobile/ \
-  --dart-define=API_BASE_URL=https://gampongblangdigital.web.id/api
-
-exit
+DEPLOY_BRANCH=main bash scripts/deploy-staging.sh
 ```
 
-Then reload services as root or a sudo user:
+The script:
 
-```bash
-sudo systemctl restart gbd-backend-staging
-sudo nginx -t
-sudo systemctl reload nginx
-```
+- pulls with `git pull --ff-only`
+- checks migrations for destructive SQL
+- creates a database backup with `pg_dump`
+- runs `prisma migrate deploy`
+- builds backend and dashboard
+- does not delete `backend/storage/production`
+- restarts `gbd-backend-staging` and reloads Nginx
 
 Run the smoke tests again after deployment.
+
+For GitHub Actions CI/CD setup, see `docs/CI_CD.md`.
 
 ## 14. Database Backup Before Risky Deploys
 

@@ -63,7 +63,7 @@ class NotificationService {
   static bool _localNotificationsReady = false;
   static bool _timezoneReady = false;
 
-  static const _adzanAlarmChannelId = 'adzan_alarm_v1';
+  static const _adzanAlarmChannelId = 'adzan_alarm_v2';
   static const _adzanAlarmChannelName = 'Alarm azan';
   static const _adzanSoundResource = 'adzan_short';
   static const _adzanSoundFile = 'adzan_short.caf';
@@ -337,7 +337,7 @@ class NotificationService {
 
     try {
       await _ensureInstanceLocalNotifications();
-      await _requestAdzanNotificationPermissions();
+      final androidScheduleMode = await _prepareAdzanNotificationPermissions();
       await _cancelNativeAdzanAlarms();
       _ensureTimezone();
 
@@ -386,12 +386,13 @@ class NotificationService {
               presentList: true,
             ),
           ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: androidScheduleMode,
           matchDateTimeComponents: DateTimeComponents.time,
           payload: 'adzan:${slot.$1}',
         );
       }
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to schedule native adzan alarms: $error');
       // Native alarms are best-effort; the in-app alarm timer still runs.
     }
   }
@@ -408,17 +409,31 @@ class NotificationService {
     }
   }
 
-  Future<void> _requestAdzanNotificationPermissions() async {
+  Future<AndroidScheduleMode> _prepareAdzanNotificationPermissions() async {
     try {
       final android = _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
       await android?.requestNotificationsPermission();
+      if (defaultTargetPlatform != TargetPlatform.android) {
+        return AndroidScheduleMode.exactAllowWhileIdle;
+      }
+
+      final canScheduleExact =
+          await android?.canScheduleExactNotifications() ?? true;
+      if (canScheduleExact) return AndroidScheduleMode.exactAllowWhileIdle;
+
       await android?.requestExactAlarmsPermission();
-    } catch (_) {
+      final grantedAfterRequest =
+          await android?.canScheduleExactNotifications() ?? false;
+      if (grantedAfterRequest) return AndroidScheduleMode.exactAllowWhileIdle;
+    } catch (error) {
+      debugPrint('Adzan exact alarm permission check failed: $error');
       // Alarm scheduling should not block the prayer screen.
     }
+
+    return AndroidScheduleMode.inexactAllowWhileIdle;
   }
 
   static void _ensureTimezone() {

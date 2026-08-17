@@ -58,7 +58,7 @@ class SapaScaffold extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF667069),
+                        color: AppTheme.g100,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -76,7 +76,6 @@ class SapaScaffold extends StatelessWidget {
           ? null
           : NavigationBar(
               selectedIndex: selectedIndex!,
-              height: 68,
               onDestinationSelected: (index) {
                 switch (index) {
                   case 0:
@@ -154,7 +153,7 @@ class SectionTitle extends StatelessWidget {
         text,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w800,
-          color: AppTheme.deepGreen,
+          color: Colors.white,
         ),
       ),
     );
@@ -198,7 +197,10 @@ class SapaListTile extends StatelessWidget {
           title,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
         ),
-        subtitle: Text(subtitle),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: AppTheme.ink700),
+        ),
         trailing:
             trailing ??
             const Icon(Icons.chevron_right, color: Color(0xFFB7BEB9)),

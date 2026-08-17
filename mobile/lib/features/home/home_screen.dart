@@ -329,10 +329,10 @@ class _HomeHistoryCard extends StatelessWidget {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEF6F1),
+                      color: AppTheme.gold500,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: AppTheme.villageGreen),
+                    child: Icon(icon, color: AppTheme.ink900),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -387,7 +387,7 @@ class _FallbackBanner extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: const LinearGradient(
-              colors: [AppTheme.sky500, AppTheme.g700],
+              colors: [AppTheme.gold500, AppTheme.gold100],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -414,7 +414,7 @@ class _FallbackBanner extends StatelessWidget {
                   child: Text(
                     'Gampong Blang Digital',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.ink900,
                       fontSize: 25,
                       fontWeight: FontWeight.w900,
                       height: 1.1,
@@ -427,7 +427,7 @@ class _FallbackBanner extends StatelessWidget {
                 child: Text(
                   'Banner informasi gampong',
                   style: TextStyle(
-                    color: Color(0xFFE8F3ED),
+                    color: AppTheme.ink700,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -539,7 +539,7 @@ class _BannerCard extends StatelessWidget {
   Widget _gradientBox() => Container(
     decoration: const BoxDecoration(
       gradient: LinearGradient(
-        colors: [AppTheme.sky500, AppTheme.g700],
+        colors: [AppTheme.gold500, AppTheme.gold100],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -631,7 +631,7 @@ class _AnnouncementCard extends StatelessWidget {
       key: const Key('home-announcement-card'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.g800,
+        color: AppTheme.gold500,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -641,13 +641,13 @@ class _AnnouncementCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppTheme.accentYellow,
+              color: AppTheme.g900,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               slide.badge,
               style: const TextStyle(
-                color: AppTheme.ink900,
+                color: Colors.white,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
               ),
@@ -659,7 +659,7 @@ class _AnnouncementCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppTheme.ink900,
               fontSize: 18,
               fontWeight: FontWeight.w800,
               height: 1.15,
@@ -671,7 +671,7 @@ class _AnnouncementCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Color(0xFFCDEBDD),
+              color: AppTheme.ink700,
               fontSize: 12,
               height: 1.25,
             ),
@@ -695,7 +695,7 @@ class _PrimaryActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppTheme.villageGreen,
+      color: AppTheme.gold500,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -713,7 +713,7 @@ class _PrimaryActionCard extends StatelessWidget {
                     Text(
                       StringsId.letterRequest,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.ink900,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
@@ -722,14 +722,14 @@ class _PrimaryActionCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Color(0xFFCDEBDD),
+                        color: AppTheme.ink700,
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white),
+              const Icon(Icons.chevron_right, color: AppTheme.ink900),
             ],
           ),
         ),
@@ -747,7 +747,7 @@ class _PrimaryIcon extends StatelessWidget {
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: AppTheme.g900,
         borderRadius: BorderRadius.circular(14),
       ),
       child: const Icon(Icons.description_outlined, color: Colors.white),
@@ -789,10 +789,10 @@ class _FeatureTile extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppTheme.g50,
+                    color: AppTheme.gold500,
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Icon(icon, color: AppTheme.g700, size: 22),
+                  child: Icon(icon, color: AppTheme.ink900, size: 22),
                 ),
                 const SizedBox(height: 14),
                 Text(

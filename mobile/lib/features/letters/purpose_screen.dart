@@ -58,12 +58,16 @@ class _PurposeScreenState extends State<PurposeScreen> {
           StepHeader(step: 3, code: widget.flowDraft.letterType.code),
           const Text(
             'Tujuan Surat',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Pilih tujuan penggunaan surat keterangan ini.',
-            style: TextStyle(color: AppTheme.ink500),
+            style: TextStyle(color: AppTheme.g100),
           ),
           const SizedBox(height: 20),
           Wrap(

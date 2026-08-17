@@ -318,20 +318,26 @@ class StepHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppTheme.villageGreen,
+                color: AppTheme.gold500,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 code,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.ink900,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            Text('Langkah $step dari 5'),
+            Text(
+              'Langkah $step dari 5',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -343,9 +349,7 @@ class StepHeader extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
-                  color: index < step
-                      ? AppTheme.villageGreen
-                      : const Color(0xFFDCEDE4),
+                  color: index < step ? AppTheme.gold500 : AppTheme.g700,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -380,7 +384,7 @@ class StepLabels extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-                color: active ? AppTheme.villageGreen : const Color(0xFFB7BEB9),
+                color: active ? AppTheme.gold500 : AppTheme.g100,
               ),
             ),
           ),

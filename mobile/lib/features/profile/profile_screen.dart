@@ -21,7 +21,7 @@ class ProfileScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: AppTheme.bg,
+        backgroundColor: AppTheme.shell,
         appBar: AppBar(
           leading: const SapaBackButton(),
           titleSpacing: 0,
@@ -37,16 +37,16 @@ class ProfileScreen extends StatelessWidget {
                 'Gampong Blang',
                 style: TextStyle(
                   fontSize: 11,
-                  color: AppTheme.ink500,
+                  color: AppTheme.g100,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
           bottom: const TabBar(
-            labelColor: AppTheme.g800,
-            unselectedLabelColor: AppTheme.ink400,
-            indicatorColor: AppTheme.g800,
+            labelColor: AppTheme.gold500,
+            unselectedLabelColor: AppTheme.g100,
+            indicatorColor: AppTheme.gold500,
             indicatorWeight: 2.5,
             labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             tabs: [
@@ -118,14 +118,14 @@ class _TentangContent extends StatelessWidget {
           style: const TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w900,
-            color: AppTheme.ink900,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           _locationSubtitle(profile),
           style: const TextStyle(
-            color: AppTheme.ink500,
+            color: AppTheme.g100,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -138,7 +138,7 @@ class _TentangContent extends StatelessWidget {
         Text(
           description,
           key: const Key('profile-description'),
-          style: const TextStyle(height: 1.65, color: AppTheme.ink700),
+          style: const TextStyle(height: 1.65, color: AppTheme.g100),
         ),
         const SizedBox(height: 16),
         Card(
@@ -213,7 +213,7 @@ class _UpdatedAtNote extends StatelessWidget {
       'Diperbarui ${_format(updatedAt)}',
       key: const Key('profile-cache-note'),
       style: const TextStyle(
-        color: AppTheme.ink400,
+        color: AppTheme.g100,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
@@ -599,7 +599,7 @@ class _SectionLabel extends StatelessWidget {
         style: const TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 15,
-          color: AppTheme.g900,
+          color: Colors.white,
         ),
       ),
     );

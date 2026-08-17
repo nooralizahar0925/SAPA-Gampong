@@ -50,8 +50,11 @@ class _LetterCatalogScreenState extends ConsumerState<LetterCatalogScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_off_outlined,
-                    size: 48, color: AppTheme.ink300),
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 48,
+                  color: AppTheme.ink300,
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   'Gagal memuat jenis surat.',
@@ -100,8 +103,8 @@ class _CatalogBody extends StatelessWidget {
     final filtered = query.isEmpty
         ? types
         : types
-            .where((l) => l.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+              .where((l) => l.name.toLowerCase().contains(query.toLowerCase()))
+              .toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -109,12 +112,16 @@ class _CatalogBody extends StatelessWidget {
         StepHeader(step: 1, code: ''),
         const Text(
           'Pilih jenis surat',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 8),
         const Text(
           'Silakan pilih surat keterangan yang Anda butuhkan.',
-          style: TextStyle(color: AppTheme.ink500),
+          style: TextStyle(color: AppTheme.g100),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -137,10 +144,8 @@ class _CatalogBody extends StatelessWidget {
             child: _LetterTile(
               key: Key('letter-type-${letter.code}'),
               letter: letter,
-              onTap: () => context.pushNamed(
-                AppRouteNames.letterForm,
-                extra: letter,
-              ),
+              onTap: () =>
+                  context.pushNamed(AppRouteNames.letterForm, extra: letter),
             ),
           ),
         if (filtered.isEmpty)
@@ -170,8 +175,7 @@ class _LetterTile extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         minLeadingWidth: 42,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: Container(
           width: 42,
           height: 42,

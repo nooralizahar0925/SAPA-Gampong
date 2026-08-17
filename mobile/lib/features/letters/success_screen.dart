@@ -31,25 +31,25 @@ class SuccessScreen extends StatelessWidget {
                 color: AppTheme.okBg,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: const Icon(
-                Icons.check,
-                size: 52,
-                color: AppTheme.ok,
-              ),
+              child: const Icon(Icons.check, size: 52, color: AppTheme.ok),
             ),
           ),
           const SizedBox(height: 24),
           const Text(
             'Permohonan telah dikirim',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
             'Permohonan Anda sedang diproses dan akan dikirim ke email '
             '${flowDraft.applicantEmail} dalam waktu maksimal 3×24 jam.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppTheme.ink500, height: 1.5),
+            style: const TextStyle(color: AppTheme.g100, height: 1.5),
           ),
           const SizedBox(height: 22),
           // Reference code card
@@ -130,8 +130,18 @@ class SuccessScreen extends StatelessWidget {
 
   static String _monthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return months[month - 1];
   }
@@ -151,10 +161,7 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: AppTheme.ink500),
-            ),
+            child: Text(label, style: const TextStyle(color: AppTheme.ink500)),
           ),
           Expanded(
             child: Text(

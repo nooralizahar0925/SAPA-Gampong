@@ -259,13 +259,17 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const Text(
           'Laporan telah dikirim',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 12),
         Text(
           'Laporan Anda akan ditindaklanjuti melalui email ${session?.email ?? '-'} dalam waktu maksimal 3×24 jam.',
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppTheme.ink500, height: 1.5),
+          style: const TextStyle(color: AppTheme.g100, height: 1.5),
         ),
         const SizedBox(height: 22),
         // Report reference code card

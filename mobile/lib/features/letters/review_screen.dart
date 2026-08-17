@@ -39,12 +39,16 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           StepHeader(step: 5, code: widget.flowDraft.letterType.code),
           const Text(
             'Periksa permohonan',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Pastikan semua data sudah benar sebelum dikirim.',
-            style: TextStyle(color: AppTheme.ink500),
+            style: TextStyle(color: AppTheme.g100),
           ),
           const SizedBox(height: 16),
           Container(

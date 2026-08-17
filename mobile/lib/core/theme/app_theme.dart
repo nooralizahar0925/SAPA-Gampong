@@ -35,7 +35,11 @@ class AppTheme {
 
   // Surfaces
   static const Color line = Color(0xFFE2E7E3);
-  static const Color bg = Color(0xFFF4F7F5);
+  static const Color bg = g900;
+  static const Color shell = g900;
+  static const Color shellMuted = g800;
+  static const Color cardGold = gold100;
+  static const Color fieldSurface = Color(0xFFFFFCF4);
 
   // Status
   static const Color ok = Color(0xFF1E8A61);
@@ -57,24 +61,30 @@ class AppTheme {
       primary: g800,
       secondary: gold500,
     );
+    final inputRadius = BorderRadius.circular(8);
+    final inputBorder = OutlineInputBorder(
+      borderRadius: inputRadius,
+      borderSide: const BorderSide(color: gold600),
+      gapPadding: 10,
+    );
 
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: bg,
+      scaffoldBackgroundColor: shell,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
-        foregroundColor: ink900,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        foregroundColor: Colors.white,
+        backgroundColor: shell,
+        surfaceTintColor: shell,
         elevation: 0,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white,
+        color: cardGold,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: line),
+          side: const BorderSide(color: gold500),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -94,15 +104,53 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFD5DDD3)),
+        filled: true,
+        fillColor: fieldSurface,
+        labelStyle: const TextStyle(color: ink700),
+        floatingLabelStyle: const TextStyle(
+          color: g800,
+          fontWeight: FontWeight.w700,
+          backgroundColor: fieldSurface,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: g800, width: 1.4),
+        hintStyle: const TextStyle(color: ink400),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
         ),
+        border: inputBorder,
+        enabledBorder: inputBorder,
+        focusedBorder: inputBorder.copyWith(
+          borderSide: const BorderSide(color: gold500, width: 1.6),
+        ),
+        errorBorder: inputBorder.copyWith(
+          borderSide: const BorderSide(color: danger),
+        ),
+        focusedErrorBorder: inputBorder.copyWith(
+          borderSide: const BorderSide(color: danger, width: 1.6),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: gold100),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 68,
+        backgroundColor: g950,
+        surfaceTintColor: g950,
+        indicatorColor: gold500,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: ink900);
+          }
+          return const IconThemeData(color: g100);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            color: selected ? gold100 : g100,
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+          );
+        }),
       ),
     );
 
