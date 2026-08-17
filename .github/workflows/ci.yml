@@ -51,6 +51,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create test env file
+        run: |
+          cat > .env.test <<EOF
+          NODE_ENV=test
+          PORT=8081
+          DATABASE_URL=$DATABASE_URL
+          JWT_SECRET=$JWT_SECRET
+          APP_CONFIG_ENCRYPTION_KEY=$APP_CONFIG_ENCRYPTION_KEY
+          PUBLIC_BASE_URL=$PUBLIC_BASE_URL
+          DASHBOARD_BASE_URL=$DASHBOARD_BASE_URL
+          CORS_ORIGINS=$CORS_ORIGINS
+          DOCS_ENABLED=$DOCS_ENABLED
+          EMAIL_PROVIDER_DEFAULT=smtp
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          SMTP_SECURE=false
+          SMTP_FROM_EMAIL=no-reply@gampongblang.test
+          SMTP_FROM_NAME=Gampong Blang Digital Test
+          SEED_ADMIN_EMAIL=admin@gampongblang.test
+          SEED_ADMIN_PASSWORD=admin12345
+          EOF
+
       - name: Generate Prisma client
         run: npx prisma generate
 
