@@ -28,6 +28,8 @@ async function login() {
 }
 
 describe('GET /verify/:token', () => {
+  const issuedAt = new Date('2026-07-21T00:00:00.000Z');
+
   it('returns valid verification data, masks personal fields, and increments verifiedCount', async () => {
     const created = await testPrisma.letterRequest.create({
       data: {
@@ -128,6 +130,8 @@ describe('GET /verify/:token', () => {
         subjectData: { nama: 'Budi', nik: '1607010101010001' },
         nomorSurat: '400.12.2.1/125/2026',
         verificationToken: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        createdAt: issuedAt,
+        updatedAt: issuedAt,
       },
     });
 
