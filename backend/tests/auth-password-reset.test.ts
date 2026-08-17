@@ -2,7 +2,7 @@ import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
-import { setEmailTransportForTests } from '../src/services/email.service';
+import { setEmailProviderConfigsForTests, setEmailTransportForTests } from '../src/services/email.service';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
@@ -11,6 +11,12 @@ let sendMailMock = vi.fn();
 
 beforeEach(async () => {
   sendMailMock = vi.fn().mockResolvedValue({ ok: true });
+  setEmailProviderConfigsForTests({
+    mailersend: {
+      fromEmail: 'no-reply@gampongblang.test',
+      apiKey: 'mailersend-test-key',
+    },
+  });
   setEmailTransportForTests({ sendMail: sendMailMock });
 
   await truncateAll();
@@ -25,6 +31,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  setEmailProviderConfigsForTests(null);
   setEmailTransportForTests(null);
 });
 
