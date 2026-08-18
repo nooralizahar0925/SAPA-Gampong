@@ -152,6 +152,7 @@ class PrayerTimesService {
   PrayerTimesService({
     Dio? dio,
     PrayerLocationProvider? locationProvider,
+    PrayerLocationProvider? passiveLocationProvider,
     this.cache,
   }) : _dio =
            dio ??
@@ -163,10 +164,13 @@ class PrayerTimesService {
                headers: const {'Accept': 'application/json'},
              ),
            ),
-       _locationProvider = locationProvider ?? _determineLocation;
+       _locationProvider = locationProvider ?? _determineLocation,
+       _passiveLocationProvider =
+           passiveLocationProvider ?? _determineAvailableLocation;
 
   final Dio _dio;
   final PrayerLocationProvider _locationProvider;
+  final PrayerLocationProvider _passiveLocationProvider;
   final ContentCacheService? cache;
 
   Future<PrayerTimes> fetchUsingGps({DateTime? date}) async {
@@ -183,6 +187,26 @@ class PrayerTimesService {
     DateTime? date,
   }) async {
     final location = await _locationProvider();
+    final methodSettings =
+        '${config.fajrAngle.round()},null,${config.ishaAngle.round()}';
+    return fetchForCoordinates(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      date: date,
+      aladhanMethod: config.aladhanMethod,
+      methodSettings: methodSettings,
+      timezone: config.timezone,
+      school: config.school,
+    );
+  }
+
+  /// Uses GPS only when permission has already been granted. This is safe for
+  /// automatic screen loading because it never opens a system permission dialog.
+  Future<PrayerTimes> fetchUsingAvailableGpsForConfig(
+    PrayerConfig config, {
+    DateTime? date,
+  }) async {
+    final location = await _passiveLocationProvider();
     final methodSettings =
         '${config.fajrAngle.round()},null,${config.ishaAngle.round()}';
     return fetchForCoordinates(
@@ -318,6 +342,42 @@ class PrayerTimesService {
         timeLimit: Duration(seconds: 15),
       ),
     );
+
+    return PrayerLocation(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+  }
+
+  static Future<PrayerLocation> _determineAvailableLocation() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw const LocationPermissionException(
+        'Layanan lokasi perangkat belum aktif.',
+      );
+    }
+
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      throw const LocationPermissionException(
+        'Izin lokasi belum diberikan. Gunakan tombol GPS untuk mengaktifkannya.',
+      );
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw const LocationPermissionException(
+        'Izin lokasi ditolak permanen. Ubah izin dari pengaturan perangkat.',
+      );
+    }
+
+    final lastKnown = await Geolocator.getLastKnownPosition();
+    final position =
+        lastKnown ??
+        await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
 
     return PrayerLocation(
       latitude: position.latitude,

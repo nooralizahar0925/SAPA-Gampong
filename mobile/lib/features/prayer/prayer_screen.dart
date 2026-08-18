@@ -49,7 +49,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
         _loading = false;
       });
 
-      await _fetchPreferredSchedule(config);
+      await _fetchPreferredSchedule(config, requestPermission: false);
     } catch (_) {
       // Keep hard-coded fallback on any config error.
       if (mounted) setState(() => _loading = false);
@@ -59,6 +59,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
   Future<void> _fetchPreferredSchedule(
     PrayerConfig config, {
     bool showGpsError = false,
+    bool requestPermission = true,
   }) async {
     if (!mounted) return;
     setState(() {
@@ -68,7 +69,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
 
     final service = ref.read(prayerTimesServiceProvider);
     try {
-      final times = await service.fetchUsingGpsForConfig(config);
+      final times = requestPermission
+          ? await service.fetchUsingGpsForConfig(config)
+          : await service.fetchUsingAvailableGpsForConfig(config);
       if (!mounted) return;
       setState(() {
         _prayerTimes = times;
@@ -137,6 +140,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
     await _fetchPreferredSchedule(
       _config ?? const PrayerConfig(),
       showGpsError: true,
+      requestPermission: true,
     );
   }
 

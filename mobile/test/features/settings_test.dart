@@ -38,7 +38,7 @@ class _FakeNotificationService extends NotificationService {
 
 class _FakePrayerTimesService extends PrayerTimesService {
   @override
-  Future<PrayerTimes> fetchUsingGpsForConfig(
+  Future<PrayerTimes> fetchUsingAvailableGpsForConfig(
     PrayerConfig config, {
     DateTime? date,
   }) async {

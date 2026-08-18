@@ -132,7 +132,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       var prayerTimes = PrayerTimes.fromConfigFallback(config);
       final prayerService = ref.read(prayerTimesServiceProvider);
       try {
-        prayerTimes = await prayerService.fetchUsingGpsForConfig(config);
+        prayerTimes = await prayerService.fetchUsingAvailableGpsForConfig(
+          config,
+        );
       } catch (_) {
         if (config.lat != null && config.lng != null) {
           prayerTimes = await prayerService.fetchForVillageConfig(config);
@@ -163,7 +165,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Failed to enable adzan alarm: $error');
+      debugPrintStack(stackTrace: stackTrace);
       await notifier.setAdzanAlarmEnabled(false);
       await notifications.cancel();
       if (!mounted) return;

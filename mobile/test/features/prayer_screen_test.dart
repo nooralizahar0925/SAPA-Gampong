@@ -23,6 +23,8 @@ class _FakePrayerTimesService extends PrayerTimesService {
 
   final Object? villageError;
   final Object? gpsError;
+  int passiveGpsCalls = 0;
+  int requestedGpsCalls = 0;
 
   @override
   Future<PrayerTimes> fetchForVillageConfig(
@@ -46,6 +48,16 @@ class _FakePrayerTimesService extends PrayerTimesService {
     PrayerConfig config, {
     DateTime? date,
   }) async {
+    requestedGpsCalls += 1;
+    return fetchUsingGps(date: date);
+  }
+
+  @override
+  Future<PrayerTimes> fetchUsingAvailableGpsForConfig(
+    PrayerConfig config, {
+    DateTime? date,
+  }) async {
+    passiveGpsCalls += 1;
     return fetchUsingGps(date: date);
   }
 
@@ -372,14 +384,14 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
+    final prayerService = _FakePrayerTimesService();
+
     await tester.pumpWidget(
       _wrap(
         const PrayerScreen(),
         overrides: [
           prayerConfigProvider.overrideWith((_) async => const PrayerConfig()),
-          prayerTimesServiceProvider.overrideWith(
-            (_) => _FakePrayerTimesService(),
-          ),
+          prayerTimesServiceProvider.overrideWith((_) => prayerService),
         ],
       ),
     );
@@ -388,6 +400,36 @@ void main() {
 
     expect(find.text('04:50 WIB'), findsOneWidget);
     expect(find.text('Internet · GPS Anda'), findsOneWidget);
+    expect(prayerService.passiveGpsCalls, 1);
+    expect(prayerService.requestedGpsCalls, 0);
+  });
+
+  testWidgets('GPS button requests permission only after an explicit tap', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final prayerService = _FakePrayerTimesService();
+    await tester.pumpWidget(
+      _wrap(
+        const PrayerScreen(),
+        overrides: [
+          prayerConfigProvider.overrideWith((_) async => const PrayerConfig()),
+          prayerTimesServiceProvider.overrideWith((_) => prayerService),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(prayerService.passiveGpsCalls, 1);
+    expect(prayerService.requestedGpsCalls, 0);
+
+    await tester.tap(find.byKey(const Key('prayer-use-gps')));
+    await tester.pumpAndSettle();
+
+    expect(prayerService.requestedGpsCalls, 1);
   });
 
   testWidgets('GPS error shows error message and keeps previous times', (

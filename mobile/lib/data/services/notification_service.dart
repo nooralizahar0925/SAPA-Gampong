@@ -475,13 +475,9 @@ class NotificationService {
           await android?.canScheduleExactNotifications() ?? true;
       if (canScheduleExact) return AndroidScheduleMode.exactAllowWhileIdle;
 
-      await android?.requestExactAlarmsPermission();
-      final grantedAfterRequest =
-          await android?.canScheduleExactNotifications() ?? false;
-      if (grantedAfterRequest) return AndroidScheduleMode.exactAllowWhileIdle;
-      throw const AdzanAlarmPermissionException(
-        'Izinkan Alarm & pengingat agar azan berbunyi tepat waktu.',
-      );
+      // Android 12+ can deny exact alarms on a fresh install. A slightly less
+      // precise background alarm is preferable to disabling adzan completely.
+      return AndroidScheduleMode.inexactAllowWhileIdle;
     } on AdzanAlarmPermissionException {
       rethrow;
     } catch (error) {
