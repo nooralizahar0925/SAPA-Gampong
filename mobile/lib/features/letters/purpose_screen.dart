@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import 'letter_form_screen.dart';
 
@@ -109,15 +110,13 @@ class _PurposeScreenState extends State<PurposeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          TextField(
+          SapaTextField(
             controller: _notesController,
+            label: 'Keterangan Tambahan (opsional)',
             maxLines: 4,
             maxLength: 200,
-            decoration: InputDecoration(
-              labelText: 'Keterangan Tambahan (opsional)',
-              alignLabelWithHint: true,
-              counterText: '$_noteLen / 200',
-            ),
+            counterText: '',
+            helperText: '$_noteLen / 200',
           ),
           const SizedBox(height: 20),
           FilledButton.icon(

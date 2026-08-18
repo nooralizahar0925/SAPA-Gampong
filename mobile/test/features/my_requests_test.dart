@@ -129,7 +129,7 @@ const _letterType = LetterType(
   name: 'Surat Rekomendasi',
   description: 'Rekomendasi resmi.',
   subjectIsApplicant: false,
-  requiredAttachments: ['KTP', 'KK'],
+  requiredAttachments: ['KTP'],
   fields: [
     FieldSpec(key: 'nama', label: 'Nama', type: FieldType.text, required: true),
   ],

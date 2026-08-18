@@ -14,9 +14,15 @@ describe('GET /api/letter-types', () => {
       code: 'L1',
       name: 'Surat Keterangan Berdomisili',
       subject_is_applicant: true,
-      required_attachments: ['KTP', 'KK'],
+      required_attachments: ['KTP'],
       signatory: 'Keuchik',
     });
+    expect(
+      res.body.every(
+        (item: { required_attachments: string[] }) =>
+          !item.required_attachments.includes('KK'),
+      ),
+    ).toBe(true);
     expect(l1.fields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ key: 'nik', type: 'nik', required: true }),

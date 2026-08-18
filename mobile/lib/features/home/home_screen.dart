@@ -255,10 +255,12 @@ class _HomeRequestsSectionState extends ConsumerState<_HomeRequestsSection>
             children: [
               TextButton(
                 onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.gold500),
                 child: const Text('Lihat surat'),
               ),
               TextButton(
                 onPressed: () => context.pushNamed(AppRouteNames.myFeedback),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.gold500),
                 child: const Text('Lihat laporan'),
               ),
             ],
@@ -268,6 +270,7 @@ class _HomeRequestsSectionState extends ConsumerState<_HomeRequestsSection>
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => context.pushNamed(AppRouteNames.myRequests),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.gold500),
               child: const Text('Lihat semua'),
             ),
           ),

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/contact_actions.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/letter_request.dart';
+import '../../data/providers/content_providers.dart';
 import '../../data/providers/letter_providers.dart';
 
 class TrackingScreen extends ConsumerStatefulWidget {
@@ -39,29 +42,30 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(villageProfileProvider).asData?.value;
+    final contactPhone = resolveOfficePhone(profile?.contactPhone);
+
     return SapaScaffold(
       title: 'Lacak Permohonan',
       subtitle: _status != null ? _status!.referenceCode : 'Masukkan kode',
       leading: const SapaBackButton(),
       body: ListView(
         children: [
-          TextField(
+          SapaTextField(
             controller: _controller,
+            label: 'Kode Permohonan',
+            hintText: 'Contoh: BLG-A1B2',
             textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              labelText: 'Kode Permohonan',
-              hintText: 'Contoh: BLG-A1B2',
-              suffixIcon: IconButton(
-                key: const Key('tracking-search'),
-                onPressed: _loading ? null : _search,
-                icon: _loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.search),
-              ),
+            suffixIcon: IconButton(
+              key: const Key('tracking-search'),
+              onPressed: _loading ? null : _search,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.search),
             ),
             onSubmitted: (_) => _search(),
           ),
@@ -70,11 +74,12 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(color: AppTheme.gold500),
               ),
             ),
           if (_error != null && !_loading) _ErrorCard(message: _error!),
-          if (_status != null && !_loading) _StatusResult(status: _status!),
+          if (_status != null && !_loading)
+            _StatusResult(status: _status!, contactPhone: contactPhone),
         ],
       ),
     );
@@ -143,9 +148,10 @@ class _ErrorCard extends StatelessWidget {
 }
 
 class _StatusResult extends StatelessWidget {
-  const _StatusResult({required this.status});
+  const _StatusResult({required this.status, required this.contactPhone});
 
   final TrackStatus status;
+  final String contactPhone;
 
   static const _steps = [
     'Permohonan diajukan',
@@ -248,8 +254,12 @@ class _StatusResult extends StatelessWidget {
                 : 'Menunggu',
           ),
         const SizedBox(height: 20),
-        OutlinedButton.icon(
-          onPressed: () {},
+        FilledButton.icon(
+          onPressed: () => showOfficeContactActions(context, contactPhone),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.gold500,
+            foregroundColor: AppTheme.ink900,
+          ),
           icon: const Icon(Icons.phone_outlined, size: 18),
           label: const Text('Hubungi Kantor Keuchik'),
         ),
@@ -383,8 +393,8 @@ class _TimelineStep extends StatelessWidget {
     final Color dotColor = isNow
         ? AppTheme.gold500
         : done
-        ? AppTheme.villageGreen
-        : AppTheme.ink300;
+        ? AppTheme.g300
+        : AppTheme.helperText;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +425,7 @@ class _TimelineStep extends StatelessWidget {
               Container(
                 width: 2,
                 height: 48,
-                color: done ? AppTheme.g300 : AppTheme.line,
+                color: done ? AppTheme.g300 : AppTheme.g700,
               ),
           ],
         ),
@@ -430,7 +440,7 @@ class _TimelineStep extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: isNow ? AppTheme.ink900 : AppTheme.ink700,
+                    color: isNow ? AppTheme.gold100 : AppTheme.g50,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -438,7 +448,7 @@ class _TimelineStep extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isNow ? AppTheme.warn : AppTheme.ink500,
+                    color: isNow ? AppTheme.gold500 : AppTheme.helperText,
                     fontWeight: isNow ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),

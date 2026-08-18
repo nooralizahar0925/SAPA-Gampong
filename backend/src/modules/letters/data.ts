@@ -14,7 +14,7 @@ export const MARITAL_STATUS_OPTIONS = [
   'Cerai Mati',
 ] as const;
 export const DUSUN_OPTIONS = ['Kuini', 'Mangga', 'Rumbia'] as const;
-export const ATTACHMENT_DEFAULTS = ['KTP', 'KK'] as const;
+export const ATTACHMENT_DEFAULTS = ['KTP'] as const;
 
 export type LetterField = {
   key: string;

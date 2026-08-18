@@ -18,7 +18,7 @@ const _type = LetterType(
   name: 'Surat Keterangan Berdomisili',
   description: '',
   subjectIsApplicant: true,
-  requiredAttachments: ['KTP', 'KK'],
+  requiredAttachments: ['KTP'],
   fields: [],
 );
 
@@ -94,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('attachment-KTP')), findsOneWidget);
-      expect(find.byKey(const Key('attachment-KK')), findsOneWidget);
+      expect(find.byKey(const Key('attachment-KK')), findsNothing);
     });
 
     testWidgets('Next button is disabled when no uploads done', (tester) async {
@@ -115,10 +115,7 @@ void main() {
       tester,
     ) async {
       final draft = _draft(
-        attachments: [
-          const Attachment(fileId: 'f1', kind: 'KTP'),
-          const Attachment(fileId: 'f2', kind: 'KK'),
-        ],
+        attachments: [const Attachment(fileId: 'f1', kind: 'KTP')],
       );
 
       await tester.pumpWidget(
@@ -136,10 +133,7 @@ void main() {
 
     testWidgets('tapping Next navigates to review screen', (tester) async {
       final draft = _draft(
-        attachments: [
-          const Attachment(fileId: 'f1', kind: 'KTP'),
-          const Attachment(fileId: 'f2', kind: 'KK'),
-        ],
+        attachments: [const Attachment(fileId: 'f1', kind: 'KTP')],
       );
 
       await tester.pumpWidget(
@@ -168,7 +162,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.upload_file_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.upload_file_outlined), findsNothing);
     });
 
     testWidgets('optional attachment slots do not block the next step', (
@@ -186,8 +180,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('attachment-KK')), findsOneWidget);
-      expect(find.text('Opsional, unggah bila tersedia'), findsOneWidget);
+      expect(find.byKey(const Key('attachment-KK')), findsNothing);
+      expect(find.text('Opsional, unggah bila tersedia'), findsNothing);
 
       final button = tester.widget<FilledButton>(
         find.byKey(const Key('attachments-next')),
@@ -201,10 +195,7 @@ void main() {
       final uploadService = _FakeUploadService();
       LetterFlowDraft? reviewDraft;
       final draft = _draft(
-        attachments: [
-          const Attachment(fileId: 'old-ktp', kind: 'KTP'),
-          const Attachment(fileId: 'old-kk', kind: 'KK'),
-        ],
+        attachments: [const Attachment(fileId: 'old-ktp', kind: 'KTP')],
       );
 
       await tester.pumpWidget(
@@ -225,7 +216,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Ketuk untuk ganti berkas'), findsNWidgets(2));
+      expect(find.text('Ketuk untuk ganti berkas'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('attachment-KTP')));
       await tester.pumpAndSettle();
@@ -247,11 +238,8 @@ void main() {
         'new-1',
       );
       expect(
-        reviewDraft?.attachments
-            .where((item) => item.kind == 'KK')
-            .single
-            .fileId,
-        'old-kk',
+        reviewDraft?.attachments.where((item) => item.kind == 'KK'),
+        isEmpty,
       );
     });
   });

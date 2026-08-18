@@ -19,7 +19,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Berdomisili',
     description: 'Keterangan tempat tinggal warga Gampong Blang.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',
@@ -105,7 +105,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Domisili Kantor',
     description: 'Untuk kantor, lembaga, atau organisasi.',
     subjectIsApplicant: false,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama_pemohon',
@@ -168,7 +168,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Kehilangan',
     description: 'Keterangan kehilangan barang atau dokumen.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',
@@ -222,7 +222,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Miskin',
     description: 'SKTM untuk beasiswa, kesehatan, atau bantuan.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',
@@ -295,7 +295,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Usaha',
     description: 'Keterangan kepemilikan dan lokasi usaha.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',
@@ -381,7 +381,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Yatim / Piatu',
     description: 'Untuk anak yatim, piatu, atau yatim piatu.',
     subjectIsApplicant: false,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama_anak',
@@ -453,7 +453,7 @@ const sampleLetterTypes = <LetterType>[
     name: 'Surat Keterangan Kematian',
     description: 'Keterangan kematian yang dilaporkan keluarga.',
     subjectIsApplicant: false,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',

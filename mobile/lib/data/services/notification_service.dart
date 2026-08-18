@@ -37,6 +37,15 @@ class ResidentPushNotification {
   final String body;
 }
 
+class AdzanAlarmPermissionException implements Exception {
+  const AdzanAlarmPermissionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class NotificationService {
   NotificationService({
     AudioPlayer? audioPlayer,
@@ -63,7 +72,7 @@ class NotificationService {
   static bool _localNotificationsReady = false;
   static bool _timezoneReady = false;
 
-  static const _adzanAlarmChannelId = 'adzan_alarm_v2';
+  static const _adzanAlarmChannelId = 'adzan_alarm_v3';
   static const _adzanAlarmChannelName = 'Alarm azan';
   static const _adzanSoundResource = 'adzan_short';
   static const _adzanSoundFile = 'adzan_short.caf';
@@ -141,6 +150,7 @@ class NotificationService {
   }) async {
     _timer?.cancel();
     await _scheduleNativeAdzanAlarms(prayerTimes, now: now);
+    await _cacheAdzanAudio(adzanUrl);
 
     _lastSchedule = nextPrayer(prayerTimes, now: now);
     final reference = now ?? DateTime.now();
@@ -161,6 +171,12 @@ class NotificationService {
     }
 
     final cacheKey = apiFileCacheKey(url: adzanUrl);
+    final cached = currentFileCache.getBytes(cacheKey);
+    if (cached != null) {
+      await _audioPlayer.play(BytesSource(cached.bytes));
+      return;
+    }
+
     try {
       final res = await _client.dio.get<List<int>>(
         adzanUrl,
@@ -179,6 +195,34 @@ class NotificationService {
       }
       rethrow;
     }
+  }
+
+  Future<void> _cacheAdzanAudio(String adzanUrl) async {
+    final currentFileCache = fileCache;
+    if (currentFileCache == null || adzanUrl.isEmpty) return;
+
+    final cacheKey = apiFileCacheKey(url: adzanUrl);
+    if (currentFileCache.getBytes(cacheKey) != null) return;
+
+    try {
+      final res = await _client.dio.get<List<int>>(
+        adzanUrl,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = res.data;
+      if (data == null || data.isEmpty) return;
+      await currentFileCache.putBytes(cacheKey, Uint8List.fromList(data));
+    } catch (error) {
+      debugPrint('Failed to cache full adzan audio: $error');
+    }
+  }
+
+  Future<bool> hasScheduledAdzanAlarms() async {
+    if (kIsWeb) return false;
+    await _ensureInstanceLocalNotifications();
+    final pending = await _localNotifications.pendingNotificationRequests();
+    final ids = _adzanNotificationIds.values.toSet();
+    return pending.where((item) => ids.contains(item.id)).length == ids.length;
   }
 
   Future<void> cancel() async {
@@ -335,65 +379,66 @@ class NotificationService {
   }) async {
     if (kIsWeb) return;
 
-    try {
-      await _ensureInstanceLocalNotifications();
-      final androidScheduleMode = await _prepareAdzanNotificationPermissions();
-      await _cancelNativeAdzanAlarms();
-      _ensureTimezone();
+    await _ensureInstanceLocalNotifications();
+    final androidScheduleMode = await _prepareAdzanNotificationPermissions();
+    await _cancelNativeAdzanAlarms();
+    _ensureTimezone();
 
-      final reference = now ?? DateTime.now();
-      final slots = [
-        ('Subuh', prayerTimes.subuh),
-        ('Dhuhur', prayerTimes.dhuhur),
-        ('Ashar', prayerTimes.ashar),
-        ('Maghrib', prayerTimes.maghrib),
-        ('Isya', prayerTimes.isya),
-      ];
+    final reference = now ?? DateTime.now();
+    final slots = [
+      ('Subuh', prayerTimes.subuh),
+      ('Dhuhur', prayerTimes.dhuhur),
+      ('Ashar', prayerTimes.ashar),
+      ('Maghrib', prayerTimes.maghrib),
+      ('Isya', prayerTimes.isya),
+    ];
 
-      for (final slot in slots) {
-        final scheduledToday = _dateTimeFor(reference, slot.$2);
-        final scheduledAt = scheduledToday.isAfter(reference)
-            ? scheduledToday
-            : scheduledToday.add(const Duration(days: 1));
+    for (final slot in slots) {
+      final scheduledToday = _dateTimeFor(reference, slot.$2);
+      final scheduledAt = scheduledToday.isAfter(reference)
+          ? scheduledToday
+          : scheduledToday.add(const Duration(days: 1));
 
-        await _localNotifications.zonedSchedule(
-          id: _adzanNotificationIds[slot.$1]!,
-          title: 'Waktu ${slot.$1}',
-          body: 'Alarm azan ${slot.$1} aktif.',
-          scheduledDate: tz.TZDateTime.from(scheduledAt, tz.local),
-          notificationDetails: const NotificationDetails(
-            android: AndroidNotificationDetails(
-              _adzanAlarmChannelId,
-              _adzanAlarmChannelName,
-              channelDescription: 'Pengingat waktu sholat dengan suara azan',
-              importance: Importance.max,
-              priority: Priority.high,
-              sound: RawResourceAndroidNotificationSound(_adzanSoundResource),
-              audioAttributesUsage: AudioAttributesUsage.alarm,
-            ),
-            iOS: DarwinNotificationDetails(
-              sound: _adzanSoundFile,
-              presentAlert: true,
-              presentSound: true,
-              presentBanner: true,
-              presentList: true,
-            ),
-            macOS: DarwinNotificationDetails(
-              sound: _adzanSoundFile,
-              presentAlert: true,
-              presentSound: true,
-              presentBanner: true,
-              presentList: true,
-            ),
+      await _localNotifications.zonedSchedule(
+        id: _adzanNotificationIds[slot.$1]!,
+        title: 'Waktu ${slot.$1}',
+        body: 'Alarm azan ${slot.$1} aktif.',
+        scheduledDate: tz.TZDateTime.from(scheduledAt, tz.local),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _adzanAlarmChannelId,
+            _adzanAlarmChannelName,
+            channelDescription: 'Pengingat waktu sholat dengan suara azan',
+            importance: Importance.max,
+            priority: Priority.high,
+            sound: RawResourceAndroidNotificationSound(_adzanSoundResource),
+            audioAttributesUsage: AudioAttributesUsage.alarm,
           ),
-          androidScheduleMode: androidScheduleMode,
-          matchDateTimeComponents: DateTimeComponents.time,
-          payload: 'adzan:${slot.$1}',
-        );
-      }
-    } catch (error) {
-      debugPrint('Failed to schedule native adzan alarms: $error');
-      // Native alarms are best-effort; the in-app alarm timer still runs.
+          iOS: DarwinNotificationDetails(
+            sound: _adzanSoundFile,
+            presentAlert: true,
+            presentSound: true,
+            presentBanner: true,
+            presentList: true,
+          ),
+          macOS: DarwinNotificationDetails(
+            sound: _adzanSoundFile,
+            presentAlert: true,
+            presentSound: true,
+            presentBanner: true,
+            presentList: true,
+          ),
+        ),
+        androidScheduleMode: androidScheduleMode,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'adzan:${slot.$1}',
+      );
+    }
+
+    if (!await hasScheduledAdzanAlarms()) {
+      throw const AdzanAlarmPermissionException(
+        'Jadwal alarm azan belum tersimpan di perangkat.',
+      );
     }
   }
 
@@ -415,7 +460,13 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      await android?.requestNotificationsPermission();
+      final notificationsGranted = await android
+          ?.requestNotificationsPermission();
+      if (notificationsGranted == false) {
+        throw const AdzanAlarmPermissionException(
+          'Izin notifikasi diperlukan untuk alarm azan.',
+        );
+      }
       if (defaultTargetPlatform != TargetPlatform.android) {
         return AndroidScheduleMode.exactAllowWhileIdle;
       }
@@ -428,12 +479,17 @@ class NotificationService {
       final grantedAfterRequest =
           await android?.canScheduleExactNotifications() ?? false;
       if (grantedAfterRequest) return AndroidScheduleMode.exactAllowWhileIdle;
+      throw const AdzanAlarmPermissionException(
+        'Izinkan Alarm & pengingat agar azan berbunyi tepat waktu.',
+      );
+    } on AdzanAlarmPermissionException {
+      rethrow;
     } catch (error) {
       debugPrint('Adzan exact alarm permission check failed: $error');
-      // Alarm scheduling should not block the prayer screen.
+      throw const AdzanAlarmPermissionException(
+        'Alarm azan belum dapat dijadwalkan di perangkat ini.',
+      );
     }
-
-    return AndroidScheduleMode.inexactAllowWhileIdle;
   }
 
   static void _ensureTimezone() {

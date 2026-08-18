@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/resident_email_gate.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/resident_session.dart';
 import '../../data/providers/resident_providers.dart';
@@ -35,7 +36,9 @@ class _MyFeedbackScreenState extends ConsumerState<MyFeedbackScreen> {
       leading: const SapaBackButton(),
       body: ResidentEmailGate(
         child: feedbackAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppTheme.gold500),
+          ),
           error: (_, _) => RefreshIndicator(
             onRefresh: () async => _refresh(ref),
             child: const _EmptyState(
@@ -113,14 +116,12 @@ class _FilterPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        TextField(
+        SapaTextField(
           key: const Key('feedback-search-code'),
           controller: search,
-          decoration: const InputDecoration(
-            labelText: 'Cari kode laporan',
-            hintText: 'Contoh: LPR-79459',
-            prefixIcon: Icon(Icons.search),
-          ),
+          label: 'Cari kode laporan',
+          hintText: 'Contoh: LPR-79459',
+          prefixIcon: const Icon(Icons.search),
           textInputAction: TextInputAction.search,
           onChanged: (_) => onSearchChanged(),
         ),
@@ -230,7 +231,11 @@ class _FeedbackCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Dikirim ${_fmt(item.createdAt)}',
-                style: const TextStyle(fontSize: 12, color: AppTheme.ink300),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.ink500,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (item.reply != null && item.reply!.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -370,7 +375,11 @@ class MyFeedbackDetailScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Dibalas ${_fmt(item.repliedAt!)}',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.ink300),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.ink500,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ],

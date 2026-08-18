@@ -102,7 +102,7 @@ const _letterTypes = [
     name: 'Surat Keterangan Berdomisili',
     description: 'Keterangan domisili warga.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
         key: 'nama',
@@ -117,7 +117,7 @@ const _letterTypes = [
     name: 'Surat Keterangan Miskin',
     description: 'SKTM untuk bantuan.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [],
   ),
 ];

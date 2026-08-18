@@ -72,7 +72,7 @@ const l1Type = LetterType(
   name: 'Surat Keterangan Berdomisili',
   description: 'Keterangan tempat tinggal warga.',
   subjectIsApplicant: true,
-  requiredAttachments: ['KTP', 'KK'],
+  requiredAttachments: ['KTP'],
   fields: [
     FieldSpec(key: 'nik', label: 'NIK', type: FieldType.nik, required: true),
     FieldSpec(

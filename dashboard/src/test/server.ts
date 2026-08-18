@@ -24,7 +24,7 @@ const letterTypes = [
     description: 'Keterangan domisili warga.',
     subject_is_applicant: true,
     signatory: 'Keuchik',
-    required_attachments: ['KTP', 'KK'],
+    required_attachments: ['KTP'],
     fields: [
       { key: 'nama', label: 'Nama Lengkap', type: 'text', required: true },
       { key: 'nik', label: 'NIK', type: 'nik', required: true },
@@ -37,7 +37,7 @@ const letterTypes = [
     description: 'Keterangan warga kurang mampu.',
     subject_is_applicant: true,
     signatory: 'Keuchik',
-    required_attachments: ['KTP', 'KK'],
+    required_attachments: ['KTP'],
     fields: [
       { key: 'nama', label: 'Nama Lengkap', type: 'text', required: true },
       { key: 'nik', label: 'NIK', type: 'nik', required: true },

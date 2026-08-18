@@ -60,7 +60,9 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen>
       leading: const SapaBackButton(),
       body: ResidentEmailGate(
         child: requestsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppTheme.gold500),
+          ),
           error: (_, _) => const _EmptyState(
             title: 'Riwayat belum bisa dimuat',
             body: 'Coba lagi saat koneksi tersedia.',
@@ -152,7 +154,11 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
               const SizedBox(height: 4),
               Text(
                 'Diajukan ${_fmt(item.createdAt)}',
-                style: const TextStyle(fontSize: 12, color: AppTheme.ink300),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.ink500,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (item.decisionReason != null &&
                   item.decisionReason!.isNotEmpty) ...[

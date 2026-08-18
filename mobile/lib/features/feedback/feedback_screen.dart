@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/resident_email_gate.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/attachment.dart';
 import '../../data/models/feedback_model.dart';
@@ -62,32 +63,27 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       key: formKey,
       child: ListView(
         children: [
-          TextFormField(
+          SapaTextField(
             controller: name,
-            decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+            label: 'Nama Lengkap',
             validator: Validators.required,
           ),
           const SizedBox(height: 12),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Alamat Email',
-              helperText: 'Email ini sudah terverifikasi.',
-            ),
-            child: Text(
-              session?.email ?? '-',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+          SapaDisplayField(
+            label: 'Alamat Email',
+            value: session?.email ?? '-',
+            helperText: 'Email ini sudah terverifikasi.',
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          SapaTextField(
             controller: phone,
-            decoration: const InputDecoration(labelText: 'No. HP'),
+            label: 'No. HP',
             validator: Validators.phone,
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          SapaTextField(
             controller: body,
-            decoration: const InputDecoration(labelText: 'Isi Laporan'),
+            label: 'Isi Laporan',
             validator: Validators.required,
             maxLines: 5,
           ),

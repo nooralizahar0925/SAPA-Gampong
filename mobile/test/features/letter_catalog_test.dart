@@ -15,10 +15,14 @@ const _twoTypes = [
     name: 'Surat Keterangan Berdomisili',
     description: 'Keterangan domisili warga.',
     subjectIsApplicant: true,
-    requiredAttachments: ['KTP', 'KK'],
+    requiredAttachments: ['KTP'],
     fields: [
       FieldSpec(
-          key: 'nama', label: 'Nama', type: FieldType.text, required: true),
+        key: 'nama',
+        label: 'Nama',
+        type: FieldType.text,
+        required: true,
+      ),
     ],
   ),
   LetterType(
@@ -32,23 +36,21 @@ const _twoTypes = [
 ];
 
 GoRouter _makeRouter() => GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (_, __) => const LetterCatalogScreen(),
-        ),
-        GoRoute(
-          path: '/layanan/surat/form',
-          name: 'letterForm',
-          builder: (_, __) => const Scaffold(body: Text('form')),
-        ),
-      ],
-    );
+  routes: [
+    GoRoute(path: '/', builder: (_, __) => const LetterCatalogScreen()),
+    GoRoute(
+      path: '/layanan/surat/form',
+      name: 'letterForm',
+      builder: (_, __) => const Scaffold(body: Text('form')),
+    ),
+  ],
+);
 
 void main() {
   group('LetterCatalogScreen', () {
-    testWidgets('shows loading indicator while provider is pending',
-        (tester) async {
+    testWidgets('shows loading indicator while provider is pending', (
+      tester,
+    ) async {
       final completer = Completer<List<LetterType>>();
       await tester.pumpWidget(
         ProviderScope(
@@ -66,8 +68,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('renders a tile for each letter type returned by provider',
-        (tester) async {
+    testWidgets('renders a tile for each letter type returned by provider', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -89,7 +92,8 @@ void main() {
         ProviderScope(
           overrides: [
             letterTypesProvider.overrideWith(
-                (ref) => Future<List<LetterType>>.error('network error')),
+              (ref) => Future<List<LetterType>>.error('network error'),
+            ),
           ],
           child: MaterialApp.router(routerConfig: _makeRouter()),
         ),

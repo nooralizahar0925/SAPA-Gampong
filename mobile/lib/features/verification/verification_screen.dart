@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/verification_result.dart';
 import '../../data/providers/verification_providers.dart';
@@ -74,25 +75,23 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  SapaTextField(
                     key: const Key('verification-input'),
                     controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: 'Tautan atau token verifikasi',
-                      hintText: 'https://.../verify/abcdef',
-                      suffixIcon: IconButton(
-                        key: const Key('verification-clear'),
-                        onPressed: _loading
-                            ? null
-                            : () {
-                                _controller.clear();
-                                setState(() {
-                                  _result = null;
-                                  _error = null;
-                                });
-                              },
-                        icon: const Icon(Icons.close),
-                      ),
+                    label: 'Tautan atau token verifikasi',
+                    hintText: 'https://.../verify/abcdef',
+                    suffixIcon: IconButton(
+                      key: const Key('verification-clear'),
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              _controller.clear();
+                              setState(() {
+                                _result = null;
+                                _error = null;
+                              });
+                            },
+                      icon: const Icon(Icons.close),
                     ),
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _verify(),

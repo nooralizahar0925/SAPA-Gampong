@@ -17,6 +17,10 @@ type SerializableLetterTemplate = LetterDefinition & {
 
 const TEMPLATE_CODE_SET = new Set<string>(LETTER_TYPE_CODES);
 
+function withoutLegacyKk(attachments: readonly string[]) {
+  return attachments.filter((kind) => kind !== 'KK');
+}
+
 function assertSupportedCode(code: string): asserts code is LetterType {
   if (!TEMPLATE_CODE_SET.has(code)) {
     throw ApiError.validation('Data yang dikirim tidak valid', {
@@ -31,7 +35,7 @@ function defaultTemplateRows() {
     name: definition.name,
     description: definition.description,
     subjectIsApplicant: definition.subject_is_applicant,
-    requiredAttachments: [...definition.required_attachments],
+    requiredAttachments: withoutLegacyKk(definition.required_attachments),
     signatory: definition.signatory,
     fields: JSON.parse(JSON.stringify(definition.fields)),
     active: true,
@@ -67,7 +71,7 @@ function serializeTemplate(row: LetterTemplate): SerializableLetterTemplate {
     name: row.name,
     description: row.description,
     subject_is_applicant: row.subjectIsApplicant,
-    required_attachments: row.requiredAttachments,
+    required_attachments: withoutLegacyKk(row.requiredAttachments),
     signatory: row.signatory,
     fields: (row.fields ?? []) as unknown as LetterField[],
     active: row.active,
@@ -117,7 +121,9 @@ export async function createLetterTemplate(input: CreateLetterTemplateBodyType) 
         name: input.name ?? fallback.name,
         description: input.description ?? fallback.description,
         subjectIsApplicant: input.subject_is_applicant ?? fallback.subject_is_applicant,
-        requiredAttachments: input.required_attachments ?? [...fallback.required_attachments],
+        requiredAttachments: withoutLegacyKk(
+          input.required_attachments ?? fallback.required_attachments,
+        ),
         signatory: input.signatory ?? fallback.signatory,
         fields: input.fields ?? JSON.parse(JSON.stringify(fallback.fields)),
         active: input.active ?? true,
@@ -147,7 +153,7 @@ export async function updateLetterTemplate(code: string, input: UpdateLetterTemp
           ? { subjectIsApplicant: input.subject_is_applicant }
           : {}),
         ...(input.required_attachments !== undefined
-          ? { requiredAttachments: input.required_attachments }
+          ? { requiredAttachments: withoutLegacyKk(input.required_attachments) }
           : {}),
         ...(input.signatory !== undefined ? { signatory: input.signatory } : {}),
         ...(input.fields !== undefined ? { fields: input.fields } : {}),

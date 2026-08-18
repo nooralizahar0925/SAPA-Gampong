@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/resident_session.dart';
 import '../repositories/resident_repository.dart';
@@ -29,10 +30,14 @@ class ResidentSessionNotifier extends AsyncNotifier<ResidentSession?> {
   }
 
   Future<void> save(ResidentSession session) async {
-    await ref.read(residentSessionServiceProvider).save(session);
     state = AsyncData(session);
     ref.invalidate(residentRequestsProvider);
     ref.invalidate(residentFeedbackProvider);
+    try {
+      await ref.read(residentSessionServiceProvider).save(session);
+    } catch (error) {
+      debugPrint('Failed to persist resident session: $error');
+    }
   }
 
   Future<void> clear() async {

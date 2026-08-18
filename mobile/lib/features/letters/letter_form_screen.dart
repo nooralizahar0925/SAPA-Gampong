@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/resident_email_gate.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/attachment.dart';
 import '../../data/models/field_spec.dart';
@@ -70,10 +71,7 @@ class LetterFlowDraft {
       subjectData: {
         for (final field in letterType.fields) field.key: _sampleValue(field),
       },
-      attachments: const [
-        Attachment(fileId: 'mock_ktp', kind: 'KTP'),
-        Attachment(fileId: 'mock_kk', kind: 'KK'),
-      ],
+      attachments: const [Attachment(fileId: 'mock_ktp', kind: 'KTP')],
       falseStatementConfirmed: true,
     );
   }
@@ -187,27 +185,22 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
                   ),
                 ),
               const SectionTitle('Data Pemohon'),
-              TextFormField(
+              SapaTextField(
                 controller: applicantName,
-                decoration: const InputDecoration(labelText: 'Nama Pemohon'),
+                label: 'Nama Pemohon',
                 validator: Validators.required,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
-              InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Alamat Email',
-                  helperText: 'Surat jadi hanya dikirim ke email ini.',
-                ),
-                child: Text(
-                  session?.email ?? '-',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+              SapaDisplayField(
+                label: 'Alamat Email',
+                value: session?.email ?? '-',
+                helperText: 'Surat jadi hanya dikirim ke email ini.',
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              SapaTextField(
                 controller: applicantPhone,
-                decoration: const InputDecoration(labelText: 'No. HP'),
+                label: 'No. HP',
                 keyboardType: TextInputType.phone,
                 validator: Validators.phone,
                 textInputAction: TextInputAction.next,
@@ -414,10 +407,10 @@ class _FieldInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (field.type == FieldType.enumT) {
-      return DropdownButtonFormField<String>(
+      return SapaDropdownField(
         key: Key('field-${field.key}'),
-        initialValue: value?.isEmpty == true ? null : value,
-        decoration: InputDecoration(labelText: _label),
+        label: _label,
+        value: value?.isEmpty == true ? null : value,
         items: field.options
             .map(
               (option) => DropdownMenuItem(value: option, child: Text(option)),
@@ -429,37 +422,33 @@ class _FieldInput extends StatelessWidget {
     }
 
     if (field.type == FieldType.date) {
-      return TextFormField(
+      return SapaTextField(
         key: Key('field-${field.key}'),
+        label: _label,
         controller: controller,
         readOnly: true,
         onTap: onPickDate,
-        decoration: InputDecoration(
-          labelText: _label,
-          suffixIcon: const Icon(Icons.calendar_today_outlined),
-        ),
+        suffixIcon: const Icon(Icons.calendar_today_outlined),
         validator: Validators.forField(field),
       );
     }
 
     if (field.type == FieldType.time) {
-      return TextFormField(
+      return SapaTextField(
         key: Key('field-${field.key}'),
+        label: _label,
         controller: controller,
         readOnly: true,
         onTap: onPickTime,
-        decoration: InputDecoration(
-          labelText: _label,
-          suffixIcon: const Icon(Icons.access_time_outlined),
-        ),
+        suffixIcon: const Icon(Icons.access_time_outlined),
         validator: Validators.forField(field),
       );
     }
 
-    return TextFormField(
+    return SapaTextField(
       key: Key('field-${field.key}'),
+      label: _label,
       controller: controller,
-      decoration: InputDecoration(labelText: _label),
       validator: Validators.forField(field),
       keyboardType: switch (field.type) {
         FieldType.nik ||

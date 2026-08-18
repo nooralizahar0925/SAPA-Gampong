@@ -220,6 +220,24 @@ describe('letter templates', () => {
     });
   });
 
+  it('does not allow KK to become required again through a stale client', async () => {
+    const token = await login();
+
+    const patch = await request(app)
+      .patch('/api/settings/letter-templates/L1')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ required_attachments: ['KTP', 'KK'] });
+
+    expect(patch.status).toBe(200);
+    expect(patch.body.required_attachments).toEqual(['KTP']);
+
+    const stored = await testPrisma.letterTemplate.findUniqueOrThrow({
+      where: { code: 'L1' },
+      select: { requiredAttachments: true },
+    });
+    expect(stored.requiredAttachments).toEqual(['KTP']);
+  });
+
   it('renders a PDF preview for an admin', async () => {
     const token = await login();
 

@@ -24,7 +24,7 @@ type TemplateForm = {
   active: boolean;
 };
 
-const ATTACHMENT_OPTIONS = ['KTP', 'KK'] as const;
+const ATTACHMENT_OPTIONS = ['KTP'] as const;
 const SIGNATORY_OPTIONS = ['Keuchik', 'Sekretaris Gampong a.n. Keuchik'] as const;
 
 function toForm(template: LetterTemplateDefinition): TemplateForm {
@@ -33,7 +33,7 @@ function toForm(template: LetterTemplateDefinition): TemplateForm {
     description: template.description,
     signatory: template.signatory,
     subject_is_applicant: template.subject_is_applicant,
-    required_attachments: template.required_attachments,
+    required_attachments: template.required_attachments.filter((kind) => kind !== 'KK'),
     active: template.active,
   };
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/sapa_fields.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/models/letter_type.dart';
 import '../../data/providers/letter_providers.dart';
@@ -43,7 +44,9 @@ class _LetterCatalogScreenState extends ConsumerState<LetterCatalogScreen> {
       leading: const SapaBackButton(),
       padding: EdgeInsets.zero,
       body: typesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.gold500),
+        ),
         error: (err, st) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -53,23 +56,30 @@ class _LetterCatalogScreenState extends ConsumerState<LetterCatalogScreen> {
                 const Icon(
                   Icons.cloud_off_outlined,
                   size: 48,
-                  color: AppTheme.ink300,
+                  color: AppTheme.g100,
                 ),
                 const SizedBox(height: 14),
                 const Text(
                   'Gagal memuat jenis surat.',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 const Text(
                   'Periksa koneksi internet lalu coba lagi.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.ink500),
+                  style: TextStyle(color: AppTheme.g100),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   key: const Key('catalog-retry'),
                   onPressed: () => ref.invalidate(letterTypesProvider),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.gold500,
+                    foregroundColor: AppTheme.ink900,
+                  ),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Coba Lagi'),
                 ),
@@ -124,18 +134,17 @@ class _CatalogBody extends StatelessWidget {
           style: TextStyle(color: AppTheme.g100),
         ),
         const SizedBox(height: 16),
-        TextField(
+        SapaTextField(
           controller: searchController,
-          decoration: InputDecoration(
-            hintText: 'Cari jenis surat…',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: query.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: searchController.clear,
-                  )
-                : null,
-          ),
+          label: 'Cari jenis surat',
+          hintText: 'Cari jenis surat...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: searchController.clear,
+                )
+              : null,
         ),
         const SizedBox(height: 16),
         for (final letter in filtered)
@@ -154,7 +163,7 @@ class _CatalogBody extends StatelessWidget {
             child: Center(
               child: Text(
                 'Tidak ada surat yang cocok.',
-                style: TextStyle(color: AppTheme.ink500),
+                style: TextStyle(color: AppTheme.g100),
               ),
             ),
           ),
@@ -180,20 +189,17 @@ class _LetterTile extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: AppTheme.g50,
+            color: AppTheme.gold500,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
-            Icons.description_outlined,
-            color: AppTheme.villageGreen,
-          ),
+          child: const Icon(Icons.description_outlined, color: AppTheme.ink900),
         ),
         title: Text(
           letter.name,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
         ),
         subtitle: Text('${letter.code} · ${letter.description}'),
-        trailing: const Icon(Icons.chevron_right, color: AppTheme.ink300),
+        trailing: const Icon(Icons.chevron_right, color: AppTheme.ink500),
       ),
     );
   }

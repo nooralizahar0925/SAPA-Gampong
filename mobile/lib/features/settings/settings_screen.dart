@@ -6,10 +6,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/contact_actions.dart';
 import '../../core/widgets/resident_email_gate.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/providers/app_preferences_providers.dart';
 import '../../data/providers/content_providers.dart';
+import '../../data/services/notification_service.dart';
 import '../../data/services/prayer_times_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -24,6 +26,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final preferences = ref.watch(appPreferencesProvider);
     final values = preferences.value;
+    final profile = ref.watch(villageProfileProvider).asData?.value;
+    final contactPhone = resolveOfficePhone(profile?.contactPhone);
 
     return SapaScaffold(
       title: 'Pengaturan',
@@ -86,8 +90,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SapaListTile(
             icon: Icons.phone_outlined,
             title: 'Hubungi Kantor Keuchik',
-            subtitle: '+62 813-6000-0000',
-            onTap: () {},
+            subtitle: contactPhone,
+            onTap: () => showOfficeContactActions(context, contactPhone),
           ),
           SapaListTile(
             icon: Icons.info_outline,
@@ -152,6 +156,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       );
+    } on AdzanAlarmPermissionException catch (error) {
+      await notifier.setAdzanAlarmEnabled(false);
+      await notifications.cancel();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       await notifier.setAdzanAlarmEnabled(false);
       await notifications.cancel();

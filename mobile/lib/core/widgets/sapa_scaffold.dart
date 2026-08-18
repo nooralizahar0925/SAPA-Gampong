@@ -188,10 +188,10 @@ class SapaListTile extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF6F1),
+            color: AppTheme.gold500,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.villageGreen),
+          child: Icon(icon, color: AppTheme.ink900),
         ),
         title: Text(
           title,
@@ -203,7 +203,7 @@ class SapaListTile extends StatelessWidget {
         ),
         trailing:
             trailing ??
-            const Icon(Icons.chevron_right, color: Color(0xFFB7BEB9)),
+            const Icon(Icons.chevron_right, color: AppTheme.ink500),
       ),
     );
   }

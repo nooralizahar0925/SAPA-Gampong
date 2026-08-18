@@ -20,17 +20,20 @@ class AttachmentScreen extends ConsumerStatefulWidget {
 }
 
 class _AttachmentScreenState extends ConsumerState<AttachmentScreen> {
-  static const _supportedKinds = ['KTP', 'KK'];
+  static const _supportedKinds = ['KTP'];
 
   late final Map<String, Attachment> _uploaded = {
-    for (final a in widget.flowDraft.attachments) a.kind: a,
+    for (final a in widget.flowDraft.attachments)
+      if (_supportedKinds.contains(a.kind)) a.kind: a,
   };
   final Set<String> _uploading = {};
   final Map<String, int> _fileSizes = {};
 
   @override
   Widget build(BuildContext context) {
-    final requiredKinds = widget.flowDraft.letterType.requiredAttachments;
+    final requiredKinds = widget.flowDraft.letterType.requiredAttachments
+        .where(_supportedKinds.contains)
+        .toList();
     final optionalKinds = _supportedKinds
         .where((kind) => !requiredKinds.contains(kind))
         .toList();

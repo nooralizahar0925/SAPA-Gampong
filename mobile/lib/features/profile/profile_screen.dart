@@ -77,7 +77,9 @@ class _TentangTab extends ConsumerWidget {
         .updatedAt(ContentCacheKeys.profile);
 
     return profileAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppTheme.gold500),
+      ),
       error: (_, _) => const _TentangContent(profile: null),
       data: (profile) => _TentangContent(profile: profile, cachedAt: cachedAt),
     );
@@ -259,7 +261,11 @@ class _VisiMisiTab extends ConsumerWidget {
         vmAsync.isLoading ||
         officialsAsync.isLoading ||
         strengthsAsync.isLoading;
-    if (isLoading) return const Center(child: CircularProgressIndicator());
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.gold500),
+      );
+    }
 
     return _VisiMisiContent(
       vm: vmAsync.asData?.value,
@@ -474,7 +480,9 @@ class _PerangkatTab extends ConsumerWidget {
     final officialsAsync = ref.watch(officialsProvider);
 
     return officialsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppTheme.gold500),
+      ),
       error: (_, _) => const _PerangkatList(officials: null),
       data: (officials) => _PerangkatList(officials: officials),
     );
