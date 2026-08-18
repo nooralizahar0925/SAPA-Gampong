@@ -2719,6 +2719,45 @@
           "expires_at"
         ]
       },
+      "ResidentDeviceLinkBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web",
+              "unknown"
+            ],
+            "default": "unknown"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ResidentDeviceLinkResponse": {
+        "type": "object",
+        "properties": {
+          "linked_requests": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "linked_feedback": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "linked_requests",
+          "linked_feedback"
+        ]
+      },
       "ResidentRequestItem": {
         "type": "object",
         "properties": {
@@ -5812,6 +5851,45 @@
           },
           "400": {
             "description": "Invalid email payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/resident/device-token": {
+      "post": {
+        "tags": [
+          "Resident"
+        ],
+        "summary": "Link the current resident device to requests and feedback for the verified email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidentDeviceLinkBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resident records linked to the current device",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentDeviceLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Resident email verification is required",
             "content": {
               "application/json": {
                 "schema": {

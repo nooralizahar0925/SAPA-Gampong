@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/cached_api_image.dart';
@@ -153,7 +154,7 @@ class _TentangContent extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         FilledButton.icon(
-          onPressed: () {},
+          onPressed: () => _openOfficeLocation(context, profile),
           icon: const Icon(Icons.map_outlined),
           label: const Text('Lokasi Kantor Desa'),
         ),
@@ -202,6 +203,50 @@ class _TentangContent extends StatelessWidget {
       if (p.elevation != null) ('Ketinggian', p.elevation!),
     ];
   }
+
+  static Future<void> _openOfficeLocation(
+    BuildContext context,
+    VillageProfile? profile,
+  ) async {
+    final uri = officeMapUri(profile);
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+    } catch (_) {
+      // Unsupported map applications and launcher failures share one message.
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Lokasi kantor belum bisa dibuka di perangkat ini.'),
+      ),
+    );
+  }
+}
+
+@visibleForTesting
+Uri officeMapUri(VillageProfile? profile) {
+  final lat = profile?.mapLat;
+  final lng = profile?.mapLng;
+  final query = lat != null && lng != null
+      ? '$lat,$lng'
+      : [
+          'Kantor ${profile?.name ?? seed.villageName}',
+          if (profile?.kecamatan?.trim().isNotEmpty ?? false)
+            profile!.kecamatan!.trim()
+          else
+            'Krueng Sabee',
+          if (profile?.kabupaten?.trim().isNotEmpty ?? false)
+            profile!.kabupaten!.trim()
+          else
+            'Aceh Jaya',
+          'Aceh',
+        ].join(', ');
+
+  return Uri.https('www.google.com', '/maps/search/', {
+    'api': '1',
+    'query': query,
+  });
 }
 
 class _UpdatedAtNote extends StatelessWidget {

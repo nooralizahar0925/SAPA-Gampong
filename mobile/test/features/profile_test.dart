@@ -20,6 +20,8 @@ const _profile = VillageProfile(
   areaSize: '1.300 ha',
   elevation: '3,4 mdpl',
   description: 'Deskripsi desa dari API.',
+  mapLat: 4.6342,
+  mapLng: 95.5820,
 );
 
 const _visionMission = VisionMission(
@@ -34,11 +36,7 @@ const _officials = [
     role: 'Keuchik',
     isLeadershipHighlight: true,
   ),
-  Official(
-    id: 'o2',
-    name: 'Afzalul API',
-    role: 'Sekretaris Gampong',
-  ),
+  Official(id: 'o2', name: 'Afzalul API', role: 'Sekretaris Gampong'),
 ];
 
 const _strengths = [
@@ -55,8 +53,8 @@ Widget _buildApp({
   return ProviderScope(
     overrides: [
       villageProfileProvider.overrideWith(
-        (_) async => (profileOverride as AsyncData<VillageProfile>?)?.value ??
-            _profile,
+        (_) async =>
+            (profileOverride as AsyncData<VillageProfile>?)?.value ?? _profile,
       ),
       visionMissionProvider.overrideWith(
         (_) async =>
@@ -76,16 +74,39 @@ Widget _buildApp({
     child: MaterialApp.router(
       routerConfig: GoRouter(
         initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
-        ],
+        routes: [GoRoute(path: '/', builder: (_, __) => const ProfileScreen())],
       ),
     ),
   );
 }
 
 void main() {
-  testWidgets('Tab 1: shows loading indicator while profile loads', (tester) async {
+  test('office map uses dashboard coordinates when configured', () {
+    final uri = officeMapUri(_profile);
+
+    expect(uri.host, 'www.google.com');
+    expect(uri.path, '/maps/search/');
+    expect(uri.queryParameters['query'], '4.6342,95.582');
+  });
+
+  test('office map falls back to the village address', () {
+    final uri = officeMapUri(
+      const VillageProfile(
+        name: 'Gampong Blang',
+        kecamatan: 'Krueng Sabee',
+        kabupaten: 'Aceh Jaya',
+      ),
+    );
+
+    expect(
+      uri.queryParameters['query'],
+      'Kantor Gampong Blang, Krueng Sabee, Aceh Jaya, Aceh',
+    );
+  });
+
+  testWidgets('Tab 1: shows loading indicator while profile loads', (
+    tester,
+  ) async {
     final completer = Completer<VillageProfile>();
     await tester.pumpWidget(
       ProviderScope(
@@ -109,7 +130,9 @@ void main() {
     completer.complete(_profile);
   });
 
-  testWidgets('Tab 1: renders village name and description from API', (tester) async {
+  testWidgets('Tab 1: renders village name and description from API', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
 
@@ -119,7 +142,9 @@ void main() {
     expect(find.text('Deskripsi desa dari API.'), findsOneWidget);
   });
 
-  testWidgets('Tab 1: shows seed fallback when profile is null', (tester) async {
+  testWidgets('Tab 1: shows seed fallback when profile is null', (
+    tester,
+  ) async {
     // Simulate error → fallback to seed content.
     await tester.pumpWidget(
       ProviderScope(
@@ -157,7 +182,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('profile-vision-text')), findsOneWidget);
-    expect(find.textContaining('Visi dari API yang lebih baik.'), findsOneWidget);
+    expect(
+      find.textContaining('Visi dari API yang lebih baik.'),
+      findsOneWidget,
+    );
     expect(find.text('Misi pertama dari API.'), findsOneWidget);
   });
 
@@ -190,7 +218,9 @@ void main() {
     expect(find.byKey(const Key('official-o2')), findsOneWidget);
   });
 
-  testWidgets('Tab 3: shows seed officials when API returns empty', (tester) async {
+  testWidgets('Tab 3: shows seed officials when API returns empty', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
