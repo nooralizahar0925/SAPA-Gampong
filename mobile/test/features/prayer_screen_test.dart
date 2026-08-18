@@ -119,6 +119,16 @@ Widget _wrap(
 }
 
 void main() {
+  test('countdown after Isya points to tomorrow Subuh', () {
+    final countdown = prayerCountdown(
+      PrayerTimes.fallback(),
+      now: DateTime(2026, 8, 18, 19, 57),
+    );
+
+    expect(countdown.$1, '09:01');
+    expect(countdown.$2, 'Subuh');
+  });
+
   testWidgets('shows hard-coded fallback while config is loading', (
     tester,
   ) async {

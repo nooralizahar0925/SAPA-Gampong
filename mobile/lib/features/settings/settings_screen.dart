@@ -129,20 +129,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return;
       }
 
-      var prayerTimes = PrayerTimes.fromConfigFallback(config);
-      final prayerService = ref.read(prayerTimesServiceProvider);
-      try {
-        prayerTimes = await prayerService.fetchUsingAvailableGpsForConfig(
-          config,
-        );
-      } catch (_) {
-        if (config.lat != null && config.lng != null) {
-          prayerTimes = await prayerService.fetchForVillageConfig(config);
-        }
-      }
-
       await notifications.scheduleDaily(
-        prayerTimes: prayerTimes,
+        prayerTimes: PrayerTimes.fromConfigFallback(config),
         adzanUrl: adzanUrl,
       );
       await notifier.setAdzanAlarmEnabled(true);

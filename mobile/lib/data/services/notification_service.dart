@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -72,7 +73,7 @@ class NotificationService {
   static bool _localNotificationsReady = false;
   static bool _timezoneReady = false;
 
-  static const _adzanAlarmChannelId = 'adzan_alarm_v3';
+  static const _adzanAlarmChannelId = 'adzan_alarm_v4';
   static const _adzanAlarmChannelName = 'Alarm azan';
   static const _adzanSoundResource = 'adzan_short';
   static const _adzanSoundFile = 'adzan_short.caf';
@@ -90,7 +91,7 @@ class NotificationService {
     AppPreferences? preferences,
     Future<AppPreferences> Function()? preferencesLoader,
   }) async {
-    await _ensureInstanceLocalNotifications();
+    await _ensureStaticLocalNotifications(_localNotifications);
     if (kIsWeb) return;
     if (!await _ensureFirebase()) return;
 
@@ -150,7 +151,7 @@ class NotificationService {
   }) async {
     _timer?.cancel();
     await _scheduleNativeAdzanAlarms(prayerTimes, now: now);
-    await _cacheAdzanAudio(adzanUrl);
+    unawaited(_cacheAdzanAudio(adzanUrl));
 
     _lastSchedule = nextPrayer(prayerTimes, now: now);
     final reference = now ?? DateTime.now();
@@ -219,10 +220,16 @@ class NotificationService {
 
   Future<bool> hasScheduledAdzanAlarms() async {
     if (kIsWeb) return false;
-    await _ensureInstanceLocalNotifications();
-    final pending = await _localNotifications.pendingNotificationRequests();
-    final ids = _adzanNotificationIds.values.toSet();
-    return pending.where((item) => ids.contains(item.id)).length == ids.length;
+    try {
+      await _ensureInstanceLocalNotifications();
+      final pending = await _localNotifications.pendingNotificationRequests();
+      final ids = _adzanNotificationIds.values.toSet();
+      return pending.where((item) => ids.contains(item.id)).length ==
+          ids.length;
+    } catch (error) {
+      debugPrint('Failed to inspect scheduled adzan alarms: $error');
+      return false;
+    }
   }
 
   Future<void> cancel() async {
@@ -399,10 +406,30 @@ class NotificationService {
           ? scheduledToday
           : scheduledToday.add(const Duration(days: 1));
 
-      await _localNotifications.zonedSchedule(
+      await _scheduleAdzanSlot(
         id: _adzanNotificationIds[slot.$1]!,
-        title: 'Waktu ${slot.$1}',
-        body: 'Alarm azan ${slot.$1} aktif.',
+        prayerName: slot.$1,
+        scheduledAt: scheduledAt,
+        preferredMode: androidScheduleMode,
+      );
+    }
+
+    // Some Android vendors update pendingNotificationRequests asynchronously.
+    // A successful zonedSchedule call is the reliable signal here; startup will
+    // repair any genuinely missing schedules on the next app launch.
+  }
+
+  Future<void> _scheduleAdzanSlot({
+    required int id,
+    required String prayerName,
+    required DateTime scheduledAt,
+    required AndroidScheduleMode preferredMode,
+  }) async {
+    Future<void> schedule(AndroidScheduleMode mode) {
+      return _localNotifications.zonedSchedule(
+        id: id,
+        title: 'Waktu $prayerName',
+        body: 'Alarm azan $prayerName aktif.',
         scheduledDate: tz.TZDateTime.from(scheduledAt, tz.local),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
@@ -429,15 +456,45 @@ class NotificationService {
             presentList: true,
           ),
         ),
-        androidScheduleMode: androidScheduleMode,
+        androidScheduleMode: mode,
         matchDateTimeComponents: DateTimeComponents.time,
-        payload: 'adzan:${slot.$1}',
+        payload: 'adzan:$prayerName',
       );
     }
 
-    if (!await hasScheduledAdzanAlarms()) {
-      throw const AdzanAlarmPermissionException(
-        'Jadwal alarm azan belum tersimpan di perangkat.',
+    try {
+      await schedule(preferredMode);
+    } on PlatformException catch (error) {
+      final exactMode =
+          preferredMode == AndroidScheduleMode.exact ||
+          preferredMode == AndroidScheduleMode.exactAllowWhileIdle ||
+          preferredMode == AndroidScheduleMode.alarmClock;
+      if (defaultTargetPlatform == TargetPlatform.android &&
+          exactMode &&
+          error.code == 'exact_alarms_not_permitted') {
+        try {
+          await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
+          return;
+        } catch (fallbackError) {
+          debugPrint(
+            'Failed to schedule $prayerName with inexact fallback: '
+            '$fallbackError',
+          );
+          throw AdzanAlarmPermissionException(
+            'Alarm $prayerName gagal dijadwalkan di perangkat ini.',
+          );
+        }
+      }
+
+      debugPrint('Failed to schedule $prayerName adzan: $error');
+      throw AdzanAlarmPermissionException(
+        'Alarm $prayerName gagal dijadwalkan: '
+        '${error.message ?? error.code}',
+      );
+    } catch (error) {
+      debugPrint('Failed to schedule $prayerName adzan: $error');
+      throw AdzanAlarmPermissionException(
+        'Alarm $prayerName gagal dijadwalkan di perangkat ini.',
       );
     }
   }
@@ -532,12 +589,16 @@ class NotificationService {
   }
 
   Future<void> _ensureInstanceLocalNotifications() {
-    return _ensureStaticLocalNotifications(_localNotifications);
+    return _ensureStaticLocalNotifications(
+      _localNotifications,
+      rethrowErrors: true,
+    );
   }
 
-  static Future<void> _ensureStaticLocalNotifications([
-    FlutterLocalNotificationsPlugin? plugin,
-  ]) async {
+  static Future<void> _ensureStaticLocalNotifications(
+    FlutterLocalNotificationsPlugin? plugin, {
+    bool rethrowErrors = false,
+  }) async {
     if (_localNotificationsReady) return;
     final localNotifications = plugin ?? FlutterLocalNotificationsPlugin();
     try {
@@ -549,7 +610,9 @@ class NotificationService {
         ),
       );
       _localNotificationsReady = true;
-    } catch (_) {
+    } catch (error) {
+      if (rethrowErrors) rethrow;
+      debugPrint('Local notification initialization failed: $error');
       // Push/local notification setup should never prevent the app from opening.
     }
   }

@@ -173,6 +173,8 @@ class PrayerTimesService {
   final PrayerLocationProvider _passiveLocationProvider;
   final ContentCacheService? cache;
 
+  static PrayerLocation? _lastResolvedLocation;
+
   Future<PrayerTimes> fetchUsingGps({DateTime? date}) async {
     final location = await _locationProvider();
     return fetchForCoordinates(
@@ -343,10 +345,12 @@ class PrayerTimesService {
       ),
     );
 
-    return PrayerLocation(
+    final location = PrayerLocation(
       latitude: position.latitude,
       longitude: position.longitude,
     );
+    _lastResolvedLocation = location;
+    return location;
   }
 
   static Future<PrayerLocation> _determineAvailableLocation() async {
@@ -369,20 +373,22 @@ class PrayerTimesService {
       );
     }
 
-    final lastKnown = await Geolocator.getLastKnownPosition();
-    final position =
-        lastKnown ??
-        await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 8),
-          ),
-        );
+    final remembered = _lastResolvedLocation;
+    if (remembered != null) return remembered;
 
-    return PrayerLocation(
+    final position = await Geolocator.getLastKnownPosition();
+    if (position == null) {
+      throw const LocationPermissionException(
+        'Belum ada lokasi terakhir. Gunakan tombol GPS untuk mengambil lokasi.',
+      );
+    }
+
+    final location = PrayerLocation(
       latitude: position.latitude,
       longitude: position.longitude,
     );
+    _lastResolvedLocation = location;
+    return location;
   }
 }
 

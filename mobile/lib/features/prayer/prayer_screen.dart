@@ -23,6 +23,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
   bool _loading = false;
   PrayerTimes _prayerTimes = PrayerTimes.fallback();
   String? _errorMessage;
+  Timer? _clockTimer;
 
   String? _adzanUrl;
   PrayerConfig? _config;
@@ -30,7 +31,16 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
   @override
   void initState() {
     super.initState();
+    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
     _loadConfig();
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadConfig() async {
@@ -156,7 +166,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen> {
       leading: const SapaBackButton(),
       body: ListView(
         children: [
-          _CountdownCard(activePrayer: activePrayer, prayerTimes: _prayerTimes),
+          _CountdownCard(prayerTimes: _prayerTimes),
           const SizedBox(height: 14),
           _PrayerRow(
             'Subuh',
@@ -419,16 +429,15 @@ class _MosqueImageFallback extends StatelessWidget {
 // ── Countdown card ────────────────────────────────────────────────────────────
 
 class _CountdownCard extends StatelessWidget {
-  const _CountdownCard({required this.activePrayer, required this.prayerTimes});
+  const _CountdownCard({required this.prayerTimes});
 
-  final String? activePrayer;
   final PrayerTimes prayerTimes;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final hijriDate = _approximateHijri(now);
-    final countdown = _countdown(activePrayer ?? 'Subuh', prayerTimes);
+    final countdown = prayerCountdown(prayerTimes);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -479,35 +488,6 @@ class _CountdownCard extends StatelessWidget {
     );
   }
 
-  static (String, String) _countdown(String active, PrayerTimes times) {
-    final schedule = [
-      ('Subuh', times.subuh),
-      ('Dhuhur', times.dhuhur),
-      ('Ashar', times.ashar),
-      ('Maghrib', times.maghrib),
-      ('Isya', times.isya),
-    ];
-
-    final now = TimeOfDay.now();
-    final nowMins = now.hour * 60 + now.minute;
-
-    for (final entry in schedule) {
-      final parts = entry.$2.split(':');
-      final entryMins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
-      if (entryMins > nowMins) {
-        final diff = entryMins - nowMins;
-        final h = diff ~/ 60;
-        final m = diff % 60;
-        final timeStr = h > 0
-            ? '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}'
-            : '00:${m.toString().padLeft(2, '0')}';
-        return (timeStr, entry.$1);
-      }
-    }
-
-    return ('00:00', 'Isya');
-  }
-
   static String _approximateHijri(DateTime date) {
     final months = [
       'Muharram',
@@ -529,6 +509,39 @@ class _CountdownCard extends StatelessWidget {
     final monthIndex = ((date.month + 8) % 12);
     return '${date.day} ${months[monthIndex]} $hijriYear H';
   }
+}
+
+(String, String) prayerCountdown(PrayerTimes times, {DateTime? now}) {
+  final schedule = [
+    ('Subuh', times.subuh),
+    ('Dhuhur', times.dhuhur),
+    ('Ashar', times.ashar),
+    ('Maghrib', times.maghrib),
+    ('Isya', times.isya),
+  ];
+
+  final reference = now ?? DateTime.now();
+  final nowMins = reference.hour * 60 + reference.minute;
+
+  for (final entry in schedule) {
+    final parts = entry.$2.split(':');
+    final entryMins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    if (entryMins > nowMins) {
+      return (_formatCountdown(entryMins - nowMins), entry.$1);
+    }
+  }
+
+  final subuhParts = times.subuh.split(':');
+  final tomorrowSubuh =
+      24 * 60 + int.parse(subuhParts[0]) * 60 + int.parse(subuhParts[1]);
+  return (_formatCountdown(tomorrowSubuh - nowMins), 'Subuh');
+}
+
+String _formatCountdown(int minutes) {
+  final hours = minutes ~/ 60;
+  final remainingMinutes = minutes % 60;
+  return '${hours.toString().padLeft(2, '0')}:'
+      '${remainingMinutes.toString().padLeft(2, '0')}';
 }
 
 // ── Source card ───────────────────────────────────────────────────────────────
