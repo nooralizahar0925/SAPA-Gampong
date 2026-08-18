@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 
@@ -11,6 +12,7 @@ class SapaTextField extends StatelessWidget {
     this.helperText,
     this.validator,
     this.keyboardType,
+    this.inputFormatters,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
     this.maxLines = 1,
@@ -32,6 +34,7 @@ class SapaTextField extends StatelessWidget {
   final String? helperText;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
   final int? maxLines;
@@ -64,6 +67,7 @@ class SapaTextField extends StatelessWidget {
         style: const TextStyle(color: AppTheme.inputText),
         validator: validator,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         textInputAction: textInputAction,
         textCapitalization: textCapitalization,
         maxLines: maxLines,

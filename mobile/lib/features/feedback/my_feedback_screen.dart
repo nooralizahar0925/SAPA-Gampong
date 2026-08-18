@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
@@ -473,47 +476,85 @@ class _AttachmentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: AppTheme.g50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.g300),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            attachment.mime.contains('pdf')
-                ? Icons.picture_as_pdf_outlined
-                : Icons.image_outlined,
-            color: AppTheme.g700,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: InkWell(
+          key: Key('feedback-detail-attachment-${attachment.fileId}'),
+          onTap: () => unawaited(_openAttachment(context, attachment.url)),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.g300),
+            ),
+            child: Row(
               children: [
-                Text(
-                  attachment.originalName?.isNotEmpty == true
-                      ? attachment.originalName!
-                      : 'Lampiran ${attachment.kind}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                Icon(
+                  attachment.mime.contains('pdf')
+                      ? Icons.picture_as_pdf_outlined
+                      : Icons.image_outlined,
+                  color: AppTheme.g700,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${attachment.kind} · ${_fileSize(attachment.size)}',
-                  style: const TextStyle(color: AppTheme.ink500, fontSize: 12),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        attachment.originalName?.isNotEmpty == true
+                            ? attachment.originalName!
+                            : 'Lampiran ${attachment.kind}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${attachment.kind} · ${_fileSize(attachment.size)}',
+                        style: const TextStyle(
+                          color: AppTheme.ink500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
+                const Icon(Icons.open_in_new, size: 20, color: AppTheme.g700),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+Future<void> _openAttachment(BuildContext context, String rawUrl) async {
+  final uri = Uri.tryParse(rawUrl);
+  if (uri == null || !uri.hasScheme) {
+    _showAttachmentOpenError(context);
+    return;
+  }
+
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  } catch (_) {
+    // Show the same message for malformed, expired, and unsupported URLs.
+  }
+  if (context.mounted) _showAttachmentOpenError(context);
+}
+
+void _showAttachmentOpenError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Lampiran belum bisa dibuka. Muat ulang lalu coba lagi.'),
+    ),
+  );
 }
 
 class _EmptyState extends StatelessWidget {

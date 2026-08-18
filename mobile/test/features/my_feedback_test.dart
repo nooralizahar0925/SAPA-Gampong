@@ -102,5 +102,10 @@ void main() {
     expect(find.text('Nurul Aini'), findsOneWidget);
     expect(find.text('Tim akan dikirim untuk survey lokasi'), findsOneWidget);
     expect(find.text('jalan-rusak.jpg'), findsOneWidget);
+    final attachment = tester.widget<InkWell>(
+      find.byKey(const Key('feedback-detail-attachment-file-1')),
+    );
+    expect(attachment.onTap, isNotNull);
+    expect(find.byIcon(Icons.open_in_new), findsOneWidget);
   });
 }

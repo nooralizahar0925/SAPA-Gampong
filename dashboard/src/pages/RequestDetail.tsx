@@ -15,6 +15,7 @@ import { AttachmentViewer } from '../components/AttachmentViewer';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { AppIcon } from '../components/AppIcon';
 import { StatusBadge, getStatusLabel } from '../components/StatusBadge';
+import { alertApiError, confirmAction, toastSuccess } from '../lib/alerts';
 
 type RequestAction = PatchRequestStatusInput['action'];
 
@@ -37,7 +38,6 @@ export function RequestDetailPage() {
   const [draftSubjectData, setDraftSubjectData] = useState<Record<string, unknown>>({});
   const [draftNomorSurat, setDraftNomorSurat] = useState('');
   const [decisionReason, setDecisionReason] = useState('');
-  const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const detailQuery = useQuery({
     queryKey: ['request-detail', id],
@@ -61,7 +61,6 @@ export function RequestDetailPage() {
     setDraftSubjectData(detail.subject_data);
     setDraftNomorSurat(detail.nomor_surat ?? '');
     setDecisionReason(detail.decision_reason ?? '');
-    setDecisionError(null);
     setIsEditing(false);
   }, [detail]);
 
@@ -73,8 +72,7 @@ export function RequestDetailPage() {
         nomor_surat: draftNomorSurat.trim() || undefined,
         reason: decisionReason.trim() || undefined,
       }),
-    onSuccess: async (updated) => {
-      setDecisionError(null);
+    onSuccess: async (updated, input) => {
       setDraftSubjectData(updated.subject_data);
       setDraftNomorSurat(updated.nomor_surat ?? '');
       setDecisionReason(updated.decision_reason ?? '');
@@ -84,11 +82,30 @@ export function RequestDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['requests-overview'] }),
         queryClient.invalidateQueries({ queryKey: ['request-detail', id] }),
       ]);
+      await toastSuccess(decisionSuccessMessage(input.action));
     },
     onError: (error) => {
-      setDecisionError(error instanceof Error ? error.message : 'Aksi tidak dapat diproses.');
+      void alertApiError(error, 'Aksi permohonan tidak dapat diproses.');
     },
   });
+
+  const runDecisionAction = async (action: RequestAction) => {
+    if (decisionMutation.isPending) return;
+    if ((action === 'needs_info' || action === 'reject') && !decisionReason.trim()) {
+      await alertApiError(
+        new Error(
+          action === 'needs_info'
+            ? 'Alasan wajib diisi sebelum meminta perbaikan.'
+            : 'Alasan wajib diisi sebelum menolak permohonan.',
+        ),
+      );
+      return;
+    }
+
+    const confirmation = decisionConfirmation(action);
+    const confirmed = await confirmAction(confirmation);
+    if (confirmed) decisionMutation.mutate({ action });
+  };
 
   if (detailQuery.isLoading) {
     return (
@@ -145,6 +162,8 @@ export function RequestDetailPage() {
   const canAskCorrection = allowedActions.includes('needs_info');
   const canReject = allowedActions.includes('reject');
   const hasDecisionActions = allowedActions.length > 0;
+  const pendingAction = decisionMutation.isPending ? decisionMutation.variables?.action : undefined;
+  const latestDecision = getLatestDecision(detail);
 
   return (
     <DashboardFrame
@@ -237,6 +256,8 @@ export function RequestDetailPage() {
               <h2>Keputusan</h2>
             </div>
             <div className="detail-card-body">
+              {latestDecision ? <DecisionSummary decision={latestDecision} /> : null}
+
               {detail.status === 'APPROVED' || detail.status === 'GENERATED' || detail.status === 'SENT' ? (
                 <div className="info-box detail-stage-box" role="status">
                   <strong>Tahap penerbitan surat siap dibuka</strong>
@@ -262,10 +283,11 @@ export function RequestDetailPage() {
                   <button
                     className="table-action ghost"
                     type="button"
-                    onClick={() => decisionMutation.mutate({ action: 'in_review' })}
+                    onClick={() => void runDecisionAction('in_review')}
                     disabled={decisionMutation.isPending}
+                    aria-busy={pendingAction === 'in_review'}
                   >
-                    Tandai Sedang Ditinjau
+                    {pendingAction === 'in_review' ? <PendingLabel text="Memproses..." /> : 'Tandai Sedang Ditinjau'}
                   </button>
                 </div>
               ) : null}
@@ -324,54 +346,39 @@ export function RequestDetailPage() {
                 </>
               ) : null}
 
-              {decisionError ? (
-                <div className="error-box" role="alert">
-                  {decisionError}
-                </div>
-              ) : null}
-
               {hasDecisionActions ? (
                 <div className="detail-inline-actions">
                   {canApprove ? (
                     <button
                       className="table-action primary strong"
                       type="button"
-                      onClick={() => decisionMutation.mutate({ action: 'approve' })}
+                      onClick={() => void runDecisionAction('approve')}
                       disabled={decisionMutation.isPending}
+                      aria-busy={pendingAction === 'approve'}
                     >
-                      Setujui
+                      {pendingAction === 'approve' ? <PendingLabel text="Menyetujui..." /> : 'Setujui'}
                     </button>
                   ) : null}
                   {canAskCorrection ? (
                     <button
                       className="table-action ghost"
                       type="button"
-                      onClick={() => {
-                        if (!decisionReason.trim()) {
-                          setDecisionError('Alasan wajib diisi sebelum meminta perbaikan.');
-                          return;
-                        }
-                        decisionMutation.mutate({ action: 'needs_info' });
-                      }}
+                      onClick={() => void runDecisionAction('needs_info')}
                       disabled={decisionMutation.isPending}
+                      aria-busy={pendingAction === 'needs_info'}
                     >
-                      Minta Perbaikan
+                      {pendingAction === 'needs_info' ? <PendingLabel text="Mengirim..." /> : 'Minta Perbaikan'}
                     </button>
                   ) : null}
                   {canReject ? (
                     <button
                       className="table-action danger"
                       type="button"
-                      onClick={() => {
-                        if (!decisionReason.trim()) {
-                          setDecisionError('Alasan wajib diisi sebelum menolak permohonan.');
-                          return;
-                        }
-                        decisionMutation.mutate({ action: 'reject' });
-                      }}
+                      onClick={() => void runDecisionAction('reject')}
                       disabled={decisionMutation.isPending}
+                      aria-busy={pendingAction === 'reject'}
                     >
-                      Tolak Permohonan
+                      {pendingAction === 'reject' ? <PendingLabel text="Menolak..." /> : 'Tolak Permohonan'}
                     </button>
                   ) : null}
                 </div>
@@ -448,6 +455,90 @@ export function RequestDetailPage() {
       </div>
     </DashboardFrame>
   );
+}
+
+type DecisionSummaryItem = {
+  status: RequestStatus;
+  label: string;
+  reason: string;
+  by?: string;
+  at?: string;
+};
+
+function DecisionSummary({ decision }: { decision: DecisionSummaryItem }) {
+  return (
+    <div className="decision-summary" role="status">
+      <div className="decision-summary-head">
+        <div>
+          <span>Keputusan terakhir</span>
+          <strong>{decision.label}</strong>
+        </div>
+        <StatusBadge status={decision.status} />
+      </div>
+      <div className="decision-summary-reason">
+        <span>Alasan / catatan</span>
+        <p>{decision.reason}</p>
+      </div>
+      {decision.by || decision.at ? (
+        <div className="decision-summary-meta">
+          {decision.by ? <span>Oleh {decision.by}</span> : null}
+          {decision.at ? <span>{formatLongDateTime(decision.at)}</span> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PendingLabel({ text }: { text: string }) {
+  return (
+    <>
+      <span className="button-spinner" aria-hidden="true" />
+      {text}
+    </>
+  );
+}
+
+function decisionConfirmation(action: RequestAction) {
+  switch (action) {
+    case 'in_review':
+      return {
+        title: 'Mulai tinjau permohonan?',
+        text: 'Status permohonan akan berubah menjadi sedang ditinjau.',
+        confirmText: 'Mulai Tinjau',
+      };
+    case 'approve':
+      return {
+        title: 'Setujui permohonan?',
+        text: 'Permohonan akan dilanjutkan ke tahap pembuatan surat resmi.',
+        confirmText: 'Ya, Setujui',
+      };
+    case 'needs_info':
+      return {
+        title: 'Minta perbaikan data?',
+        text: 'Pemohon akan menerima alasan dan diminta mengirim data yang diperbaiki.',
+        confirmText: 'Minta Perbaikan',
+      };
+    case 'reject':
+      return {
+        title: 'Tolak permohonan?',
+        text: 'Status akan menjadi ditolak dan alasan keputusan dikirim kepada pemohon.',
+        confirmText: 'Ya, Tolak',
+        tone: 'danger' as const,
+      };
+  }
+}
+
+function decisionSuccessMessage(action: RequestAction) {
+  switch (action) {
+    case 'in_review':
+      return 'Permohonan mulai ditinjau';
+    case 'approve':
+      return 'Permohonan berhasil disetujui';
+    case 'needs_info':
+      return 'Permintaan perbaikan berhasil dikirim';
+    case 'reject':
+      return 'Permohonan berhasil ditolak';
+  }
 }
 
 function ContactRow({
@@ -630,6 +721,42 @@ function buildTimeline(detail: RequestDetailResponse) {
         ? ('now' as const)
         : ('done' as const),
   }));
+}
+
+function getLatestDecision(detail: RequestDetailResponse): DecisionSummaryItem | null {
+  const decisionActions = new Set(['approve', 'needs_info', 'reject', 'cancel']);
+  const history = [...detail.status_history]
+    .reverse()
+    .find((item) => item.action && decisionActions.has(item.action));
+
+  if (!history && !detail.decision_reason) return null;
+
+  const status = history?.status ?? detail.status;
+  return {
+    status,
+    label: decisionLabel(history?.action, status),
+    reason:
+      detail.decision_reason?.trim() ||
+      history?.reason?.trim() ||
+      'Tidak ada catatan tambahan untuk keputusan ini.',
+    by: history?.by,
+    at: history?.at,
+  };
+}
+
+function decisionLabel(action: string | undefined, status: RequestStatus) {
+  switch (action) {
+    case 'approve':
+      return 'Permohonan disetujui';
+    case 'needs_info':
+      return 'Perbaikan data diminta';
+    case 'reject':
+      return 'Permohonan ditolak';
+    case 'cancel':
+      return 'Permohonan dibatalkan';
+    default:
+      return getStatusLabel(status);
+  }
 }
 
 /**

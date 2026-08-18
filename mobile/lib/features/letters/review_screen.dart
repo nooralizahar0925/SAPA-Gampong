@@ -139,6 +139,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const Key('review-submit'),
+            style: FilledButton.styleFrom(
+              disabledBackgroundColor: AppTheme.g700,
+              disabledForegroundColor: AppTheme.g200,
+            ),
             onPressed: (_confirmed && !_submitting) ? _submit : null,
             icon: _submitting
                 ? const SizedBox(
@@ -146,7 +150,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppTheme.ink900,
                     ),
                   )
                 : const Icon(Icons.send_outlined),
@@ -158,11 +162,17 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           ),
           const SizedBox(height: 10),
           OutlinedButton(
+            key: const Key('review-edit'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.gold100,
+              disabledForegroundColor: AppTheme.g300,
+              side: const BorderSide(color: AppTheme.gold500),
+            ),
             onPressed: _submitting
                 ? null
                 : () => context.goNamed(
                     AppRouteNames.letterForm,
-                    extra: widget.flowDraft.letterType,
+                    extra: widget.flowDraft,
                   ),
             child: const Text('Ubah Data'),
           ),

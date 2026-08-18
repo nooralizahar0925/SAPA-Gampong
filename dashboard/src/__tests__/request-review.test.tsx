@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { setStoredSession } from '../auth/session';
 import { AppRoutes } from '../routes';
@@ -123,6 +123,33 @@ describe('request queue and review flow', () => {
     expect(screen.queryByRole('button', { name: /tandai sedang ditinjau/i })).not.toBeInTheDocument();
   });
 
+  it('disables decision actions and shows progress while an action is pending', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.patch('http://localhost:8080/api/requests/:id/status', async ({ params }) => {
+        await delay(180);
+        return HttpResponse.json({
+          ...requestDetailFixture({ id: String(params.id), status: 'APPROVED' }),
+          status_history: [
+            {
+              status: 'APPROVED',
+              at: '2026-07-20T09:10:00.000Z',
+              action: 'approve',
+              by: 'Admin Gampong',
+            },
+          ],
+        });
+      }),
+    );
+
+    renderApp(['/requests/req-1']);
+    await user.click(await screen.findByRole('button', { name: /^setujui$/i }));
+
+    expect(screen.getByRole('button', { name: /menyetujui/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /minta perbaikan/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /tolak permohonan/i })).toBeDisabled();
+  });
+
   it('hides approve and correction actions before review starts', async () => {
     server.use(
       http.get('http://localhost:8080/api/requests/action-submitted', () =>
@@ -162,6 +189,38 @@ describe('request queue and review flow', () => {
     expect(screen.queryByRole('button', { name: /tolak permohonan/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /tandai sedang ditinjau/i })).not.toBeInTheDocument();
   });
+
+  it('shows the rejection reason and decision metadata in the decision panel', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/requests/action-rejected', () =>
+        HttpResponse.json({
+          ...requestDetailFixture({ id: 'action-rejected', status: 'REJECTED' }),
+          decision_reason: null,
+          status_history: [
+            {
+              status: 'SUBMITTED',
+              at: '2026-07-18T02:41:00.000Z',
+              action: 'submit',
+              by: 'Pemohon',
+            },
+            {
+              status: 'REJECTED',
+              at: '2026-07-20T09:10:00.000Z',
+              action: 'reject',
+              by: 'Admin Gampong',
+              reason: 'NIK pada lampiran tidak sesuai dengan data pemohon.',
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderApp(['/requests/action-rejected']);
+
+    expect(await screen.findByText('Permohonan ditolak')).toBeInTheDocument();
+    expect(screen.getByText('NIK pada lampiran tidak sesuai dengan data pemohon.')).toBeInTheDocument();
+    expect(screen.getByText('Oleh Admin Gampong')).toBeInTheDocument();
+  });
 });
 
 function requestDetailFixture({
@@ -169,7 +228,7 @@ function requestDetailFixture({
   status,
 }: {
   id: string;
-  status: 'SUBMITTED' | 'NEEDS_INFO';
+  status: 'SUBMITTED' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED';
 }) {
   return {
     id,

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers/resident_providers.dart';
+import '../../data/providers/content_providers.dart';
 import '../../data/models/resident_session.dart';
 import '../network/api_exception.dart';
 import '../theme/app_theme.dart';
@@ -355,6 +356,7 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
 
     try {
       await ref.read(residentSessionProvider.notifier).save(session);
+      await ref.read(notificationServiceProvider).linkResidentDevice(session);
     } catch (error) {
       debugPrint(
         'Failed to activate resident session after OTP verify: $error',

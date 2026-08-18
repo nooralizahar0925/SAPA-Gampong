@@ -115,11 +115,17 @@ class SuccessScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           FilledButton(
+            key: const Key('letter-success-home'),
             onPressed: () => context.goNamed(AppRouteNames.home),
             child: const Text('Kembali ke Beranda'),
           ),
           const SizedBox(height: 10),
           OutlinedButton(
+            key: const Key('letter-success-track'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.gold100,
+              side: const BorderSide(color: AppTheme.gold500),
+            ),
             onPressed: () => context.goNamed(AppRouteNames.tracking),
             child: const Text('Lacak Permohonan'),
           ),

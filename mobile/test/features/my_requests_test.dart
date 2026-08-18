@@ -248,6 +248,33 @@ void main() {
     expect(find.text('Batalkan'), findsNothing);
   });
 
+  testWidgets('sent request exposes its generated PDF action', (tester) async {
+    await tester.pumpWidget(
+      await _wrap(
+        requests: [
+          ResidentRequestItem(
+            id: 'req-sent',
+            referenceCode: 'GB-2026-000010',
+            letterType: 'L10',
+            status: 'SENT',
+            statusLabel: 'Terkirim',
+            createdAt: DateTime(2026, 8, 18),
+            updatedAt: DateTime(2026, 8, 18),
+            generatedPdfUrl: 'https://example.com/api/files/surat.pdf',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('request-open-pdf-req-sent')),
+      findsOneWidget,
+    );
+    expect(find.text('Buka / Unduh Surat PDF'), findsOneWidget);
+    expect(find.text('Surat tersedia di email'), findsNothing);
+  });
+
   testWidgets('request needing info can open prefilled correction flow', (
     tester,
   ) async {

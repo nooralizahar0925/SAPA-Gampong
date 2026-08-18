@@ -12,6 +12,7 @@ import { AppIcon } from '../components/AppIcon';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { PdfPreview } from '../components/PdfPreview';
 import { StatusBadge } from '../components/StatusBadge';
+import { alertApiError, confirmAction, toastSuccess } from '../lib/alerts';
 
 export function GeneratePage() {
   const { id = '' } = useParams();
@@ -43,6 +44,10 @@ export function GeneratePage() {
         queryClient.invalidateQueries({ queryKey: ['requests-overview'] }),
         queryClient.invalidateQueries({ queryKey: ['request-detail', id] }),
       ]);
+      await toastSuccess('PDF surat berhasil dibuat');
+    },
+    onError: (error) => {
+      void alertApiError(error, 'PDF surat tidak dapat dibuat.');
     },
   });
 
@@ -54,8 +59,32 @@ export function GeneratePage() {
         queryClient.invalidateQueries({ queryKey: ['requests-overview'] }),
         queryClient.invalidateQueries({ queryKey: ['request-detail', id] }),
       ]);
+      await toastSuccess('Surat berhasil dikirim ke email pemohon');
+    },
+    onError: (error) => {
+      void alertApiError(error, 'Surat tidak dapat dikirim.');
     },
   });
+
+  const runGenerate = async () => {
+    if (generateMutation.isPending || sendMutation.isPending) return;
+    const confirmed = await confirmAction({
+      title: detail?.generated_pdf_url ? 'Buat ulang PDF surat?' : 'Buat PDF surat?',
+      text: 'Pastikan data dan nomor surat sudah benar sebelum membuat dokumen resmi.',
+      confirmText: detail?.generated_pdf_url ? 'Buat Ulang PDF' : 'Buat PDF',
+    });
+    if (confirmed) generateMutation.mutate();
+  };
+
+  const runSend = async () => {
+    if (generateMutation.isPending || sendMutation.isPending) return;
+    const confirmed = await confirmAction({
+      title: 'Kirim surat ke pemohon?',
+      text: 'PDF resmi akan dikirim ke email pemohon dan status berubah menjadi terkirim.',
+      confirmText: 'Ya, Kirim Surat',
+    });
+    if (confirmed) sendMutation.mutate();
+  };
 
   if (detailQuery.isLoading) {
     return (
@@ -109,6 +138,7 @@ export function GeneratePage() {
   const canGenerate = detail.status === 'APPROVED' || detail.status === 'GENERATED';
   const canSend = effectiveStatus === 'GENERATED';
   const isReadyForPreview = detail.status === 'APPROVED' || detail.status === 'GENERATED' || detail.status === 'SENT';
+  const isActionPending = generateMutation.isPending || sendMutation.isPending;
 
   return (
     <DashboardFrame
@@ -174,22 +204,6 @@ export function GeneratePage() {
                   <strong className="mono-muted strong-text">{effectiveNomorSurat}</strong>
                 </div>
 
-                {generateMutation.error ? (
-                  <div className="error-box" role="alert">
-                    {generateMutation.error instanceof Error
-                      ? generateMutation.error.message
-                      : 'PDF surat tidak dapat dibuat.'}
-                  </div>
-                ) : null}
-
-                {sendMutation.error ? (
-                  <div className="error-box" role="alert">
-                    {sendMutation.error instanceof Error
-                      ? sendMutation.error.message
-                      : 'Surat tidak dapat dikirim.'}
-                  </div>
-                ) : null}
-
                 {sendMutation.isSuccess || detail.status === 'SENT' ? (
                   <div className="info-box" role="status">
                     <strong>Surat berhasil dikirim</strong>
@@ -201,18 +215,26 @@ export function GeneratePage() {
                   <button
                     className="table-action primary strong"
                     type="button"
-                    onClick={() => generateMutation.mutate()}
-                    disabled={!canGenerate || generateMutation.isPending || detail.status === 'SENT'}
+                    onClick={() => void runGenerate()}
+                    disabled={!canGenerate || isActionPending || detail.status === 'SENT'}
+                    aria-busy={generateMutation.isPending}
                   >
-                    {previewUrl ? 'Generate Ulang PDF' : 'Generate PDF'}
+                    {generateMutation.isPending ? (
+                      <PendingLabel text="Membuat PDF..." />
+                    ) : previewUrl ? (
+                      'Generate Ulang PDF'
+                    ) : (
+                      'Generate PDF'
+                    )}
                   </button>
                   <button
                     className="table-action gold"
                     type="button"
-                    onClick={() => sendMutation.mutate()}
-                    disabled={!canSend || sendMutation.isPending}
+                    onClick={() => void runSend()}
+                    disabled={!canSend || isActionPending}
+                    aria-busy={sendMutation.isPending}
                   >
-                    Kirim ke Email Pemohon
+                    {sendMutation.isPending ? <PendingLabel text="Mengirim..." /> : 'Kirim ke Email Pemohon'}
                   </button>
                 </div>
               </div>
@@ -274,5 +296,14 @@ export function GeneratePage() {
         </div>
       )}
     </DashboardFrame>
+  );
+}
+
+function PendingLabel({ text }: { text: string }) {
+  return (
+    <>
+      <span className="button-spinner" aria-hidden="true" />
+      {text}
+    </>
   );
 }

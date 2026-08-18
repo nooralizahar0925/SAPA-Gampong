@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,6 +65,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       child: ListView(
         children: [
           SapaTextField(
+            key: const Key('feedback-name'),
             controller: name,
             label: 'Nama Lengkap',
             validator: Validators.required,
@@ -76,12 +78,16 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           ),
           const SizedBox(height: 12),
           SapaTextField(
+            key: const Key('feedback-phone'),
             controller: phone,
             label: 'No. HP',
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: Validators.phone,
           ),
           const SizedBox(height: 12),
           SapaTextField(
+            key: const Key('feedback-body'),
             controller: body,
             label: 'Isi Laporan',
             validator: Validators.required,
@@ -105,7 +111,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppTheme.ink900,
                     ),
                   )
                 : const Icon(Icons.send_outlined),
@@ -327,12 +333,22 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ),
         const SizedBox(height: 32),
         OutlinedButton.icon(
+          key: const Key('feedback-success-history'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.gold100,
+            side: const BorderSide(color: AppTheme.gold500),
+          ),
           onPressed: () => context.goNamed(AppRouteNames.myFeedback),
           icon: const Icon(Icons.campaign_outlined),
           label: const Text('Lihat Laporan Saya'),
         ),
         const SizedBox(height: 10),
         FilledButton(
+          key: const Key('feedback-success-home'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.gold500,
+            foregroundColor: AppTheme.ink900,
+          ),
           onPressed: () => context.goNamed(AppRouteNames.home),
           child: const Text('Kembali ke Beranda'),
         ),

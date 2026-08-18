@@ -83,6 +83,7 @@ export async function confirmDelete(options: {
   confirmText?: string;
 }) {
   if (confirmOverride) return confirmOverride(options.title);
+  if (IS_TEST) return true;
 
   const result = await Swal.fire({
     icon: 'warning',
@@ -93,6 +94,30 @@ export async function confirmDelete(options: {
     cancelButtonText: 'Batal',
     ...BRAND,
     confirmButtonColor: '#c0392b',
+  });
+
+  return result.isConfirmed;
+}
+
+/** Confirmation for workflow actions such as approval, rejection, generation, and sending. */
+export async function confirmAction(options: {
+  title: string;
+  text: string;
+  confirmText: string;
+  tone?: 'primary' | 'danger';
+}) {
+  if (confirmOverride) return confirmOverride(options.title);
+  if (IS_TEST) return true;
+
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: options.title,
+    text: options.text,
+    showCancelButton: true,
+    confirmButtonText: options.confirmText,
+    cancelButtonText: 'Batal',
+    ...BRAND,
+    ...(options.tone === 'danger' ? { confirmButtonColor: '#c0392b' } : {}),
   });
 
   return result.isConfirmed;

@@ -95,8 +95,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: g800,
-          foregroundColor: Colors.white,
+          backgroundColor: gold500,
+          foregroundColor: ink900,
+          disabledBackgroundColor: g700,
+          disabledForegroundColor: g200,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           minimumSize: const Size.fromHeight(48),
         ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sapa_gampong/core/network/dio_client.dart';
+import 'package:sapa_gampong/core/theme/app_theme.dart';
 import 'package:sapa_gampong/data/models/attachment.dart';
 import 'package:sapa_gampong/data/models/feedback_model.dart';
 import 'package:sapa_gampong/data/providers/feedback_providers.dart';
@@ -81,6 +82,11 @@ Future<Widget> _wrap(
 }
 
 void main() {
+  Finder field(String key) => find.descendant(
+    of: find.byKey(Key(key)),
+    matching: find.byType(TextFormField),
+  );
+
   Future<void> scrollTo(WidgetTester tester, Finder finder) async {
     await tester.scrollUntilVisible(
       finder,
@@ -94,16 +100,10 @@ void main() {
     await tester.pumpWidget(await _wrap(repository));
     await tester.pumpAndSettle();
 
+    await tester.enterText(field('feedback-name'), 'Budi Santoso');
+    await tester.enterText(field('feedback-phone'), '081234567890');
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Nama Lengkap'),
-      'Budi Santoso',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'No. HP'),
-      '081234567890',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Isi Laporan'),
+      field('feedback-body'),
       'Lampu jalan dekat meunasah mati sejak kemarin.',
     );
     await scrollTo(tester, find.byKey(const Key('feedback-submit')));
@@ -118,6 +118,28 @@ void main() {
     expect(find.text('Laporan telah dikirim'), findsOneWidget);
     expect(find.text('LPR-A1B2C'), findsOneWidget);
     expect(find.text('Lihat Laporan Saya'), findsOneWidget);
+
+    final historyButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('feedback-success-history')),
+    );
+    expect(historyButton.style?.foregroundColor?.resolve({}), AppTheme.gold100);
+    await scrollTo(tester, find.byKey(const Key('feedback-success-home')));
+    final homeButton = tester.widget<FilledButton>(
+      find.byKey(const Key('feedback-success-home')),
+    );
+    expect(homeButton.style?.backgroundColor?.resolve({}), AppTheme.gold500);
+  });
+
+  testWidgets('phone field accepts digits only', (tester) async {
+    final repository = _FakeFeedbackRepository();
+    await tester.pumpWidget(await _wrap(repository));
+    await tester.pumpAndSettle();
+
+    final phoneField = field('feedback-phone');
+    await tester.enterText(phoneField, '08ab12-34');
+
+    final input = tester.widget<TextFormField>(phoneField);
+    expect(input.controller?.text, '081234');
   });
 
   testWidgets('requires verified email before showing the form', (
@@ -140,18 +162,9 @@ void main() {
     await tester.pumpWidget(await _wrap(repository, queue: queue));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Nama Lengkap'),
-      'Budi Santoso',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'No. HP'),
-      '081234567890',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Isi Laporan'),
-      'Lampu jalan mati.',
-    );
+    await tester.enterText(field('feedback-name'), 'Budi Santoso');
+    await tester.enterText(field('feedback-phone'), '081234567890');
+    await tester.enterText(field('feedback-body'), 'Lampu jalan mati.');
     await scrollTo(tester, find.byKey(const Key('feedback-submit')));
     await tester.tap(find.byKey(const Key('feedback-submit')));
     await tester.pumpAndSettle();
@@ -216,18 +229,9 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Nama Lengkap'),
-      'Budi Santoso',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'No. HP'),
-      '081234567890',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Isi Laporan'),
-      'Lampiran kerusakan jalan.',
-    );
+    await tester.enterText(field('feedback-name'), 'Budi Santoso');
+    await tester.enterText(field('feedback-phone'), '081234567890');
+    await tester.enterText(field('feedback-body'), 'Lampiran kerusakan jalan.');
     await tester.tap(find.byKey(const Key('feedback-submit')));
     await tester.pumpAndSettle();
 

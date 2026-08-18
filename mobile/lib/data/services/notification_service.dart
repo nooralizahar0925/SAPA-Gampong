@@ -12,6 +12,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/network/dio_client.dart';
 import '../../firebase_options.dart';
+import '../models/resident_session.dart';
 import 'app_preferences_service.dart';
 import 'content_cache_service.dart';
 import 'prayer_times_service.dart';
@@ -90,6 +91,7 @@ class NotificationService {
   Future<void> initializePush({
     AppPreferences? preferences,
     Future<AppPreferences> Function()? preferencesLoader,
+    Future<ResidentSession?> Function()? residentSessionLoader,
   }) async {
     await _ensureStaticLocalNotifications(_localNotifications);
     if (kIsWeb) return;
@@ -105,6 +107,8 @@ class NotificationService {
         (preferencesLoader == null ? null : await preferencesLoader());
     if (token != null) {
       await _registerDeviceToken(token, preferences: startupPreferences);
+      final session = await residentSessionLoader?.call();
+      if (session != null) await linkResidentDevice(session, token: token);
     }
 
     await _foregroundMessages?.cancel();
@@ -119,7 +123,34 @@ class NotificationService {
           ? preferences
           : await preferencesLoader();
       await _registerDeviceToken(token, preferences: latestPreferences);
+      final session = await residentSessionLoader?.call();
+      if (session != null) await linkResidentDevice(session, token: token);
     });
+  }
+
+  Future<void> linkResidentDevice(
+    ResidentSession session, {
+    String? token,
+  }) async {
+    if (kIsWeb || session.isExpired || !await _ensureFirebase()) return;
+
+    final currentToken =
+        token ??
+        _lastPushToken ??
+        await _readMessagingToken(FirebaseMessaging.instance);
+    if (currentToken == null) return;
+
+    try {
+      await _client.dio.post<Map<String, Object?>>(
+        '/resident/device-token',
+        data: {'token': currentToken, 'platform': _platformName()},
+        options: Options(
+          headers: {'Authorization': 'Bearer ${session.token}'},
+        ),
+      );
+    } on DioException catch (error) {
+      debugPrint('Failed to link resident push token: $error');
+    }
   }
 
   Future<void> syncDevicePreferences(AppPreferences preferences) async {

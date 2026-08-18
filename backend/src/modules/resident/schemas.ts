@@ -7,6 +7,7 @@ import {
   RequestDetailAttachment,
   RequestStatusSchema,
 } from '../requests/schemas';
+import { DeviceTokenBody } from '../notifications/schemas';
 
 export const ResidentEmailBody = registry.register(
   'ResidentEmailBody',
@@ -47,6 +48,19 @@ export const ResidentMeResponse = registry.register(
     email: z.string().email(),
     verified_at: z.string().datetime(),
     expires_at: z.string().datetime(),
+  }),
+);
+
+export const ResidentDeviceLinkBody = registry.register(
+  'ResidentDeviceLinkBody',
+  DeviceTokenBody,
+);
+
+export const ResidentDeviceLinkResponse = registry.register(
+  'ResidentDeviceLinkResponse',
+  z.object({
+    linked_requests: z.number().int().nonnegative(),
+    linked_feedback: z.number().int().nonnegative(),
   }),
 );
 
@@ -119,6 +133,7 @@ export const ResidentFeedbackResponse = registry.register(
 
 export type ResidentEmailBodyType = z.infer<typeof ResidentEmailBody>;
 export type ResidentVerifyOtpBodyType = z.infer<typeof ResidentVerifyOtpBody>;
+export type ResidentDeviceLinkBodyType = z.infer<typeof ResidentDeviceLinkBody>;
 export type ResidentRequestCorrectionBodyType = z.infer<
   typeof ResidentRequestCorrectionBody
 >;

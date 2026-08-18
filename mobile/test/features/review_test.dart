@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sapa_gampong/core/network/dio_client.dart';
 import 'package:sapa_gampong/data/models/attachment.dart';
+import 'package:sapa_gampong/data/models/field_spec.dart';
 import 'package:sapa_gampong/data/models/letter_request.dart';
 import 'package:sapa_gampong/data/models/letter_type.dart';
 import 'package:sapa_gampong/data/models/resident_session.dart';
@@ -126,7 +127,16 @@ Widget _buildApp(
           GoRoute(
             path: '/layanan/surat/form',
             name: 'letterForm',
-            builder: (context, state) => const Scaffold(body: Text('form')),
+            builder: (context, state) {
+              final extra = state.extra;
+              if (extra is LetterFlowDraft) {
+                return LetterFormScreen(
+                  letterType: extra.letterType,
+                  initialDraft: extra,
+                );
+              }
+              return const Scaffold(body: Text('draft missing'));
+            },
           ),
         ],
       ),
@@ -186,6 +196,46 @@ void main() {
         find.byKey(const Key('review-submit')),
       );
       expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('edit data keeps the complete request draft', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      const typeWithDate = LetterType(
+        code: 'L10',
+        name: 'Surat Rekomendasi',
+        description: '',
+        subjectIsApplicant: false,
+        requiredAttachments: ['KTP'],
+        fields: [
+          FieldSpec(
+            key: 'tanggal_permohonan',
+            label: 'Tanggal Permohonan',
+            type: FieldType.date,
+            required: true,
+          ),
+        ],
+      );
+      final draft = LetterFlowDraft(
+        letterType: typeWithDate,
+        applicantName: 'Noor Alizah',
+        applicantEmail: 'noor@example.com',
+        applicantPhone: '081234567890',
+        subjectData: const {'tanggal_permohonan': '2026-08-19'},
+        attachments: const [Attachment(fileId: 'ktp-1', kind: 'KTP')],
+        keperluan: 'Bantuan Sosial',
+      );
+      await tester.pumpWidget(_buildApp(draft));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('review-edit')));
+      await tester.tap(find.byKey(const Key('review-edit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Noor Alizah'), findsOneWidget);
+      expect(find.text('2026-08-19'), findsOneWidget);
     });
 
     testWidgets('successful submit navigates to success screen', (

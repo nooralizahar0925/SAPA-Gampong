@@ -7,8 +7,12 @@ import { prisma } from '../../lib/prisma';
 import { EmailService } from '../../services/email.service';
 import { signedUrl } from '../../services/storage.service';
 import { getLetterTemplateDefinition } from '../letters/service';
-import { notifyRequestStatusChanged } from '../notifications/service';
+import {
+  notifyRequestStatusChanged,
+  registerDeviceToken,
+} from '../notifications/service';
 import type {
+  ResidentDeviceLinkBodyType,
   ResidentEmailBodyType,
   ResidentRequestCorrectionBodyType,
   ResidentVerifyOtpBodyType,
@@ -140,6 +144,43 @@ export async function requireResidentSession(req: Request) {
 
 export async function getResidentMe(req: Request) {
   return requireResidentSession(req);
+}
+
+export async function linkResidentDevice(req: Request, input: ResidentDeviceLinkBodyType) {
+  const resident = await requireResidentSession(req);
+  const deviceToken = await registerDeviceToken(input);
+  const [requests, feedback] = await Promise.all([
+    prisma.letterRequest.findMany({
+      where: { applicantEmail: resident.email },
+      select: { id: true },
+    }),
+    prisma.feedback.findMany({
+      where: { email: resident.email },
+      select: { id: true },
+    }),
+  ]);
+
+  await prisma.$transaction([
+    prisma.requestPushToken.createMany({
+      data: requests.map((item) => ({
+        requestId: item.id,
+        deviceTokenId: deviceToken.id,
+      })),
+      skipDuplicates: true,
+    }),
+    prisma.feedbackPushToken.createMany({
+      data: feedback.map((item) => ({
+        feedbackId: item.id,
+        deviceTokenId: deviceToken.id,
+      })),
+      skipDuplicates: true,
+    }),
+  ]);
+
+  return {
+    linked_requests: requests.length,
+    linked_feedback: feedback.length,
+  };
 }
 
 export async function listResidentRequests(req: Request) {

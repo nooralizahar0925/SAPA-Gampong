@@ -6,6 +6,7 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers/app_preferences_providers.dart';
 import 'data/providers/content_providers.dart';
+import 'data/providers/resident_providers.dart';
 import 'data/providers/submission_queue_providers.dart';
 import 'data/services/prayer_times_service.dart';
 
@@ -30,6 +31,7 @@ class _AppState extends ConsumerState<App> {
     await notifications.initializePush(
       preferences: preferences,
       preferencesLoader: () => ref.read(appPreferencesProvider.future),
+      residentSessionLoader: () => ref.read(residentSessionProvider.future),
     );
 
     if (!preferences.adzanAlarmEnabled ||

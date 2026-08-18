@@ -263,4 +263,65 @@ describe('resident email session', () => {
       actorName: 'Warga',
     });
   });
+
+  it('links a verified resident device to all existing requests and feedback', async () => {
+    const token = await verifiedResidentToken();
+    const residentRequest = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-000099',
+        letterType: 'L1',
+        status: 'IN_REVIEW',
+        applicantName: 'Warga',
+        applicantEmail: 'warga@example.com',
+        subjectData: {},
+      },
+    });
+    const otherRequest = await testPrisma.letterRequest.create({
+      data: {
+        referenceCode: 'GB-2026-000100',
+        letterType: 'L1',
+        status: 'IN_REVIEW',
+        applicantName: 'Warga Lain',
+        applicantEmail: 'lain@example.com',
+        subjectData: {},
+      },
+    });
+    const residentFeedback = await testPrisma.feedback.create({
+      data: {
+        referenceCode: 'LPR-LINK1',
+        name: 'Warga',
+        email: 'warga@example.com',
+        body: 'Jalan perlu diperbaiki.',
+      },
+    });
+
+    const first = await request(app)
+      .post('/api/resident/device-token')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ token: 'rotated-fcm-token', platform: 'android' });
+    const second = await request(app)
+      .post('/api/resident/device-token')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ token: 'rotated-fcm-token', platform: 'android' });
+
+    expect(first.status).toBe(200);
+    expect(first.body).toEqual({ linked_requests: 1, linked_feedback: 1 });
+    expect(second.status).toBe(200);
+
+    const device = await testPrisma.deviceToken.findUnique({
+      where: { token: 'rotated-fcm-token' },
+      include: { requests: true, feedback: true },
+    });
+    expect(device?.requests.map((item) => item.requestId)).toEqual([
+      residentRequest.id,
+    ]);
+    expect(device?.requests).toHaveLength(1);
+    expect(device?.feedback.map((item) => item.feedbackId)).toEqual([
+      residentFeedback.id,
+    ]);
+    expect(device?.feedback).toHaveLength(1);
+    expect(device?.requests.map((item) => item.requestId)).not.toContain(
+      otherRequest.id,
+    );
+  });
 });

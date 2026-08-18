@@ -3,6 +3,8 @@ import { errorResponse } from '../../openapi/components';
 import { defineRoute } from '../../openapi/define-route';
 import {
   ResidentEmailBody,
+  ResidentDeviceLinkBody,
+  ResidentDeviceLinkResponse,
   ResidentFeedbackResponse,
   ResidentMeResponse,
   ResidentOtpResponse,
@@ -16,6 +18,7 @@ import {
 import {
   cancelResidentRequest,
   getResidentMe,
+  linkResidentDevice,
   listResidentFeedback,
   listResidentRequests,
   requestResidentOtp,
@@ -41,6 +44,25 @@ defineRoute(residentRouter, {
   },
   handler: async ({ body, res }) => {
     res.json(await requestResidentOtp(body));
+  },
+});
+
+defineRoute(residentRouter, {
+  method: 'post',
+  path: '/device-token',
+  fullPath: '/api/resident/device-token',
+  tags: ['Resident'],
+  summary: 'Link the current resident device to requests and feedback for the verified email',
+  body: ResidentDeviceLinkBody,
+  responses: {
+    200: {
+      description: 'Resident records linked to the current device',
+      content: { 'application/json': { schema: ResidentDeviceLinkResponse } },
+    },
+    401: errorResponse('Resident email verification is required'),
+  },
+  handler: async ({ body, req, res }) => {
+    res.json(await linkResidentDevice(req, body));
   },
 });
 

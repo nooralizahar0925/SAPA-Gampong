@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
@@ -233,12 +234,16 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                       ),
                     if (showDownload)
                       FilledButton.icon(
-                        onPressed: () {},
+                        key: Key('request-open-pdf-${item.id}'),
+                        onPressed: () => _openGeneratedPdf(
+                          context,
+                          item.generatedPdfUrl!,
+                        ),
                         icon: const Icon(
-                          Icons.picture_as_pdf_outlined,
+                          Icons.file_download_outlined,
                           size: 18,
                         ),
-                        label: const Text('Surat tersedia di email'),
+                        label: const Text('Buka / Unduh Surat PDF'),
                       ),
                   ],
                 ),
@@ -336,6 +341,29 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
       ),
     );
   }
+}
+
+Future<void> _openGeneratedPdf(BuildContext context, String rawUrl) async {
+  final uri = Uri.tryParse(rawUrl);
+  if (uri == null || !uri.hasScheme) {
+    _showPdfOpenError(context);
+    return;
+  }
+
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  } catch (_) {
+    // Expired signed URLs and missing PDF handlers share one resident-facing error.
+  }
+  if (context.mounted) _showPdfOpenError(context);
+}
+
+void _showPdfOpenError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Surat belum bisa dibuka. Muat ulang lalu coba lagi.'),
+    ),
+  );
 }
 
 class _StatusPill extends StatelessWidget {
