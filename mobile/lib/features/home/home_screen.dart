@@ -87,6 +87,13 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.pushNamed(AppRouteNames.prayer),
               ),
               _FeatureTile(
+                key: const Key('home-gallery'),
+                icon: Icons.photo_library_outlined,
+                title: 'Galeri',
+                subtitle: 'Foto & video kegiatan',
+                onTap: () => context.pushNamed(AppRouteNames.gallery),
+              ),
+              _FeatureTile(
                 key: const Key('home-feedback'),
                 icon: Icons.campaign_outlined,
                 title: StringsId.feedback,

@@ -1,7 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
 import { readStoredFile } from '../../services/storage.service';
-import { notifyRequestSent } from '../notifications/service';
+import { notifyRequestSent, notifyRequestStatusChanged } from '../notifications/service';
 
 export async function sendGeneratedRequest(id: string, adminUserId: string) {
   const found = await prisma.letterRequest.findUnique({
@@ -63,6 +63,17 @@ export async function sendGeneratedRequest(id: string, adminUserId: string) {
       },
     });
   });
+
+  try {
+    await notifyRequestStatusChanged({
+      requestId: found.id,
+      referenceCode: found.referenceCode,
+      letterType: found.letterType,
+      status: 'SENT',
+    });
+  } catch (error) {
+    console.error('Failed to send SENT request notification', error);
+  }
 
   return { status: 'SENT' as const };
 }

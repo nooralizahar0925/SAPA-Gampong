@@ -48,6 +48,16 @@ async function createAudioFile(name: string) {
   });
 }
 
+async function createVideoFile(name: string) {
+  return testPrisma.file.create({
+    data: {
+      storagePath: `content/${name}.mp4`,
+      mime: 'video/mp4',
+      size: 6 * 1024 * 1024,
+    },
+  });
+}
+
 describe('content module', () => {
   describe('village profile (singleton)', () => {
     it('reflects an admin PATCH in the public GET', async () => {
@@ -171,6 +181,217 @@ describe('content module', () => {
         .send({ image_file_id: 'does-not-exist' });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('gallery', () => {
+    it('creates, lists only active media publicly, and exposes inactive media to admins', async () => {
+      const token = await login();
+      const [photo, video] = await Promise.all([
+        createImageFile('gallery-photo'),
+        createVideoFile('gallery-video'),
+      ]);
+
+      const photoRes = await request(app)
+        .post('/api/content/gallery')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          media_type: 'photo',
+          file_id: photo.id,
+          title: 'Gotong royong dusun',
+          caption: 'Dokumentasi kegiatan warga.',
+          order: 1,
+        });
+
+      const videoRes = await request(app)
+        .post('/api/content/gallery')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          media_type: 'video',
+          file_id: video.id,
+          title: 'Cuplikan musyawarah',
+          active: false,
+          order: 0,
+        });
+
+      expect(photoRes.status).toBe(201);
+      expect(photoRes.body.media_type).toBe('photo');
+      expect(photoRes.body.media_url).toContain(`/api/uploads/${photo.id}?`);
+      expect(videoRes.status).toBe(201);
+
+      const publicRes = await request(app).get('/api/content/gallery');
+      expect(publicRes.status).toBe(200);
+      expect(publicRes.body).toHaveLength(1);
+      expect(publicRes.body[0].title).toBe('Gotong royong dusun');
+
+      const adminRes = await request(app)
+        .get('/api/content/gallery/admin')
+        .set('Authorization', `Bearer ${token}`);
+      expect(adminRes.status).toBe(200);
+      expect(adminRes.body.map((item: { id: string }) => item.id)).toEqual([
+        videoRes.body.id,
+        photoRes.body.id,
+      ]);
+    });
+
+    it('updates, reorders, and deletes gallery items', async () => {
+      const token = await login();
+      const [firstFile, secondFile] = await Promise.all([
+        createImageFile('gallery-a'),
+        createImageFile('gallery-b'),
+      ]);
+
+      const first = await request(app)
+        .post('/api/content/gallery')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ media_type: 'photo', file_id: firstFile.id, title: 'Kegiatan A' });
+
+      const second = await request(app)
+        .post('/api/content/gallery')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ media_type: 'photo', file_id: secondFile.id, title: 'Kegiatan B' });
+
+      const updated = await request(app)
+        .patch(`/api/content/gallery/${first.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Kegiatan A diperbarui', active: false });
+
+      expect(updated.status).toBe(200);
+      expect(updated.body.title).toBe('Kegiatan A diperbarui');
+      expect(updated.body.active).toBe(false);
+
+      const reordered = await request(app)
+        .post('/api/content/gallery/reorder')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [second.body.id, first.body.id] });
+
+      expect(reordered.status).toBe(200);
+      expect(reordered.body.map((item: { id: string }) => item.id)).toEqual([
+        second.body.id,
+        first.body.id,
+      ]);
+
+      const removed = await request(app)
+        .delete(`/api/content/gallery/${first.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(removed.status).toBe(204);
+
+      const adminRes = await request(app)
+        .get('/api/content/gallery/admin')
+        .set('Authorization', `Bearer ${token}`);
+      expect(adminRes.body.map((item: { id: string }) => item.id)).toEqual([second.body.id]);
+    });
+
+    it('rejects gallery media with the wrong file mime type', async () => {
+      const token = await login();
+      const image = await createImageFile('gallery-not-video');
+
+      const res = await request(app)
+        .post('/api/content/gallery')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ media_type: 'video', file_id: image.id, title: 'Salah tipe' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.fields.file_id).toBe('File galeri video harus berupa video');
+    });
+  });
+
+  describe('social media links', () => {
+    it('creates, lists only active links publicly, and exposes inactive links to admins', async () => {
+      const token = await login();
+
+      const instagram = await request(app)
+        .post('/api/content/social-links')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          platform: 'instagram',
+          label: 'Instagram Gampong Blang',
+          url: 'https://www.instagram.com/gampongblang',
+          order: 1,
+        });
+
+      const youtube = await request(app)
+        .post('/api/content/social-links')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          platform: 'youtube',
+          label: 'YouTube Gampong Blang',
+          url: 'https://www.youtube.com/@gampongblang',
+          active: false,
+          order: 0,
+        });
+
+      expect(instagram.status).toBe(201);
+      expect(instagram.body.icon_url).toContain('domain_url=https://instagram.com');
+      expect(youtube.status).toBe(201);
+
+      const publicRes = await request(app).get('/api/content/social-links');
+      expect(publicRes.status).toBe(200);
+      expect(publicRes.body).toHaveLength(1);
+      expect(publicRes.body[0].label).toBe('Instagram Gampong Blang');
+
+      const adminRes = await request(app)
+        .get('/api/content/social-links/admin')
+        .set('Authorization', `Bearer ${token}`);
+      expect(adminRes.status).toBe(200);
+      expect(adminRes.body.map((item: { id: string }) => item.id)).toEqual([
+        youtube.body.id,
+        instagram.body.id,
+      ]);
+    });
+
+    it('updates, reorders, and deletes social media links', async () => {
+      const token = await login();
+
+      const first = await request(app)
+        .post('/api/content/social-links')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          platform: 'facebook',
+          label: 'Facebook',
+          url: 'https://www.facebook.com/gampongblang',
+        });
+
+      const second = await request(app)
+        .post('/api/content/social-links')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          platform: 'website',
+          label: 'Website',
+          url: 'https://gampongblangdigital.com',
+        });
+
+      const updated = await request(app)
+        .patch(`/api/content/social-links/${first.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ label: 'Facebook Resmi', active: false });
+
+      expect(updated.status).toBe(200);
+      expect(updated.body.label).toBe('Facebook Resmi');
+      expect(updated.body.active).toBe(false);
+
+      const reordered = await request(app)
+        .post('/api/content/social-links/reorder')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [second.body.id, first.body.id] });
+
+      expect(reordered.status).toBe(200);
+      expect(reordered.body.map((item: { id: string }) => item.id)).toEqual([
+        second.body.id,
+        first.body.id,
+      ]);
+
+      const removed = await request(app)
+        .delete(`/api/content/social-links/${first.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(removed.status).toBe(204);
+
+      const adminRes = await request(app)
+        .get('/api/content/social-links/admin')
+        .set('Authorization', `Bearer ${token}`);
+      expect(adminRes.body.map((item: { id: string }) => item.id)).toEqual([second.body.id]);
     });
   });
 

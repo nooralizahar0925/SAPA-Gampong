@@ -525,7 +525,7 @@ export type UploadResponse = {
  * Uploads via multipart. Content-Type is deliberately left unset so the browser adds
  * the multipart boundary itself; apiRequest only defaults it to JSON when absent.
  */
-export function uploadFileRequest(file: File, kind: 'photo' | 'document' | 'audio' = 'photo') {
+export function uploadFileRequest(file: File, kind: 'photo' | 'document' | 'audio' | 'video' = 'photo') {
   const body = new FormData();
   body.append('kind', kind);
   body.append('file', file);
@@ -542,6 +542,43 @@ export type BannerSlide = {
   active: boolean;
   start_at: string | null;
   end_at: string | null;
+};
+
+export type GalleryMediaType = 'photo' | 'video';
+
+export type GalleryItem = {
+  id: string;
+  media_type: GalleryMediaType;
+  file_id: string;
+  media_url: string | null;
+  title: string;
+  caption: string | null;
+  order: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SocialMediaPlatform =
+  | 'facebook'
+  | 'instagram'
+  | 'youtube'
+  | 'tiktok'
+  | 'whatsapp'
+  | 'x'
+  | 'website'
+  | 'other';
+
+export type SocialMediaLink = {
+  id: string;
+  platform: SocialMediaPlatform;
+  label: string;
+  url: string;
+  icon_url: string | null;
+  order: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type VillageProfile = {
@@ -664,6 +701,84 @@ export function deleteBannerRequest(id: string) {
 
 export function reorderBannersRequest(ids: string[]) {
   return apiRequest<BannerSlide[]>('/content/banners/reorder', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export function listGalleryItemsRequest() {
+  return apiRequest<GalleryItem[]>('/content/gallery/admin');
+}
+
+export function createGalleryItemRequest(input: {
+  media_type: GalleryMediaType;
+  file_id: string;
+  title: string;
+  caption?: string | null;
+  order?: number;
+  active?: boolean;
+}) {
+  return apiRequest<GalleryItem>('/content/gallery', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateGalleryItemRequest(
+  id: string,
+  input: Partial<Pick<GalleryItem, 'media_type' | 'file_id' | 'title' | 'caption' | 'order' | 'active'>>,
+) {
+  return apiRequest<GalleryItem>(`/content/gallery/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteGalleryItemRequest(id: string) {
+  return apiRequest<void>(`/content/gallery/${id}`, { method: 'DELETE' });
+}
+
+export function reorderGalleryItemsRequest(ids: string[]) {
+  return apiRequest<GalleryItem[]>('/content/gallery/reorder', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export function listSocialMediaLinksRequest() {
+  return apiRequest<SocialMediaLink[]>('/content/social-links/admin');
+}
+
+export function createSocialMediaLinkRequest(input: {
+  platform: SocialMediaPlatform;
+  label: string;
+  url: string;
+  icon_url?: string | null;
+  order?: number;
+  active?: boolean;
+}) {
+  return apiRequest<SocialMediaLink>('/content/social-links', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateSocialMediaLinkRequest(
+  id: string,
+  input: Partial<Pick<SocialMediaLink, 'platform' | 'label' | 'url' | 'icon_url' | 'order' | 'active'>>,
+) {
+  return apiRequest<SocialMediaLink>(`/content/social-links/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteSocialMediaLinkRequest(id: string) {
+  return apiRequest<void>(`/content/social-links/${id}`, { method: 'DELETE' });
+}
+
+export function reorderSocialMediaLinksRequest(ids: string[]) {
+  return apiRequest<SocialMediaLink[]>('/content/social-links/reorder', {
     method: 'POST',
     body: JSON.stringify({ ids }),
   });

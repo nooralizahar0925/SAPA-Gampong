@@ -25,7 +25,10 @@ class ServicesScreen extends ConsumerWidget {
             key: const Key('service-letter-request'),
             icon: Icons.description_outlined,
             title: 'Permohonan Pembuatan Surat',
-            subtitle: letterTypeCountLabel(letterTypes, suffix: 'surat keterangan'),
+            subtitle: letterTypeCountLabel(
+              letterTypes,
+              suffix: 'surat keterangan',
+            ),
             onTap: () => context.pushNamed(AppRouteNames.letterCatalog),
           ),
           SapaListTile(
@@ -56,6 +59,13 @@ class ServicesScreen extends ConsumerWidget {
             title: 'Demografi',
             subtitle: 'Statistik penduduk umum',
             onTap: () => context.pushNamed(AppRouteNames.demographics),
+          ),
+          SapaListTile(
+            key: const Key('service-gallery'),
+            icon: Icons.photo_library_outlined,
+            title: 'Galeri',
+            subtitle: 'Foto dan video kegiatan gampong',
+            onTap: () => context.pushNamed(AppRouteNames.gallery),
           ),
           SapaListTile(
             key: const Key('service-prayer'),

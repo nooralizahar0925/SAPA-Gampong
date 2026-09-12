@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createSocialMediaLinkRequest,
+  deleteSocialMediaLinkRequest,
   getVillageProfileRequest,
   getVisionMissionRequest,
   listDemographicsRequest,
+  listSocialMediaLinksRequest,
+  reorderSocialMediaLinksRequest,
   updateDemographicsRequest,
+  updateSocialMediaLinkRequest,
   updateVillageProfileRequest,
   updateVisionMissionRequest,
   type DemographicBlock,
+  type SocialMediaLink,
+  type SocialMediaPlatform,
 } from '../../api/client';
 import { alertApiError, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
@@ -31,6 +38,11 @@ type ProfileForm = {
   missions: string[];
 };
 
+type DraftSocialLink = SocialMediaLink & {
+  localId: string;
+  isNew?: boolean;
+};
+
 const EMPTY: ProfileForm = {
   name: '',
   kemukiman: '',
@@ -49,6 +61,80 @@ const EMPTY: ProfileForm = {
 
 const DESCRIPTION_LIMIT = 600;
 
+const SOCIAL_PLATFORM_OPTIONS: Array<{ value: SocialMediaPlatform; label: string }> = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'x', label: 'X' },
+  { value: 'website', label: 'Website' },
+  { value: 'other', label: 'Lainnya' },
+];
+
+function defaultSocialLabel(platform: SocialMediaPlatform) {
+  return SOCIAL_PLATFORM_OPTIONS.find((item) => item.value === platform)?.label ?? 'Media Sosial';
+}
+
+function defaultSocialUrl(platform: SocialMediaPlatform) {
+  switch (platform) {
+    case 'instagram':
+      return 'https://www.instagram.com/';
+    case 'facebook':
+      return 'https://www.facebook.com/';
+    case 'youtube':
+      return 'https://www.youtube.com/';
+    case 'tiktok':
+      return 'https://www.tiktok.com/@';
+    case 'whatsapp':
+      return 'https://wa.me/';
+    case 'x':
+      return 'https://x.com/';
+    case 'website':
+    case 'other':
+      return 'https://';
+  }
+}
+
+function defaultSocialIconUrl(platform: SocialMediaPlatform) {
+  const domain = {
+    facebook: 'facebook.com',
+    instagram: 'instagram.com',
+    youtube: 'youtube.com',
+    tiktok: 'tiktok.com',
+    whatsapp: 'whatsapp.com',
+    x: 'x.com',
+    website: 'gampongblangdigital.com',
+    other: 'gampongblangdigital.com',
+  }[platform];
+
+  return `https://www.google.com/s2/favicons?sz=64&domain_url=https://${domain}`;
+}
+
+function reorderedSocialLinks(items: DraftSocialLink[], index: number, direction: -1 | 1): DraftSocialLink[] {
+  const next = [...items];
+  const target = index + direction;
+  if (target < 0 || target >= next.length) return next;
+
+  [next[index], next[target]] = [next[target], next[index]];
+  return next.map((item, order) => ({ ...item, order }));
+}
+
+function sameOrder(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function socialLinkChanged(current: DraftSocialLink, original: SocialMediaLink) {
+  return (
+    current.platform !== original.platform ||
+    current.label !== original.label ||
+    current.url !== original.url ||
+    current.icon_url !== original.icon_url ||
+    current.order !== original.order ||
+    current.active !== original.active
+  );
+}
+
 function optionalNumber(value: string): number | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -58,6 +144,7 @@ function optionalNumber(value: string): number | null {
 
 export function ProfileTab() {
   const [form, setForm] = useState<ProfileForm>(EMPTY);
+  const [socialLinks, setSocialLinks] = useState<DraftSocialLink[]>([]);
   const markDirty = useMarkDirty();
   const queryClient = useQueryClient();
 
@@ -74,6 +161,11 @@ export function ProfileTab() {
   const demographicsQuery = useQuery({
     queryKey: ['content', 'demographics'],
     queryFn: listDemographicsRequest,
+  });
+
+  const socialLinksQuery = useQuery({
+    queryKey: ['content', 'social-links'],
+    queryFn: listSocialMediaLinksRequest,
   });
 
   /**
@@ -129,6 +221,11 @@ export function ProfileTab() {
     }));
   }, [visionQuery.data]);
 
+  useEffect(() => {
+    if (!socialLinksQuery.data) return;
+    setSocialLinks(socialLinksQuery.data.map((item) => ({ ...item, localId: item.id })));
+  }, [socialLinksQuery.data]);
+
   useRegisterSave(async () => {
     // Required columns are omitted rather than sent blank: the API rejects empty
     // strings for name/kecamatan/kabupaten, and an untouched field should not be
@@ -157,7 +254,9 @@ export function ProfileTab() {
       ...(form.vision.trim() ? { vision: form.vision.trim() } : {}),
       missions,
     });
-  }, [form]);
+
+    await saveSocialLinks(socialLinks, socialLinksQuery.data ?? []);
+  }, [form, socialLinks, socialLinksQuery.data]);
 
   function field(key: keyof ProfileForm) {
     return {
@@ -167,6 +266,116 @@ export function ProfileTab() {
         setForm((prev) => ({ ...prev, [key]: event.target.value }));
       },
     };
+  }
+
+  async function saveSocialLinks(drafts: DraftSocialLink[], original: SocialMediaLink[]) {
+    const invalid = drafts.find((item) => !item.label.trim() || !item.url.trim());
+    if (invalid) {
+      throw new Error('Nama dan tautan media sosial wajib diisi.');
+    }
+
+    const originalById = new Map(original.map((item) => [item.id, item]));
+    const originalIds = original.map((item) => item.id);
+    const keptOriginalIds = drafts.filter((item) => !item.isNew).map((item) => item.id);
+    const deletedIds = originalIds.filter((id) => !keptOriginalIds.includes(id));
+    const createdIds = new Map<string, string>();
+
+    for (const id of deletedIds) {
+      await deleteSocialMediaLinkRequest(id);
+    }
+
+    for (const [index, item] of drafts.entries()) {
+      if (!item.isNew) continue;
+      const created = await createSocialMediaLinkRequest({
+        platform: item.platform,
+        label: item.label.trim(),
+        url: item.url.trim(),
+        icon_url: item.icon_url?.trim() || null,
+        order: index,
+        active: item.active,
+      });
+      createdIds.set(item.localId, created.id);
+    }
+
+    for (const item of drafts) {
+      if (item.isNew) continue;
+      const originalItem = originalById.get(item.id);
+      if (!originalItem || !socialLinkChanged(item, originalItem)) continue;
+      await updateSocialMediaLinkRequest(item.id, {
+        platform: item.platform,
+        label: item.label.trim(),
+        url: item.url.trim(),
+        icon_url: item.icon_url?.trim() || null,
+        order: item.order,
+        active: item.active,
+      });
+    }
+
+    const finalIds = drafts.map((item) => (item.isNew ? createdIds.get(item.localId)! : item.id));
+    if (finalIds.length > 0 && !sameOrder(finalIds, originalIds)) {
+      await reorderSocialMediaLinksRequest(finalIds);
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['content', 'social-links'] });
+  }
+
+  function addSocialLink() {
+    const platform: SocialMediaPlatform = 'instagram';
+    const now = new Date().toISOString();
+    const localId = `new-social-${Date.now()}`;
+    markDirty();
+    setSocialLinks((prev) => [
+      ...prev,
+      {
+        id: localId,
+        localId,
+        isNew: true,
+        platform,
+        label: defaultSocialLabel(platform),
+        url: defaultSocialUrl(platform),
+        icon_url: null,
+        order: prev.length,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      },
+    ]);
+  }
+
+  function updateSocialDraft(localId: string, patch: Partial<DraftSocialLink>) {
+    markDirty();
+    setSocialLinks((prev) => prev.map((item) => (item.localId === localId ? { ...item, ...patch } : item)));
+  }
+
+  function updateSocialPlatform(localId: string, platform: SocialMediaPlatform) {
+    markDirty();
+    setSocialLinks((prev) =>
+      prev.map((item) =>
+        item.localId === localId
+          ? {
+              ...item,
+              platform,
+              label: item.label === defaultSocialLabel(item.platform) ? defaultSocialLabel(platform) : item.label,
+              url: item.url === defaultSocialUrl(item.platform) ? defaultSocialUrl(platform) : item.url,
+              icon_url: null,
+            }
+          : item,
+      ),
+    );
+  }
+
+  function moveSocialLink(index: number, direction: -1 | 1) {
+    markDirty();
+    setSocialLinks((prev) => reorderedSocialLinks(prev, index, direction));
+  }
+
+  function removeSocialLink(localId: string) {
+    markDirty();
+    setSocialLinks((prev) =>
+      prev
+        .filter((item) => item.localId !== localId)
+        .map((item, order) => ({ ...item, order })),
+    );
   }
 
   const blocks = demographicsQuery.data ?? [];
@@ -275,6 +484,113 @@ export function ProfileTab() {
             <small className="field-hint">
               Seret untuk mengubah urutan. Urutan ini dipakai pada layar Profil Desa.
             </small>
+          </div>
+        </section>
+
+        <section className="detail-card">
+          <div className="detail-card-head">
+            <div>
+              <h2>Media Sosial</h2>
+              <small className="detail-card-note">
+                Tautan aktif tampil di Profil Desa aplikasi warga, tepat di bawah Batas Wilayah.
+              </small>
+            </div>
+            <button className="secondary-button" type="button" onClick={addSocialLink}>
+              <AppIcon name="megaphone" />
+              Tambah media sosial
+            </button>
+          </div>
+
+          {socialLinksQuery.isLoading ? <div className="loading-state">Memuat media sosial...</div> : null}
+
+          {socialLinks.length === 0 && !socialLinksQuery.isLoading ? (
+            <p className="empty-state">
+              Belum ada media sosial. Tambahkan Instagram, Facebook, YouTube, WhatsApp, atau tautan resmi lain.
+            </p>
+          ) : null}
+
+          <div className="social-link-list">
+            {socialLinks.map((item, index) => (
+              <div className="social-link-row" data-testid="social-link-row" key={item.localId}>
+                <div className="social-link-icon-preview">
+                  <img src={item.icon_url ?? defaultSocialIconUrl(item.platform)} alt="" />
+                </div>
+
+                <div className="social-link-fields">
+                  <div className="field">
+                    <label htmlFor={`social-platform-${item.localId}`}>Platform</label>
+                    <select
+                      id={`social-platform-${item.localId}`}
+                      value={item.platform}
+                      onChange={(event) => updateSocialPlatform(item.localId, event.target.value as SocialMediaPlatform)}
+                    >
+                      {SOCIAL_PLATFORM_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor={`social-label-${item.localId}`}>Nama tampilan</label>
+                    <input
+                      id={`social-label-${item.localId}`}
+                      value={item.label}
+                      maxLength={80}
+                      onChange={(event) => updateSocialDraft(item.localId, { label: event.target.value })}
+                    />
+                  </div>
+                  <div className="field span-2">
+                    <label htmlFor={`social-url-${item.localId}`}>Tautan</label>
+                    <input
+                      id={`social-url-${item.localId}`}
+                      type="url"
+                      value={item.url}
+                      onChange={(event) => updateSocialDraft(item.localId, { url: event.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="social-link-actions">
+                  <label className="gallery-publish-toggle">
+                    <input
+                      type="checkbox"
+                      checked={item.active}
+                      onChange={(event) => updateSocialDraft(item.localId, { active: event.target.checked })}
+                    />
+                    <span>{item.active ? 'Tampil' : 'Disembunyikan'}</span>
+                  </label>
+                  <div className="banner-row-actions">
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      aria-label={`Naikkan media sosial ${index + 1}`}
+                      disabled={index === 0}
+                      onClick={() => moveSocialLink(index, -1)}
+                    >
+                      <AppIcon name="chevronUp" />
+                    </button>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      aria-label={`Turunkan media sosial ${index + 1}`}
+                      disabled={index === socialLinks.length - 1}
+                      onClick={() => moveSocialLink(index, 1)}
+                    >
+                      <AppIcon name="chevronDown" />
+                    </button>
+                    <button
+                      className="ghost-button danger"
+                      type="button"
+                      aria-label={`Hapus media sosial ${index + 1}`}
+                      onClick={() => removeSocialLink(item.localId)}
+                    >
+                      <AppIcon name="x" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </div>

@@ -55,6 +55,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Konten Aplikasi',
     items: [
       { label: 'Banner Beranda', icon: 'layout', to: '/content/banners', matchPrefix: '/content/banners' },
+      { label: 'Galeri', icon: 'image', to: '/content/gallery', matchPrefix: '/content/gallery' },
       { label: 'Profil Desa', icon: 'landmark', to: '/content/profile', matchPrefix: '/content/profile' },
       {
         label: 'Perangkat Gampong',
@@ -73,6 +74,12 @@ const NAV_SECTIONS: NavSection[] = [
         icon: 'chart',
         to: '/content/demographics',
         matchPrefix: '/content/demographics',
+      },
+      {
+        label: 'Potensi Desa',
+        icon: 'archive',
+        to: '/content/strengths',
+        matchPrefix: '/content/strengths',
       },
     ],
   },

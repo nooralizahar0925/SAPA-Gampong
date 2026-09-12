@@ -2,6 +2,7 @@ import type { FeedbackStatus, PushPlatform, RequestStatus } from '@prisma/client
 import type { ServiceAccount } from 'firebase-admin';
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
+import type { MulticastMessage } from 'firebase-admin/messaging';
 import { getLetterTemplateDefinition } from '../letters/service';
 import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
@@ -54,18 +55,9 @@ class FirebasePushTransport implements PushTransport {
 
     for (let start = 0; start < tokens.length; start += 500) {
       const batch = tokens.slice(start, start + 500);
-      const response = await getMessaging().sendEachForMulticast({
-        tokens: batch,
-        notification: {
-          title: payload.title,
-          body: payload.body,
-        },
-        data: {
-          event: payload.event,
-          reference_code: payload.referenceCode,
-          request_id: payload.requestId,
-        },
-      });
+      const response = await getMessaging().sendEachForMulticast(
+        firebaseMessageForTokens(batch, payload),
+      );
 
       successCount += response.successCount;
       failureCount += response.failureCount;
@@ -79,6 +71,51 @@ class FirebasePushTransport implements PushTransport {
 
     return { successCount, failureCount, invalidTokens };
   }
+}
+
+/**
+ * Android uses one data-only, high-priority path in every app state. The Flutter
+ * background handler then creates the visible local notification. Mixing FCM's
+ * automatic notification UI with local foreground notifications caused later
+ * workflow events to be handled differently and could collapse pending updates.
+ */
+export function firebaseMessageForTokens(
+  tokens: string[],
+  payload: PushPayload,
+): MulticastMessage {
+  return {
+    tokens,
+    data: {
+      event: payload.event,
+      title: payload.title,
+      body: payload.body,
+      reference_code: payload.referenceCode,
+      request_id: payload.requestId,
+    },
+    android: {
+      priority: 'high',
+      ttl: 24 * 60 * 60 * 1000,
+    },
+    apns: {
+      headers: {
+        'apns-priority': '10',
+        'apns-push-type': 'alert',
+      },
+      payload: {
+        aps: {
+          alert: { title: payload.title, body: payload.body },
+          sound: 'default',
+          threadId: payload.referenceCode,
+        },
+      },
+    },
+    webpush: {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+    },
+  };
 }
 
 let pushTransport: PushTransport = createDefaultPushTransport();
@@ -337,13 +374,6 @@ export async function notifyRequestSent(input: {
       logoAttachment,
     ],
   });
-
-  await notifyRequestStatusChanged({
-    requestId: input.requestId,
-    referenceCode: input.referenceCode,
-    letterType: input.letterType,
-    status: 'SENT',
-  });
 }
 
 export async function notifyRequestRejected(input: {
@@ -382,7 +412,6 @@ export async function notifyRequestRejected(input: {
 }
 
 export async function notifyFeedbackReply(input: {
-  feedbackId?: string;
   reporterEmail: string;
   reporterName: string;
   referenceCode: string;
@@ -412,18 +441,6 @@ export async function notifyFeedbackReply(input: {
     html,
     attachments: [logoAttachment],
   });
-
-  if (input.feedbackId) {
-    try {
-      await notifyFeedbackStatusChanged({
-        feedbackId: input.feedbackId,
-        referenceCode: input.referenceCode,
-        status: 'responded',
-      });
-    } catch (error) {
-      logNotificationFailure('feedback reply push', error);
-    }
-  }
 }
 
 async function dispatchResidentPush(requestId: string, payload: PushPayload) {

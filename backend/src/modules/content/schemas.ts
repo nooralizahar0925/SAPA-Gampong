@@ -55,6 +55,113 @@ export const ReorderBannerSlidesBody = registry.register(
 );
 
 /* -------------------------------------------------------------------------- */
+/* Gallery                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export const GalleryMediaType = registry.register(
+  'GalleryMediaType',
+  z.enum(['photo', 'video']),
+);
+
+export const GalleryItemResponse = registry.register(
+  'GalleryItemResponse',
+  z.object({
+    id: z.string(),
+    media_type: GalleryMediaType,
+    file_id: z.string(),
+    media_url: z.string().nullable(),
+    title: z.string(),
+    caption: z.string().nullable(),
+    order: z.number().int(),
+    active: z.boolean(),
+    created_at: z.string(),
+    updated_at: z.string(),
+  }),
+);
+
+export const GalleryItemListResponse = registry.register(
+  'GalleryItemListResponse',
+  z.array(GalleryItemResponse),
+);
+
+export const CreateGalleryItemBody = registry.register(
+  'CreateGalleryItemBody',
+  z.object({
+    media_type: GalleryMediaType,
+    file_id: z.string().min(1),
+    title: z.string().min(1).max(160),
+    caption: z.string().max(1000).nullish(),
+    order: z.number().int().min(0).optional(),
+    active: z.boolean().optional(),
+  }),
+);
+
+export const UpdateGalleryItemBody = registry.register(
+  'UpdateGalleryItemBody',
+  CreateGalleryItemBody.partial(),
+);
+
+export const ReorderGalleryItemsBody = registry.register(
+  'ReorderGalleryItemsBody',
+  z.object({
+    ids: z.array(z.string().min(1)).min(1),
+  }),
+);
+
+/* -------------------------------------------------------------------------- */
+/* Social media links                                                         */
+/* -------------------------------------------------------------------------- */
+
+export const SocialMediaPlatform = registry.register(
+  'SocialMediaPlatform',
+  z.enum(['facebook', 'instagram', 'youtube', 'tiktok', 'whatsapp', 'x', 'website', 'other']),
+);
+
+export const SocialMediaLinkResponse = registry.register(
+  'SocialMediaLinkResponse',
+  z.object({
+    id: z.string(),
+    platform: SocialMediaPlatform,
+    label: z.string(),
+    url: z.string().url(),
+    icon_url: z.string().url().nullable(),
+    order: z.number().int(),
+    active: z.boolean(),
+    created_at: z.string(),
+    updated_at: z.string(),
+  }),
+);
+
+export const SocialMediaLinkListResponse = registry.register(
+  'SocialMediaLinkListResponse',
+  z.array(SocialMediaLinkResponse),
+);
+
+export const CreateSocialMediaLinkBody = registry.register(
+  'CreateSocialMediaLinkBody',
+  z.object({
+    platform: SocialMediaPlatform,
+    label: z.string().min(1).max(80),
+    url: z.string().url(),
+    icon_url: z.string().url().nullish(),
+    order: z.number().int().min(0).optional(),
+    active: z.boolean().optional(),
+  }),
+);
+
+export const UpdateSocialMediaLinkBody = registry.register(
+  'UpdateSocialMediaLinkBody',
+  CreateSocialMediaLinkBody.partial(),
+);
+
+export const ReorderSocialMediaLinksBody = registry.register(
+  'ReorderSocialMediaLinksBody',
+  z.object({
+    ids: z.array(z.string().min(1)).min(1),
+  }),
+);
+
+/* -------------------------------------------------------------------------- */
 /* Village profile (singleton)                                                */
 /* -------------------------------------------------------------------------- */
 

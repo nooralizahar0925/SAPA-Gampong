@@ -6,6 +6,7 @@ import '../../data/models/resident_session.dart';
 import '../../features/demographics/demographics_screen.dart';
 import '../../features/feedback/feedback_screen.dart';
 import '../../features/feedback/my_feedback_screen.dart';
+import '../../features/gallery/gallery_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/letters/attachment_screen.dart';
 import '../../features/letters/letter_catalog_screen.dart';
@@ -43,6 +44,7 @@ class AppRouteNames {
   static const prayer = 'prayer';
   static const demographics = 'demographics';
   static const feedback = 'feedback';
+  static const gallery = 'gallery';
   static const myFeedback = 'myFeedback';
   static const myFeedbackDetail = 'myFeedbackDetail';
   static const verify = 'verify';
@@ -174,6 +176,11 @@ class AppRouter {
         path: '/demografi',
         name: AppRouteNames.demographics,
         builder: (context, state) => const DemographicsScreen(),
+      ),
+      GoRoute(
+        path: '/galeri',
+        name: AppRouteNames.gallery,
+        builder: (context, state) => const GalleryScreen(),
       ),
       GoRoute(
         path: '/pelaporan',

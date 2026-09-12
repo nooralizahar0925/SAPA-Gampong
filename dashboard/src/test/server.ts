@@ -5,6 +5,7 @@ import type {
   BannerSlide,
   DemographicBlock,
   EmailProviderSettingsResponse,
+  GalleryItem,
   LetterTemplateDefinition,
   LetterTypeDefinition,
   LetterTypeCode,
@@ -12,6 +13,7 @@ import type {
   Mosque,
   Official,
   PrayerConfig,
+  SocialMediaLink,
   VillageProfile,
   VillageStrength,
   VisionMission,
@@ -323,6 +325,8 @@ function updateProviderSummary(
  */
 function initialContentState(): {
   banners: BannerSlide[];
+  gallery: GalleryItem[];
+  socialLinks: SocialMediaLink[];
   profile: VillageProfile;
   visionMission: VisionMission;
   officials: Official[];
@@ -355,6 +359,56 @@ function initialContentState(): {
         active: true,
         start_at: null,
         end_at: null,
+      },
+    ],
+    gallery: [
+      {
+        id: 'gallery-1',
+        media_type: 'photo',
+        file_id: 'file-gallery-1',
+        media_url: 'http://localhost:8080/api/uploads/file-gallery-1',
+        title: 'Gotong royong dusun',
+        caption: 'Dokumentasi kegiatan warga.',
+        order: 0,
+        active: true,
+        created_at: '2026-09-09T02:00:00.000Z',
+        updated_at: '2026-09-09T02:00:00.000Z',
+      },
+      {
+        id: 'gallery-2',
+        media_type: 'video',
+        file_id: 'file-gallery-2',
+        media_url: 'http://localhost:8080/api/uploads/file-gallery-2',
+        title: 'Cuplikan musyawarah',
+        caption: null,
+        order: 1,
+        active: false,
+        created_at: '2026-09-09T03:00:00.000Z',
+        updated_at: '2026-09-09T03:00:00.000Z',
+      },
+    ],
+    socialLinks: [
+      {
+        id: 'social-1',
+        platform: 'instagram',
+        label: 'Instagram Gampong Blang',
+        url: 'https://www.instagram.com/gampongblang',
+        icon_url: 'https://www.google.com/s2/favicons?sz=64&domain_url=https://instagram.com',
+        order: 0,
+        active: true,
+        created_at: '2026-09-10T02:00:00.000Z',
+        updated_at: '2026-09-10T02:00:00.000Z',
+      },
+      {
+        id: 'social-2',
+        platform: 'youtube',
+        label: 'YouTube Gampong Blang',
+        url: 'https://www.youtube.com/@gampongblang',
+        icon_url: 'https://www.google.com/s2/favicons?sz=64&domain_url=https://youtube.com',
+        order: 1,
+        active: false,
+        created_at: '2026-09-10T03:00:00.000Z',
+        updated_at: '2026-09-10T03:00:00.000Z',
       },
     ],
     profile: {
@@ -1086,6 +1140,119 @@ export const server = setupServer(
   }),
   http.delete('http://localhost:8080/api/content/banners/:id', ({ params }) => {
     contentState.banners = contentState.banners.filter((b) => b.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/gallery/admin', () =>
+    HttpResponse.json(contentState.gallery),
+  ),
+  http.get('http://localhost:8080/api/content/gallery', () =>
+    HttpResponse.json(contentState.gallery.filter((item) => item.active)),
+  ),
+  http.post('http://localhost:8080/api/content/gallery/reorder', async ({ request }) => {
+    const body = (await request.json()) as { ids: string[] };
+    contentState.gallery = body.ids.map((id, index) => {
+      const found = contentState.gallery.find((item) => item.id === id)!;
+      return { ...found, order: index };
+    });
+    return HttpResponse.json(contentState.gallery);
+  }),
+  http.post('http://localhost:8080/api/content/gallery', async ({ request }) => {
+    const body = (await request.json()) as {
+      media_type: 'photo' | 'video';
+      file_id: string;
+      title: string;
+      caption?: string | null;
+      order?: number;
+      active?: boolean;
+    };
+    const now = new Date().toISOString();
+    const created = {
+      id: `gallery-${contentState.gallery.length + 1}`,
+      media_type: body.media_type,
+      file_id: body.file_id,
+      media_url: `http://localhost:8080/api/uploads/${body.file_id}`,
+      title: body.title,
+      caption: body.caption ?? null,
+      order: body.order ?? contentState.gallery.length,
+      active: body.active ?? true,
+      created_at: now,
+      updated_at: now,
+    };
+    contentState.gallery = [...contentState.gallery, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.patch('http://localhost:8080/api/content/gallery/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Partial<GalleryItem>;
+    const index = contentState.gallery.findIndex((item) => item.id === params.id);
+    if (index < 0) return new HttpResponse(null, { status: 404 });
+
+    contentState.gallery[index] = {
+      ...contentState.gallery[index],
+      ...body,
+      updated_at: new Date().toISOString(),
+    };
+    return HttpResponse.json(contentState.gallery[index]);
+  }),
+  http.delete('http://localhost:8080/api/content/gallery/:id', ({ params }) => {
+    contentState.gallery = contentState.gallery.filter((item) => item.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('http://localhost:8080/api/content/social-links/admin', () =>
+    HttpResponse.json(contentState.socialLinks),
+  ),
+  http.get('http://localhost:8080/api/content/social-links', () =>
+    HttpResponse.json(contentState.socialLinks.filter((item) => item.active)),
+  ),
+  http.post('http://localhost:8080/api/content/social-links/reorder', async ({ request }) => {
+    const body = (await request.json()) as { ids: string[] };
+    contentState.socialLinks = body.ids.map((id, index) => {
+      const found = contentState.socialLinks.find((item) => item.id === id)!;
+      return { ...found, order: index };
+    });
+    return HttpResponse.json(contentState.socialLinks);
+  }),
+  http.post('http://localhost:8080/api/content/social-links', async ({ request }) => {
+    const body = (await request.json()) as {
+      platform: SocialMediaLink['platform'];
+      label: string;
+      url: string;
+      icon_url?: string | null;
+      order?: number;
+      active?: boolean;
+    };
+    const now = new Date().toISOString();
+    const created = {
+      id: `social-${contentState.socialLinks.length + 1}`,
+      platform: body.platform,
+      label: body.label,
+      url: body.url,
+      icon_url:
+        body.icon_url ??
+        `https://www.google.com/s2/favicons?sz=64&domain_url=https://${body.platform}.com`,
+      order: body.order ?? contentState.socialLinks.length,
+      active: body.active ?? true,
+      created_at: now,
+      updated_at: now,
+    };
+    contentState.socialLinks = [...contentState.socialLinks, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.patch('http://localhost:8080/api/content/social-links/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Partial<SocialMediaLink>;
+    const index = contentState.socialLinks.findIndex((item) => item.id === params.id);
+    if (index < 0) return new HttpResponse(null, { status: 404 });
+
+    contentState.socialLinks[index] = {
+      ...contentState.socialLinks[index],
+      ...body,
+      updated_at: new Date().toISOString(),
+    };
+    return HttpResponse.json(contentState.socialLinks[index]);
+  }),
+  http.delete('http://localhost:8080/api/content/social-links/:id', ({ params }) => {
+    contentState.socialLinks = contentState.socialLinks.filter((item) => item.id !== params.id);
     return new HttpResponse(null, { status: 204 });
   }),
 

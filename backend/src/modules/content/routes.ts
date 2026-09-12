@@ -6,21 +6,31 @@ import {
   BannerSlideResponse,
   ContentIdParams,
   CreateBannerSlideBody,
+  CreateGalleryItemBody,
   CreateMosqueBody,
   CreateOfficialBody,
+  CreateSocialMediaLinkBody,
   CreateVillageStrengthBody,
   DemographicBlockListResponse,
+  GalleryItemListResponse,
+  GalleryItemResponse,
   MosqueListResponse,
   MosqueResponse,
   OfficialListResponse,
   OfficialResponse,
   PrayerConfigResponse,
+  ReorderGalleryItemsBody,
   ReorderBannerSlidesBody,
+  ReorderSocialMediaLinksBody,
+  SocialMediaLinkListResponse,
+  SocialMediaLinkResponse,
   UpdateBannerSlideBody,
   UpdateDemographicsBody,
+  UpdateGalleryItemBody,
   UpdateMosqueBody,
   UpdateOfficialBody,
   UpdatePrayerConfigBody,
+  UpdateSocialMediaLinkBody,
   UpdateVillageProfileBody,
   UpdateVillageStrengthBody,
   UpdateVisionMissionBody,
@@ -31,27 +41,37 @@ import {
 } from './schemas';
 import {
   createBanner,
+  createGalleryItem,
   createMosque,
   createOfficial,
+  createSocialMediaLink,
   createStrength,
   deleteBanner,
+  deleteGalleryItem,
   deleteMosque,
   deleteOfficial,
+  deleteSocialMediaLink,
   deleteStrength,
   getPrayerConfig,
   getProfile,
   getVisionMission,
   listBanners,
   listDemographics,
+  listGalleryItems,
   listMosques,
   listOfficials,
+  listSocialMediaLinks,
   listStrengths,
   reorderBanners,
+  reorderGalleryItems,
+  reorderSocialMediaLinks,
   updateBanner,
   updateDemographics,
+  updateGalleryItem,
   updateMosque,
   updateOfficial,
   updatePrayerConfig,
+  updateSocialMediaLink,
   updateProfile,
   updateStrength,
   updateVisionMission,
@@ -101,6 +121,259 @@ defineRoute(contentRouter, {
   },
   handler: async ({ body, res }) => {
     res.status(201).json(await createBanner(body));
+  },
+});
+
+/* -------------------------------------------------------------------------- */
+/* Gallery                                                                    */
+/* -------------------------------------------------------------------------- */
+
+defineRoute(contentRouter, {
+  method: 'get',
+  path: '/gallery',
+  fullPath: '/api/content/gallery',
+  tags: TAGS,
+  summary: 'List published gallery photos and videos',
+  responses: {
+    200: {
+      description: 'Gallery media in display order',
+      content: { 'application/json': { schema: GalleryItemListResponse } },
+    },
+  },
+  handler: async ({ res }) => {
+    res.json(await listGalleryItems());
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'get',
+  path: '/gallery/admin',
+  fullPath: '/api/content/gallery/admin',
+  tags: TAGS,
+  summary: 'List all gallery photos and videos for admins',
+  auth: 'admin',
+  responses: {
+    200: {
+      description: 'All gallery media in display order',
+      content: { 'application/json': { schema: GalleryItemListResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ res }) => {
+    res.json(await listGalleryItems({ includeInactive: true }));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'post',
+  path: '/gallery',
+  fullPath: '/api/content/gallery',
+  tags: TAGS,
+  summary: 'Create a gallery item',
+  auth: 'admin',
+  body: CreateGalleryItemBody,
+  responses: {
+    201: {
+      description: 'Created gallery item',
+      content: { 'application/json': { schema: GalleryItemResponse } },
+    },
+    400: errorResponse('Invalid gallery payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Referenced media file was not found'),
+  },
+  handler: async ({ body, res }) => {
+    res.status(201).json(await createGalleryItem(body));
+  },
+});
+
+// Registered before "/gallery/:id" so the literal segment is not captured as an id.
+defineRoute(contentRouter, {
+  method: 'post',
+  path: '/gallery/reorder',
+  fullPath: '/api/content/gallery/reorder',
+  tags: TAGS,
+  summary: 'Persist a new gallery display order',
+  auth: 'admin',
+  body: ReorderGalleryItemsBody,
+  responses: {
+    200: {
+      description: 'Gallery items in their new order',
+      content: { 'application/json': { schema: GalleryItemListResponse } },
+    },
+    400: errorResponse('Invalid reorder payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('One or more gallery items were not found'),
+  },
+  handler: async ({ body, res }) => {
+    res.json(await reorderGalleryItems(body.ids));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'patch',
+  path: '/gallery/:id',
+  fullPath: '/api/content/gallery/{id}',
+  tags: TAGS,
+  summary: 'Update a gallery item',
+  auth: 'admin',
+  params: ContentIdParams,
+  body: UpdateGalleryItemBody,
+  responses: {
+    200: {
+      description: 'Updated gallery item',
+      content: { 'application/json': { schema: GalleryItemResponse } },
+    },
+    400: errorResponse('Invalid gallery payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Gallery item was not found'),
+  },
+  handler: async ({ params, body, res }) => {
+    res.json(await updateGalleryItem(params.id, body));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'delete',
+  path: '/gallery/:id',
+  fullPath: '/api/content/gallery/{id}',
+  tags: TAGS,
+  summary: 'Delete a gallery item',
+  auth: 'admin',
+  params: ContentIdParams,
+  responses: {
+    204: { description: 'Gallery item deleted' },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Gallery item was not found'),
+  },
+  handler: async ({ params, res }) => {
+    await deleteGalleryItem(params.id);
+    res.status(204).send();
+  },
+});
+
+/* -------------------------------------------------------------------------- */
+/* Social media links                                                         */
+/* -------------------------------------------------------------------------- */
+
+defineRoute(contentRouter, {
+  method: 'get',
+  path: '/social-links',
+  fullPath: '/api/content/social-links',
+  tags: TAGS,
+  summary: 'List published social media links',
+  responses: {
+    200: {
+      description: 'Social media links in display order',
+      content: { 'application/json': { schema: SocialMediaLinkListResponse } },
+    },
+  },
+  handler: async ({ res }) => {
+    res.json(await listSocialMediaLinks());
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'get',
+  path: '/social-links/admin',
+  fullPath: '/api/content/social-links/admin',
+  tags: TAGS,
+  summary: 'List all social media links for admins',
+  auth: 'admin',
+  responses: {
+    200: {
+      description: 'All social media links in display order',
+      content: { 'application/json': { schema: SocialMediaLinkListResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ res }) => {
+    res.json(await listSocialMediaLinks({ includeInactive: true }));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'post',
+  path: '/social-links',
+  fullPath: '/api/content/social-links',
+  tags: TAGS,
+  summary: 'Create a social media link',
+  auth: 'admin',
+  body: CreateSocialMediaLinkBody,
+  responses: {
+    201: {
+      description: 'Created social media link',
+      content: { 'application/json': { schema: SocialMediaLinkResponse } },
+    },
+    400: errorResponse('Invalid social media payload'),
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ body, res }) => {
+    res.status(201).json(await createSocialMediaLink(body));
+  },
+});
+
+// Registered before "/social-links/:id" so the literal segment is not captured as an id.
+defineRoute(contentRouter, {
+  method: 'post',
+  path: '/social-links/reorder',
+  fullPath: '/api/content/social-links/reorder',
+  tags: TAGS,
+  summary: 'Persist a new social media display order',
+  auth: 'admin',
+  body: ReorderSocialMediaLinksBody,
+  responses: {
+    200: {
+      description: 'Social media links in their new order',
+      content: { 'application/json': { schema: SocialMediaLinkListResponse } },
+    },
+    400: errorResponse('Invalid reorder payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('One or more social media links were not found'),
+  },
+  handler: async ({ body, res }) => {
+    res.json(await reorderSocialMediaLinks(body.ids));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'patch',
+  path: '/social-links/:id',
+  fullPath: '/api/content/social-links/{id}',
+  tags: TAGS,
+  summary: 'Update a social media link',
+  auth: 'admin',
+  params: ContentIdParams,
+  body: UpdateSocialMediaLinkBody,
+  responses: {
+    200: {
+      description: 'Updated social media link',
+      content: { 'application/json': { schema: SocialMediaLinkResponse } },
+    },
+    400: errorResponse('Invalid social media payload'),
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Social media link was not found'),
+  },
+  handler: async ({ params, body, res }) => {
+    res.json(await updateSocialMediaLink(params.id, body));
+  },
+});
+
+defineRoute(contentRouter, {
+  method: 'delete',
+  path: '/social-links/:id',
+  fullPath: '/api/content/social-links/{id}',
+  tags: TAGS,
+  summary: 'Delete a social media link',
+  auth: 'admin',
+  params: ContentIdParams,
+  responses: {
+    204: { description: 'Social media link deleted' },
+    401: errorResponse('Authentication is required'),
+    404: errorResponse('Social media link was not found'),
+  },
+  handler: async ({ params, res }) => {
+    await deleteSocialMediaLink(params.id);
+    res.status(204).send();
   },
 });
 

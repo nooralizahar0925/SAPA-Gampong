@@ -51,7 +51,7 @@ Create the app user and folders:
 
 ```bash
 adduser --disabled-password --gecos "" gbd
-mkdir -p /opt/gampong-blang
+mkdir -p /opt/gampong-blang/staging /opt/gampong-blang/backups/staging
 chown -R gbd:gbd /opt/gampong-blang
 ```
 
@@ -76,6 +76,7 @@ Run as the app user:
 ```bash
 su - gbd
 cd /opt/gampong-blang
+cd staging
 git clone git@github.com:nooralizahar0925/SAPA-Gampong.git
 cd SAPA-Gampong
 ```
@@ -89,7 +90,7 @@ The backend reads the government logo from `backend/assets/logo.webp` for genera
 After cloning, check it exists:
 
 ```bash
-ls -lh /opt/gampong-blang/SAPA-Gampong/backend/assets/logo.webp
+ls -lh /opt/gampong-blang/staging/SAPA-Gampong/backend/assets/logo.webp
 ```
 
 ## 4. Backend Environment
@@ -97,7 +98,7 @@ ls -lh /opt/gampong-blang/SAPA-Gampong/backend/assets/logo.webp
 Create the staging env file:
 
 ```bash
-cd /opt/gampong-blang/SAPA-Gampong/backend
+cd /opt/gampong-blang/staging/SAPA-Gampong/backend
 cp .env.example .env
 nano .env
 ```
@@ -183,7 +184,7 @@ node -e "const fs=require('fs'); const json=JSON.parse(fs.readFileSync('/tmp/fir
 Paste the printed line into:
 
 ```bash
-/opt/gampong-blang/SAPA-Gampong/backend/.env
+/opt/gampong-blang/staging/SAPA-Gampong/backend/.env
 ```
 
 Then remove the temporary JSON file:
@@ -195,14 +196,14 @@ rm /tmp/firebase-service-account.json
 Validate the `.env` value can be parsed:
 
 ```bash
-cd /opt/gampong-blang/SAPA-Gampong/backend
+cd /opt/gampong-blang/staging/SAPA-Gampong/backend
 node -e "require('dotenv').config(); JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON); console.log('Firebase service account JSON OK')"
 ```
 
 ## 5. Install and Build Backend
 
 ```bash
-cd /opt/gampong-blang/SAPA-Gampong/backend
+cd /opt/gampong-blang/staging/SAPA-Gampong/backend
 npm ci
 npx prisma generate
 npx playwright install --with-deps chromium
@@ -214,7 +215,7 @@ npm run db:seed
 The backend stores uploads and generated PDFs under:
 
 ```text
-/opt/gampong-blang/SAPA-Gampong/backend/storage/production
+/opt/gampong-blang/staging/SAPA-Gampong/backend/storage/production
 ```
 
 Do not delete this folder during deploys.
@@ -238,8 +239,8 @@ After=network.target postgresql.service
 Type=simple
 User=gbd
 Group=gbd
-WorkingDirectory=/opt/gampong-blang/SAPA-Gampong/backend
-EnvironmentFile=/opt/gampong-blang/SAPA-Gampong/backend/.env
+WorkingDirectory=/opt/gampong-blang/staging/SAPA-Gampong/backend
+EnvironmentFile=/opt/gampong-blang/staging/SAPA-Gampong/backend/.env
 ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=5
@@ -272,7 +273,7 @@ curl -i http://127.0.0.1:8081/api/health
 ## 7. Build Dashboard
 
 ```bash
-cd /opt/gampong-blang/SAPA-Gampong/dashboard
+cd /opt/gampong-blang/staging/SAPA-Gampong/dashboard
 cat > .env.production <<'EOF'
 VITE_API_BASE_URL=https://gampongblangdigital.web.id/api
 EOF
@@ -283,7 +284,7 @@ npm run build
 The dashboard build output is:
 
 ```text
-/opt/gampong-blang/SAPA-Gampong/dashboard/dist
+/opt/gampong-blang/staging/SAPA-Gampong/dashboard/dist
 ```
 
 ## 8. Build Mobile Web Preview
@@ -293,7 +294,7 @@ Only do this if the staging VPS should serve the resident app in browser.
 Install Flutter on the VPS first, or build `mobile/build/web` locally and upload it. If Flutter is installed on the VPS:
 
 ```bash
-cd /opt/gampong-blang/SAPA-Gampong/mobile
+cd /opt/gampong-blang/staging/SAPA-Gampong/mobile
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 flutter build web \
@@ -304,7 +305,7 @@ flutter build web \
 The mobile web build output is:
 
 ```text
-/opt/gampong-blang/SAPA-Gampong/mobile/build/web
+/opt/gampong-blang/staging/SAPA-Gampong/mobile/build/web
 ```
 
 ## 9. Nginx
@@ -324,7 +325,7 @@ server {
 
     client_max_body_size 25m;
 
-    root /opt/gampong-blang/SAPA-Gampong/dashboard/dist;
+    root /opt/gampong-blang/staging/SAPA-Gampong/dashboard/dist;
     index index.html;
 
     location /api/ {
@@ -345,8 +346,17 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8081/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location /mobile/ {
-        alias /opt/gampong-blang/SAPA-Gampong/mobile/build/web/;
+        alias /opt/gampong-blang/staging/SAPA-Gampong/mobile/build/web/;
         try_files $uri $uri/ /mobile/index.html;
     }
 
@@ -425,8 +435,8 @@ The safest repeat deploy path is the guarded deploy script:
 
 ```bash
 sudo -iu gbd
-cd /opt/gampong-blang/SAPA-Gampong
-DEPLOY_BRANCH=main bash scripts/deploy-staging.sh
+cd /opt/gampong-blang/staging/SAPA-Gampong
+DEPLOY_BRANCH=staging bash scripts/deploy-staging.sh
 ```
 
 The script:

@@ -418,6 +418,305 @@
           "ids"
         ]
       },
+      "GalleryMediaType": {
+        "type": "string",
+        "enum": [
+          "photo",
+          "video"
+        ]
+      },
+      "GalleryItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/GalleryMediaType"
+          },
+          "file_id": {
+            "type": "string"
+          },
+          "media_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "order": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "media_type",
+          "file_id",
+          "media_url",
+          "title",
+          "caption",
+          "order",
+          "active",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "GalleryItemListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GalleryItemResponse"
+        }
+      },
+      "CreateGalleryItemBody": {
+        "type": "object",
+        "properties": {
+          "media_type": {
+            "$ref": "#/components/schemas/GalleryMediaType"
+          },
+          "file_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "media_type",
+          "file_id",
+          "title"
+        ]
+      },
+      "UpdateGalleryItemBody": {
+        "type": "object",
+        "properties": {
+          "media_type": {
+            "$ref": "#/components/schemas/GalleryMediaType"
+          },
+          "file_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReorderGalleryItemsBody": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "SocialMediaPlatform": {
+        "type": "string",
+        "enum": [
+          "facebook",
+          "instagram",
+          "youtube",
+          "tiktok",
+          "whatsapp",
+          "x",
+          "website",
+          "other"
+        ]
+      },
+      "SocialMediaLinkResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/SocialMediaPlatform"
+          },
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "label",
+          "url",
+          "icon_url",
+          "order",
+          "active",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SocialMediaLinkListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SocialMediaLinkResponse"
+        }
+      },
+      "CreateSocialMediaLinkBody": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "$ref": "#/components/schemas/SocialMediaPlatform"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "platform",
+          "label",
+          "url"
+        ]
+      },
+      "UpdateSocialMediaLinkBody": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "$ref": "#/components/schemas/SocialMediaPlatform"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReorderSocialMediaLinksBody": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
       "VillageProfileResponse": {
         "type": "object",
         "properties": {
@@ -1395,7 +1694,8 @@
                     "other",
                     "photo",
                     "document",
-                    "audio"
+                    "audio",
+                    "video"
                   ]
                 }
               },
@@ -1731,7 +2031,8 @@
               "other",
               "photo",
               "document",
-              "audio"
+              "audio",
+              "video"
             ]
           },
           "mime": {
@@ -1999,7 +2300,8 @@
                     "other",
                     "photo",
                     "document",
-                    "audio"
+                    "audio",
+                    "video"
                   ]
                 }
               },
@@ -2157,7 +2459,8 @@
               "other",
               "photo",
               "document",
-              "audio"
+              "audio",
+              "video"
             ]
           },
           "mime": {
@@ -2915,7 +3218,8 @@
                     "other",
                     "photo",
                     "document",
-                    "audio"
+                    "audio",
+                    "video"
                   ]
                 }
               },
@@ -3481,7 +3785,8 @@
               "other",
               "photo",
               "document",
-              "audio"
+              "audio",
+              "video"
             ]
           },
           "file": {
@@ -3921,6 +4226,602 @@
           },
           "404": {
             "description": "Referenced image file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/gallery": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List published gallery photos and videos",
+        "responses": {
+          "200": {
+            "description": "Gallery media in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryItemListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a gallery item",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGalleryItemBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created gallery item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid gallery payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced media file was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/gallery/admin": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List all gallery photos and videos for admins",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All gallery media in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryItemListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/gallery/reorder": {
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Persist a new gallery display order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderGalleryItemsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gallery items in their new order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryItemListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid reorder payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "One or more gallery items were not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/gallery/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a gallery item",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGalleryItemBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated gallery item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid gallery payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Gallery item was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a gallery item",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Gallery item deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Gallery item was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/social-links": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List published social media links",
+        "responses": {
+          "200": {
+            "description": "Social media links in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialMediaLinkListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Create a social media link",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSocialMediaLinkBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created social media link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialMediaLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid social media payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/social-links/admin": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "List all social media links for admins",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All social media links in display order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialMediaLinkListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/social-links/reorder": {
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Persist a new social media display order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderSocialMediaLinksBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Social media links in their new order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialMediaLinkListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid reorder payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "One or more social media links were not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/social-links/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Update a social media link",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSocialMediaLinkBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated social media link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialMediaLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid social media payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Social media link was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete a social media link",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Social media link deleted"
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Social media link was not found",
             "content": {
               "application/json": {
                 "schema": {

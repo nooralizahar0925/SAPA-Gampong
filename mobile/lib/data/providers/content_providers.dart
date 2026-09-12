@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/banner_slide.dart';
 import '../models/demographic_block.dart';
+import '../models/gallery_item.dart';
 import '../models/mosque.dart';
 import '../models/official.dart';
 import '../models/prayer_config.dart';
+import '../models/social_media_link.dart';
 import '../models/village_profile.dart';
 import '../models/village_strength.dart';
 import '../models/vision_mission.dart';
@@ -23,6 +25,14 @@ final contentRepositoryProvider = Provider<ContentRepository>((ref) {
 
 final bannersProvider = FutureProvider<List<BannerSlide>>((ref) {
   return ref.watch(contentRepositoryProvider).banners();
+});
+
+final galleryProvider = FutureProvider<List<GalleryItem>>((ref) {
+  return ref.watch(contentRepositoryProvider).gallery();
+});
+
+final socialLinksProvider = FutureProvider<List<SocialMediaLink>>((ref) {
+  return ref.watch(contentRepositoryProvider).socialLinks();
 });
 
 final villageProfileProvider = FutureProvider<VillageProfile>((ref) {

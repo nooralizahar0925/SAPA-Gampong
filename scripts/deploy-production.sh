@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
-DEPLOY_BRANCH="${DEPLOY_BRANCH:-staging}"
-BACKEND_SERVICE="${BACKEND_SERVICE:-gbd-backend-staging}"
-DASHBOARD_API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.web.id/api}"
-BACKUP_DIR="${BACKUP_DIR:-/opt/gampong-blang/backups/staging}"
+APP_DIR="${APP_DIR:-/opt/gampong-blang/production/SAPA-Gampong}"
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-production}"
+BACKEND_SERVICE="${BACKEND_SERVICE:-gbd-backend-production}"
+DASHBOARD_API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.com/api}"
+BACKUP_DIR="${BACKUP_DIR:-/opt/gampong-blang/backups/production}"
+BACKUP_NAME_PREFIX="${BACKUP_NAME_PREFIX:-gbd_production}"
 SKIP_GIT_UPDATE="${SKIP_GIT_UPDATE:-false}"
 RUN_SEED="${RUN_SEED:-false}"
 RESTART_SERVICES="${RESTART_SERVICES:-true}"
+BUILD_MOBILE_WEB="${BUILD_MOBILE_WEB:-false}"
+MOBILE_WEB_API_BASE_URL="${MOBILE_WEB_API_BASE_URL:-https://gampongblangdigital.com/api}"
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*"
@@ -47,7 +50,7 @@ backup_database() {
   [ -n "$database_url" ] || fail "DATABASE_URL is empty in backend/.env"
 
   mkdir -p "$BACKUP_DIR"
-  local backup_file="$BACKUP_DIR/gbd_staging_$(date +%Y%m%d_%H%M%S).sql"
+  local backup_file="$BACKUP_DIR/${BACKUP_NAME_PREFIX}_$(date +%Y%m%d_%H%M%S).sql"
   pg_dump "$database_url" > "$backup_file"
   chmod 600 "$backup_file"
   log "Database backup written to $backup_file"
@@ -59,7 +62,7 @@ protect_storage() {
   [ -d "$APP_DIR/backend/storage/production" ] || fail "storage folder is not available"
 }
 
-log "Starting staging deploy"
+log "Starting production deploy"
 cd "$APP_DIR"
 require_file "$APP_DIR/backend/.env"
 require_file "$APP_DIR/backend/package-lock.json"
@@ -98,6 +101,17 @@ npm ci
 printf 'VITE_API_BASE_URL=%s\n' "$DASHBOARD_API_BASE_URL" > .env.production
 npm run build
 
+if [ "$BUILD_MOBILE_WEB" = "true" ]; then
+  command -v flutter >/dev/null 2>&1 || fail "Flutter is required when BUILD_MOBILE_WEB=true"
+  log "Building mobile web preview"
+  cd "$APP_DIR/mobile"
+  flutter pub get
+  dart run build_runner build --delete-conflicting-outputs
+  flutter build web --base-href=/mobile/ --dart-define=API_BASE_URL="$MOBILE_WEB_API_BASE_URL"
+else
+  log "Skipping mobile web build because BUILD_MOBILE_WEB=false"
+fi
+
 if [ "$RESTART_SERVICES" = "true" ]; then
   log "Restarting backend service and reloading nginx"
   sudo systemctl restart "$BACKEND_SERVICE"
@@ -105,4 +119,4 @@ if [ "$RESTART_SERVICES" = "true" ]; then
   sudo systemctl reload nginx
 fi
 
-log "Staging deploy completed"
+log "Production deploy completed"

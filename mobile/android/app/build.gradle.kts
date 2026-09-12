@@ -1,8 +1,25 @@
+import org.gradle.api.GradleException
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+
+if (hasReleaseKeystore) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+fun releaseSigningProperty(name: String): String {
+    return keystoreProperties[name]?.toString()
+        ?: throw GradleException("Missing '$name' in ${keystorePropertiesFile.path}")
 }
 
 android {
@@ -27,12 +44,36 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                keyAlias = releaseSigningProperty("keyAlias")
+                keyPassword = releaseSigningProperty("keyPassword")
+                storeFile = file(releaseSigningProperty("storeFile"))
+                storePassword = releaseSigningProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val releaseBuildRequested = allTasks.any { task ->
+        val name = task.name.lowercase()
+        name.contains("release") &&
+            (name.contains("assemble") || name.contains("bundle") || name.contains("package"))
+    }
+
+    if (releaseBuildRequested && !hasReleaseKeystore) {
+        throw GradleException(
+            "Missing mobile/android/key.properties. Copy key.properties.example, " +
+                "fill it with the upload keystore values, then rebuild the release artifact."
+        )
     }
 }
 

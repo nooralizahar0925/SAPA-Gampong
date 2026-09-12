@@ -1,6 +1,6 @@
 # CI/CD Guide
 
-This repository uses GitHub Actions for backend and dashboard verification plus staging deployment.
+This repository uses GitHub Actions for backend and dashboard verification plus staging and production deployment.
 
 The deployment is intentionally conservative. It never runs database reset commands, never deletes Docker volumes, and never deletes `backend/storage/production`.
 
@@ -44,6 +44,22 @@ The deploy job SSHes into the VPS, updates the Git checkout, and runs:
 scripts/deploy-staging.sh
 ```
 
+### Production Deploy
+
+File:
+
+```text
+.github/workflows/deploy-production.yml
+```
+
+Runs manually from GitHub Actions after CI verification. It does not auto-deploy on push.
+
+The deploy job SSHes into the production VPS, updates the Git checkout, and runs:
+
+```bash
+scripts/deploy-production.sh
+```
+
 ## Required GitHub Secrets
 
 Add these in:
@@ -64,8 +80,25 @@ Optional:
 
 ```text
 STAGING_PORT=22
-STAGING_APP_DIR=/opt/gampong-blang/SAPA-Gampong
+STAGING_APP_DIR=/opt/gampong-blang/staging/SAPA-Gampong
 STAGING_DASHBOARD_API_BASE_URL=https://gampongblangdigital.web.id/api
+```
+
+Production required:
+
+```text
+PRODUCTION_HOST=<VPS_PUBLIC_IP_OR_DOMAIN>
+PRODUCTION_USER=gbd
+PRODUCTION_SSH_KEY=<PRIVATE_SSH_KEY_ALLOWED_TO_LOGIN_TO_VPS>
+```
+
+Production optional:
+
+```text
+PRODUCTION_PORT=22
+PRODUCTION_APP_DIR=/opt/gampong-blang/production/SAPA-Gampong
+PRODUCTION_DASHBOARD_API_BASE_URL=https://gampongblangdigital.com/api
+PRODUCTION_MOBILE_WEB_API_BASE_URL=https://gampongblangdigital.com/api
 ```
 
 ## VPS Requirements
@@ -90,6 +123,12 @@ Paste:
 
 ```text
 gbd ALL=(root) NOPASSWD: /bin/systemctl restart gbd-backend-staging, /usr/sbin/nginx -t, /bin/systemctl reload nginx
+```
+
+For production:
+
+```text
+gbd ALL=(root) NOPASSWD: /bin/systemctl restart gbd-backend-production, /usr/sbin/nginx -t, /bin/systemctl reload nginx
 ```
 
 Paths may differ by VPS. Check with:
@@ -127,8 +166,16 @@ If GitHub Actions is unavailable, SSH to the VPS and run:
 
 ```bash
 sudo -iu gbd
-cd /opt/gampong-blang/SAPA-Gampong
-DEPLOY_BRANCH=main bash scripts/deploy-staging.sh
+cd /opt/gampong-blang/staging/SAPA-Gampong
+DEPLOY_BRANCH=staging bash scripts/deploy-staging.sh
+```
+
+For production:
+
+```bash
+sudo -iu gbd
+cd /opt/gampong-blang/production/SAPA-Gampong
+DEPLOY_BRANCH=production bash scripts/deploy-production.sh
 ```
 
 ## Manual Deploy From GitHub
@@ -141,7 +188,7 @@ DEPLOY_BRANCH=main bash scripts/deploy-staging.sh
 
 ## Smoke Test
 
-After deploy:
+After staging deploy:
 
 ```bash
 curl -fsS https://gampongblangdigital.web.id/api/health
@@ -155,3 +202,16 @@ https://gampongblangdigital.web.id/
 ```
 
 Login to dashboard and verify the latest backend/dashboard behavior.
+
+After production deploy:
+
+```bash
+curl -fsS https://gampongblangdigital.com/api/health
+curl -fsSI https://gampongblangdigital.com/
+```
+
+Then open:
+
+```text
+https://gampongblangdigital.com/
+```

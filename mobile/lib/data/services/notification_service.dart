@@ -19,6 +19,11 @@ import 'prayer_times_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   await NotificationService.showResidentPushData(message.data);
 }
 
@@ -33,10 +38,25 @@ class PrayerAlarmSchedule {
 }
 
 class ResidentPushNotification {
-  const ResidentPushNotification({required this.title, required this.body});
+  const ResidentPushNotification({
+    required this.event,
+    required this.referenceCode,
+    required this.title,
+    required this.body,
+  });
 
+  final String event;
+  final String referenceCode;
   final String title;
   final String body;
+
+  int get id {
+    var hash = 0x811c9dc5;
+    for (final value in '$event|$referenceCode'.codeUnits) {
+      hash = ((hash ^ value) * 0x01000193) & 0x7fffffff;
+    }
+    return hash;
+  }
 }
 
 class AdzanAlarmPermissionException implements Exception {
@@ -88,6 +108,12 @@ class NotificationService {
 
   PrayerAlarmSchedule? get lastSchedule => _lastSchedule;
 
+  static void registerBackgroundHandler() {
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
+  }
+
   Future<void> initializePush({
     AppPreferences? preferences,
     Future<AppPreferences> Function()? preferencesLoader,
@@ -96,8 +122,6 @@ class NotificationService {
     await _ensureStaticLocalNotifications(_localNotifications);
     if (kIsWeb) return;
     if (!await _ensureFirebase()) return;
-
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     final messaging = _messaging ?? FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
@@ -144,9 +168,7 @@ class NotificationService {
       await _client.dio.post<Map<String, Object?>>(
         '/resident/device-token',
         data: {'token': currentToken, 'platform': _platformName()},
-        options: Options(
-          headers: {'Authorization': 'Bearer ${session.token}'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer ${session.token}'}),
       );
     } on DioException catch (error) {
       debugPrint('Failed to link resident push token: $error');
@@ -282,66 +304,75 @@ class NotificationService {
     Map<String, dynamic> data,
   ) {
     final event = data['event']?.toString();
-    final referenceCode = data['reference_code']?.toString();
-    final suffix = referenceCode == null || referenceCode.isEmpty
-        ? ''
-        : ' ($referenceCode)';
+    final referenceCode = data['reference_code']?.toString() ?? '';
+    final suffix = referenceCode.isEmpty ? '' : ' ($referenceCode)';
+
+    ResidentPushNotification notification(String title, String body) {
+      final remoteTitle = data['title']?.toString().trim();
+      final remoteBody = data['body']?.toString().trim();
+      return ResidentPushNotification(
+        event: event ?? '',
+        referenceCode: referenceCode,
+        title: remoteTitle?.isNotEmpty == true ? remoteTitle! : title,
+        body: remoteBody?.isNotEmpty == true ? remoteBody! : body,
+      );
+    }
 
     switch (event) {
       case 'SUBMITTED':
-        return ResidentPushNotification(
-          title: 'Permohonan surat diterima',
-          body: 'Permohonan$suffix sudah tercatat dan menunggu diproses.',
+        return notification(
+          'Permohonan surat diterima',
+          'Permohonan$suffix sudah tercatat dan menunggu diproses.',
         );
       case 'IN_REVIEW':
-        return ResidentPushNotification(
-          title: 'Permohonan sedang ditinjau',
-          body: 'Permohonan$suffix sedang ditinjau petugas.',
+        return notification(
+          'Permohonan sedang ditinjau',
+          'Permohonan$suffix sedang ditinjau petugas.',
         );
       case 'NEEDS_INFO':
-        return ResidentPushNotification(
-          title: 'Permohonan perlu dilengkapi',
-          body: 'Permohonan$suffix membutuhkan informasi tambahan.',
+        return notification(
+          'Permohonan perlu dilengkapi',
+          'Permohonan$suffix membutuhkan informasi tambahan.',
         );
       case 'APPROVED':
-        return ResidentPushNotification(
-          title: 'Permohonan surat disetujui',
-          body: 'Permohonan$suffix sudah disetujui dan akan dibuatkan surat.',
+        return notification(
+          'Permohonan surat disetujui',
+          'Permohonan$suffix sudah disetujui dan akan dibuatkan surat.',
         );
       case 'GENERATED':
-        return ResidentPushNotification(
-          title: 'Surat selesai dibuat',
-          body: 'Surat$suffix sudah dibuat dan menunggu pengiriman.',
+        return notification(
+          'Surat selesai dibuat',
+          'Surat$suffix sudah dibuat dan menunggu pengiriman.',
         );
       case 'SENT':
-        return ResidentPushNotification(
-          title: 'Surat Anda sudah dikirim',
-          body: 'Surat$suffix sudah dikirim ke email Anda.',
+        return notification(
+          'Surat Anda sudah dikirim',
+          'Surat$suffix sudah dikirim ke email Anda.',
         );
       case 'REJECTED':
-        return ResidentPushNotification(
-          title: 'Permohonan surat ditolak',
-          body: 'Permohonan$suffix ditolak. Silakan cek status permohonan.',
+        return notification(
+          'Permohonan surat ditolak',
+          'Permohonan$suffix ditolak. Silakan cek status permohonan.',
         );
       case 'CANCELED':
-        return ResidentPushNotification(
-          title: 'Permohonan dibatalkan',
-          body: 'Permohonan$suffix telah dibatalkan.',
+        return notification(
+          'Permohonan dibatalkan',
+          'Permohonan$suffix telah dibatalkan.',
         );
       case 'FEEDBACK_NEW':
-        return ResidentPushNotification(
-          title: 'Laporan diterima',
-          body: 'Laporan$suffix sudah diterima kantor keuchik.',
+        return notification(
+          'Laporan diterima',
+          'Laporan$suffix sudah diterima kantor keuchik.',
         );
       case 'FEEDBACK_READ':
-        return ResidentPushNotification(
-          title: 'Laporan sedang ditinjau',
-          body: 'Laporan$suffix sedang ditinjau petugas.',
+        return notification(
+          'Laporan sedang ditinjau',
+          'Laporan$suffix sedang ditinjau petugas.',
         );
       case 'FEEDBACK_RESPONDED':
-        return ResidentPushNotification(
-          title: 'Laporan Anda dibalas',
-          body: 'Laporan$suffix sudah mendapat balasan.',
+        return notification(
+          'Laporan Anda dibalas',
+          'Laporan$suffix sudah mendapat balasan.',
         );
       default:
         return null;
@@ -354,20 +385,23 @@ class NotificationService {
 
     final localNotifications = FlutterLocalNotificationsPlugin();
     await _ensureStaticLocalNotifications(localNotifications);
+    final isFeedback = notification.event.startsWith('FEEDBACK_');
     await localNotifications.show(
-      id: notification.hashCode & 0x7fffffff,
+      id: notification.id,
       title: notification.title,
       body: notification.body,
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'resident_letters',
-          'Status surat warga',
-          channelDescription: 'Pembaruan status permohonan surat warga',
+          isFeedback ? 'resident_feedback_v2' : 'resident_letters_v2',
+          isFeedback ? 'Status laporan warga' : 'Status surat warga',
+          channelDescription: isFeedback
+              ? 'Pembaruan status dan balasan laporan warga'
+              : 'Pembaruan seluruh proses permohonan surat warga',
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
+        macOS: const DarwinNotificationDetails(),
       ),
     );
   }

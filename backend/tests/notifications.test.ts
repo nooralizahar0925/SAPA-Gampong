@@ -10,6 +10,7 @@ import {
 } from '../src/services/email.service';
 import { storageRoot } from '../src/services/storage.service';
 import {
+  firebaseMessageForTokens,
   setPushTransportForTests,
   type PushPayload,
   type PushTransport,
@@ -73,6 +74,29 @@ async function createStoredPdf(storagePath: string) {
 }
 
 describe('notification push wiring', () => {
+  it('builds high-priority Android data messages with visible platform alerts', () => {
+    const message = firebaseMessageForTokens(['device-token'], {
+      event: 'APPROVED',
+      title: 'Permohonan surat disetujui',
+      body: 'Permohonan (GB-2026-001850) sudah disetujui.',
+      referenceCode: 'GB-2026-001850',
+      requestId: 'request-id',
+    });
+
+    expect(message).not.toHaveProperty('notification');
+    expect(message.android).toMatchObject({ priority: 'high' });
+    expect(message.data).toMatchObject({
+      event: 'APPROVED',
+      title: 'Permohonan surat disetujui',
+      reference_code: 'GB-2026-001850',
+    });
+    expect(message.apns?.payload?.aps.alert).toEqual({
+      title: 'Permohonan surat disetujui',
+      body: 'Permohonan (GB-2026-001850) sudah disetujui.',
+    });
+    expect(message.webpush?.notification?.title).toBe('Permohonan surat disetujui');
+  });
+
   it('registers and unregisters a resident device token', async () => {
     const created = await request(app)
       .post('/api/notifications/device-tokens')
@@ -340,8 +364,15 @@ describe('notification push wiring', () => {
   it('sends resident email and push when a generated letter is sent', async () => {
     const sendMail = stubEmailTransport();
     const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+    let statusAtPush: string | undefined;
     const restorePush = setPushTransportForTests({
       async sendToTokens(tokens, payload) {
+        statusAtPush = (
+          await testPrisma.letterRequest.findUnique({
+            where: { id: payload.requestId },
+            select: { status: true },
+          })
+        )?.status;
         sentPushes.push({ tokens, payload });
         return {
           successCount: 1,
@@ -387,6 +418,7 @@ describe('notification push wiring', () => {
 
     expect(res.status).toBe(200);
     expect(sendMail).toHaveBeenCalledTimes(1);
+    expect(statusAtPush).toBe('SENT');
     expect(sentPushes).toHaveLength(1);
     expect(sentPushes[0].tokens).toEqual(['active-token', 'stale-token']);
     expect(sentPushes[0].payload).toMatchObject({

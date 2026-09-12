@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sapa_gampong/data/models/official.dart';
+import 'package:sapa_gampong/data/models/social_media_link.dart';
 import 'package:sapa_gampong/data/models/village_profile.dart';
 import 'package:sapa_gampong/data/models/village_strength.dart';
 import 'package:sapa_gampong/data/models/vision_mission.dart';
@@ -44,11 +45,30 @@ const _strengths = [
   VillageStrength(id: 's2', title: 'Perikanan API', body: 'Dekat laut.'),
 ];
 
+const _socialLinks = [
+  SocialMediaLink(
+    id: 'soc1',
+    platform: SocialMediaPlatform.instagram,
+    label: 'Instagram Gampong Blang',
+    url: 'https://www.instagram.com/gampongblang',
+    iconUrl:
+        'https://www.google.com/s2/favicons?sz=64&domain_url=https://instagram.com',
+  ),
+  SocialMediaLink(
+    id: 'soc2',
+    platform: SocialMediaPlatform.youtube,
+    label: 'YouTube Gampong Blang',
+    url: 'https://www.youtube.com/@gampongblang',
+    active: false,
+  ),
+];
+
 Widget _buildApp({
   AsyncValue<VillageProfile>? profileOverride,
   AsyncValue<VisionMission>? vmOverride,
   AsyncValue<List<Official>>? officialsOverride,
   AsyncValue<List<VillageStrength>>? strengthsOverride,
+  AsyncValue<List<SocialMediaLink>>? socialLinksOverride,
 }) {
   return ProviderScope(
     overrides: [
@@ -69,6 +89,11 @@ Widget _buildApp({
         (_) async =>
             (strengthsOverride as AsyncData<List<VillageStrength>>?)?.value ??
             _strengths,
+      ),
+      socialLinksProvider.overrideWith(
+        (_) async =>
+            (socialLinksOverride as AsyncData<List<SocialMediaLink>>?)?.value ??
+            _socialLinks,
       ),
     ],
     child: MaterialApp.router(
@@ -115,6 +140,7 @@ void main() {
           visionMissionProvider.overrideWith((_) async => _visionMission),
           officialsProvider.overrideWith((_) async => _officials),
           strengthsProvider.overrideWith((_) async => _strengths),
+          socialLinksProvider.overrideWith((_) async => _socialLinks),
         ],
         child: MaterialApp.router(
           routerConfig: GoRouter(
@@ -142,6 +168,28 @@ void main() {
     expect(find.text('Deskripsi desa dari API.'), findsOneWidget);
   });
 
+  testWidgets('Tab 1: shows active social links below profile content', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildApp());
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile-social-soc1')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Media Sosial'), findsOneWidget);
+    expect(find.text('Instagram Gampong Blang'), findsOneWidget);
+    expect(find.text('Instagram'), findsOneWidget);
+    expect(find.text('YouTube Gampong Blang'), findsNothing);
+  });
+
   testWidgets('Tab 1: shows seed fallback when profile is null', (
     tester,
   ) async {
@@ -153,6 +201,7 @@ void main() {
           visionMissionProvider.overrideWith((_) async => _visionMission),
           officialsProvider.overrideWith((_) async => _officials),
           strengthsProvider.overrideWith((_) async => _strengths),
+          socialLinksProvider.overrideWith((_) async => _socialLinks),
         ],
         child: MaterialApp.router(
           routerConfig: GoRouter(
@@ -228,6 +277,7 @@ void main() {
           visionMissionProvider.overrideWith((_) async => _visionMission),
           officialsProvider.overrideWith((_) async => <Official>[]),
           strengthsProvider.overrideWith((_) async => _strengths),
+          socialLinksProvider.overrideWith((_) async => _socialLinks),
         ],
         child: MaterialApp.router(
           routerConfig: GoRouter(

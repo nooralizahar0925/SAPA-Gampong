@@ -1,8 +1,10 @@
 import '../models/banner_slide.dart';
 import '../models/demographic_block.dart';
+import '../models/gallery_item.dart';
 import '../models/mosque.dart';
 import '../models/official.dart';
 import '../models/prayer_config.dart';
+import '../models/social_media_link.dart';
 import '../models/village_profile.dart';
 import '../models/village_strength.dart';
 import '../models/vision_mission.dart';
@@ -36,6 +38,31 @@ class ContentRepository {
         return res.data ?? {};
       },
       decode: (data) => VillageProfile.fromJson(_objectMap(data)),
+    );
+  }
+
+  Future<List<GalleryItem>> gallery() async {
+    return _cached(
+      key: ContentCacheKeys.gallery,
+      fetch: () async {
+        final res = await _client.dio.get<List<dynamic>>('/content/gallery');
+        return res.data ?? [];
+      },
+      decode: (data) => _objectMaps(data).map(GalleryItem.fromJson).toList(),
+    );
+  }
+
+  Future<List<SocialMediaLink>> socialLinks() async {
+    return _cached(
+      key: ContentCacheKeys.socialLinks,
+      fetch: () async {
+        final res = await _client.dio.get<List<dynamic>>(
+          '/content/social-links',
+        );
+        return res.data ?? [];
+      },
+      decode: (data) =>
+          _objectMaps(data).map(SocialMediaLink.fromJson).toList(),
     );
   }
 

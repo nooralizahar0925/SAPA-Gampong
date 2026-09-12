@@ -6,6 +6,7 @@ import { alertApiError, toastSuccess } from '../lib/alerts';
 import { formatSavedAt } from '../lib/format';
 import { BannerTab } from '../components/content/BannerTab';
 import { DemographicsTab } from '../components/content/DemographicsTab';
+import { GalleryTab } from '../components/content/GalleryTab';
 import { MosqueTab } from '../components/content/MosqueTab';
 import { OfficialsTab } from '../components/content/OfficialsTab';
 import { ProfileTab } from '../components/content/ProfileTab';
@@ -14,6 +15,7 @@ import { ContentSaveContext, type SaveHandler } from '../components/content/save
 
 export type ContentTabId =
   | 'banner'
+  | 'galeri'
   | 'profil'
   | 'perangkat'
   | 'masjid'
@@ -22,6 +24,7 @@ export type ContentTabId =
 
 const TABS: Array<{ id: ContentTabId; label: string; slug: string }> = [
   { id: 'banner', label: 'Banner', slug: 'banners' },
+  { id: 'galeri', label: 'Galeri', slug: 'gallery' },
   { id: 'profil', label: 'Profil & Visi Misi', slug: 'profile' },
   { id: 'perangkat', label: 'Perangkat', slug: 'officials' },
   { id: 'masjid', label: 'Masjid & Sholat', slug: 'mosques' },
@@ -128,6 +131,7 @@ export function ContentPage() {
 
       <ContentSaveContext.Provider value={saveContext}>
         {activeTab === 'banner' ? <BannerTab /> : null}
+        {activeTab === 'galeri' ? <GalleryTab /> : null}
         {activeTab === 'profil' ? <ProfileTab /> : null}
         {activeTab === 'perangkat' ? <OfficialsTab /> : null}
         {activeTab === 'masjid' ? <MosqueTab /> : null}

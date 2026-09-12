@@ -75,6 +75,20 @@ describe('POST /api/uploads', () => {
     expect(res.body.url).toContain(`/api/uploads/${res.body.file_id}?`);
   });
 
+  it('stores video uploads up to the gallery limit', async () => {
+    const video = Buffer.alloc(6 * 1024 * 1024, 1);
+
+    const res = await request(app)
+      .post('/api/uploads')
+      .field('kind', 'video')
+      .attach('file', video, { filename: 'kegiatan.mp4', contentType: 'video/mp4' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.mime).toBe('video/mp4');
+    expect(res.body.size).toBe(video.length);
+    expect(res.body.url).toContain(`/api/uploads/${res.body.file_id}?`);
+  });
+
   it('rejects a disallowed mime type', async () => {
     const res = await request(app)
       .post('/api/uploads')
@@ -86,7 +100,7 @@ describe('POST /api/uploads', () => {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Data yang dikirim tidak valid',
-        fields: { file: 'Tipe file harus gambar, PDF, atau audio (MP3/M4A)' },
+        fields: { file: 'Tipe file harus gambar, video, PDF, atau audio (MP3/M4A)' },
       },
     });
   });

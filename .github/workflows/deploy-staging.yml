@@ -6,10 +6,10 @@ on:
       deploy_branch:
         description: Branch to deploy
         required: true
-        default: main
+        default: staging
   push:
     branches:
-      - main
+      - staging
     paths:
       - backend/**
       - dashboard/**
@@ -59,7 +59,7 @@ jobs:
       - name: Deploy safely on VPS
         run: |
           PORT="${STAGING_PORT:-22}"
-          APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/SAPA-Gampong}"
+          APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
           API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.web.id/api}"
           ssh -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
             "set -euo pipefail

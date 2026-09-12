@@ -51,6 +51,11 @@ GoRouter _makeRouter() => GoRouter(
       builder: (context, state) => const Scaffold(),
     ),
     GoRoute(
+      path: '/galeri',
+      name: AppRouteNames.gallery,
+      builder: (context, state) => const Scaffold(),
+    ),
+    GoRoute(
       path: '/lacak',
       name: AppRouteNames.tracking,
       builder: (context, state) => const Scaffold(),
@@ -169,6 +174,14 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('home-banner-carousel')), findsOneWidget);
     expect(find.byKey(const Key('home-banner-fallback')), findsNothing);
+  });
+
+  testWidgets('shows gallery entry point on the home grid', (tester) async {
+    await tester.pumpWidget(await _buildWithSlides([]));
+    await tester.pump();
+
+    expect(find.byKey(const Key('home-gallery')), findsOneWidget);
+    expect(find.text('Galeri'), findsOneWidget);
   });
 
   testWidgets('carousel renders first slide of two', (tester) async {

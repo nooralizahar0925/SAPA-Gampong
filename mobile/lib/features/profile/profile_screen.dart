@@ -7,6 +7,7 @@ import '../../core/widgets/cached_api_image.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/mock/village_seed.dart' as seed;
 import '../../data/models/official.dart';
+import '../../data/models/social_media_link.dart';
 import '../../data/models/village_profile.dart';
 import '../../data/models/village_strength.dart';
 import '../../data/models/vision_mission.dart';
@@ -73,6 +74,7 @@ class _TentangTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(villageProfileProvider);
+    final socialLinksAsync = ref.watch(socialLinksProvider);
     final cachedAt = ref
         .watch(contentCacheServiceProvider)
         .updatedAt(ContentCacheKeys.profile);
@@ -81,16 +83,28 @@ class _TentangTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppTheme.gold500),
       ),
-      error: (_, _) => const _TentangContent(profile: null),
-      data: (profile) => _TentangContent(profile: profile, cachedAt: cachedAt),
+      error: (_, _) => _TentangContent(
+        profile: null,
+        socialLinks: socialLinksAsync.asData?.value ?? const [],
+      ),
+      data: (profile) => _TentangContent(
+        profile: profile,
+        socialLinks: socialLinksAsync.asData?.value ?? const [],
+        cachedAt: cachedAt,
+      ),
     );
   }
 }
 
 class _TentangContent extends StatelessWidget {
-  const _TentangContent({required this.profile, this.cachedAt});
+  const _TentangContent({
+    required this.profile,
+    required this.socialLinks,
+    this.cachedAt,
+  });
 
   final VillageProfile? profile;
+  final List<SocialMediaLink> socialLinks;
   final DateTime? cachedAt;
 
   @override
@@ -173,6 +187,12 @@ class _TentangContent extends StatelessWidget {
             _BoundaryCard('SELATAN', 'Samudra Hindia'),
           ],
         ),
+        if (socialLinks.where((link) => link.active).isNotEmpty) ...[
+          _SectionLabel('Media Sosial'),
+          _SocialLinksCard(
+            links: socialLinks.where((link) => link.active).toList(),
+          ),
+        ],
         const SizedBox(height: 16),
       ],
     );
@@ -247,6 +267,118 @@ Uri officeMapUri(VillageProfile? profile) {
     'api': '1',
     'query': query,
   });
+}
+
+class _SocialLinksCard extends StatelessWidget {
+  const _SocialLinksCard({required this.links});
+
+  final List<SocialMediaLink> links;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          children: [
+            for (var i = 0; i < links.length; i++) ...[
+              _SocialLinkTile(link: links[i]),
+              if (i != links.length - 1)
+                const Divider(height: 1, color: AppTheme.gold500),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialLinkTile extends StatelessWidget {
+  const _SocialLinkTile({required this.link});
+
+  final SocialMediaLink link;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: Key('profile-social-${link.id}'),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      leading: _SocialIcon(link: link),
+      title: Text(
+        link.label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(
+        _platformLabel(link.platform),
+        style: const TextStyle(color: AppTheme.ink700),
+      ),
+      trailing: const Icon(Icons.open_in_new, color: AppTheme.ink500),
+      onTap: () => _openSocialLink(context, link.url),
+    );
+  }
+}
+
+class _SocialIcon extends StatelessWidget {
+  const _SocialIcon({required this.link});
+
+  final SocialMediaLink link;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: AppTheme.gold500,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: link.iconUrl?.isNotEmpty == true
+            ? Padding(
+                padding: const EdgeInsets.all(9),
+                child: Image.network(
+                  link.iconUrl!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) =>
+                      const Icon(Icons.public, color: AppTheme.ink900),
+                ),
+              )
+            : const Icon(Icons.public, color: AppTheme.ink900),
+      ),
+    );
+  }
+}
+
+String _platformLabel(SocialMediaPlatform platform) {
+  return switch (platform) {
+    SocialMediaPlatform.facebook => 'Facebook',
+    SocialMediaPlatform.instagram => 'Instagram',
+    SocialMediaPlatform.youtube => 'YouTube',
+    SocialMediaPlatform.tiktok => 'TikTok',
+    SocialMediaPlatform.whatsapp => 'WhatsApp',
+    SocialMediaPlatform.x => 'X',
+    SocialMediaPlatform.website => 'Website',
+    SocialMediaPlatform.other => 'Tautan resmi',
+  };
+}
+
+Future<void> _openSocialLink(BuildContext context, String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return;
+
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  } catch (_) {
+    // Launcher failures share one user-facing message.
+  }
+
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Tautan media sosial belum bisa dibuka.')),
+  );
 }
 
 class _UpdatedAtNote extends StatelessWidget {

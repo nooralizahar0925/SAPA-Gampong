@@ -58,7 +58,7 @@ function stubConfirm(answer: boolean) {
 afterEach(() => setConfirmHandlerForTests(null));
 
 describe('content hub shell', () => {
-  it('renders the six content tabs and marks the routed one active', async () => {
+  it('renders the seven content tabs and marks the routed one active', async () => {
     renderApp(['/content/profile']);
 
     await screen.findByRole('heading', { name: /manajemen konten/i });
@@ -66,6 +66,7 @@ describe('content hub shell', () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       'Banner',
+      'Galeri',
       'Profil & Visi Misi',
       'Perangkat',
       'Masjid & Sholat',
@@ -87,6 +88,27 @@ describe('content hub shell', () => {
 
     await waitFor(() =>
       expect(screen.getByRole('tab', { name: 'Demografi' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    );
+  });
+
+  it('links Galeri and Potensi Desa from the sidebar', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/banners']);
+
+    await user.click(await screen.findByRole('button', { name: 'Galeri' }));
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Galeri' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Potensi Desa' }));
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Potensi Desa' })).toHaveAttribute(
         'aria-selected',
         'true',
       ),
@@ -333,6 +355,48 @@ describe('profile tab', () => {
     expect(screen.getByText('Jenis Kelamin')).toBeInTheDocument();
   });
 
+  it('adds and saves multiple social media links from the profile tab', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/profile']);
+
+    await waitFor(() => expect(screen.getAllByTestId('social-link-row')).toHaveLength(2));
+
+    await user.click(screen.getByRole('button', { name: /tambah media sosial/i }));
+
+    await waitFor(() => expect(screen.getAllByTestId('social-link-row')).toHaveLength(3));
+    expect(contentState.socialLinks).toHaveLength(2);
+
+    const rows = screen.getAllByTestId('social-link-row');
+    await user.selectOptions(within(rows[2]).getByLabelText('Platform'), 'whatsapp');
+    await user.clear(within(rows[2]).getByLabelText('Nama tampilan'));
+    await user.type(within(rows[2]).getByLabelText('Nama tampilan'), 'WhatsApp Pelayanan');
+    await user.clear(within(rows[2]).getByLabelText('Tautan'));
+    await user.type(within(rows[2]).getByLabelText('Tautan'), 'https://wa.me/628123456789');
+
+    await user.click(saveButton());
+
+    await waitFor(() => expect(contentState.socialLinks).toHaveLength(3));
+    expect(contentState.socialLinks[2].platform).toBe('whatsapp');
+    expect(contentState.socialLinks[2].label).toBe('WhatsApp Pelayanan');
+  });
+
+  it('updates visibility and order for social media links', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/profile']);
+
+    await waitFor(() => expect(screen.getAllByTestId('social-link-row')).toHaveLength(2));
+
+    const rows = screen.getAllByTestId('social-link-row');
+    await user.click(within(rows[0]).getByRole('checkbox'));
+    await user.click(within(rows[1]).getByRole('button', { name: /naikkan media sosial/i }));
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      expect(contentState.socialLinks.map((item) => item.id)).toEqual(['social-2', 'social-1']);
+      expect(contentState.socialLinks[1].active).toBe(false);
+    });
+  });
+
   // The aside toggles used to be decorative spans, which read as broken controls.
   it('toggles a demographic block straight from the aside', async () => {
     const user = userEvent.setup();
@@ -349,6 +413,68 @@ describe('profile tab', () => {
       const block = contentState.demographics.find((d) => d.key === 'total_penduduk');
       expect(block?.visible).toBe(false);
     });
+  });
+});
+
+describe('gallery tab', () => {
+  it('lists photo and video media and persists edits through the header save', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/gallery']);
+
+    await waitFor(() => expect(screen.getAllByTestId('gallery-card')).toHaveLength(2));
+
+    const firstCard = screen.getAllByTestId('gallery-card')[0];
+    await user.clear(within(firstCard).getByLabelText('Judul'));
+    await user.type(within(firstCard).getByLabelText('Judul'), 'Gotong royong Jumat');
+    await user.click(within(firstCard).getByRole('checkbox'));
+
+    expect(contentState.gallery[0].title).toBe('Gotong royong dusun');
+    expect(contentState.gallery[0].active).toBe(true);
+    await user.click(saveButton());
+
+    await waitFor(() => {
+      expect(contentState.gallery[0].title).toBe('Gotong royong Jumat');
+      expect(contentState.gallery[0].active).toBe(false);
+    });
+  });
+
+  it('uploads a new gallery item and keeps it staged until saved', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/gallery']);
+
+    await waitFor(() => expect(screen.getAllByTestId('gallery-card')).toHaveLength(2));
+
+    const file = new File(['x'], 'panen-raya.png', { type: 'image/png' });
+    await user.upload(screen.getByLabelText(/unggah media galeri/i, { selector: 'input' }), file);
+
+    await waitFor(() => expect(screen.getAllByTestId('gallery-card')).toHaveLength(3));
+    expect(screen.getByDisplayValue('panen raya')).toBeInTheDocument();
+    expect(contentState.gallery).toHaveLength(2);
+
+    await user.click(saveButton());
+
+    await waitFor(() => expect(contentState.gallery).toHaveLength(3));
+    expect(contentState.gallery[2].title).toBe('panen raya');
+  });
+
+  it('removes a gallery item after the admin confirms', async () => {
+    const user = userEvent.setup();
+    const prompts = stubConfirm(true);
+    renderApp(['/content/gallery']);
+
+    await waitFor(() => expect(screen.getAllByTestId('gallery-card')).toHaveLength(2));
+
+    const firstCard = screen.getAllByTestId('gallery-card')[0];
+    await user.click(within(firstCard).getByRole('button', { name: /hapus media/i }));
+
+    await waitFor(() => expect(screen.getAllByTestId('gallery-card')).toHaveLength(1));
+    expect(contentState.gallery).toHaveLength(2);
+
+    await user.click(saveButton());
+
+    await waitFor(() => expect(contentState.gallery).toHaveLength(1));
+    expect(contentState.gallery[0].id).toBe('gallery-2');
+    expect(prompts).toEqual(['Hapus foto ini?']);
   });
 });
 

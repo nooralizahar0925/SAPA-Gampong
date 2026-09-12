@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - main
+      - staging
+      - production
 
 jobs:
   backend:
@@ -95,7 +97,7 @@ jobs:
       run:
         working-directory: dashboard
     env:
-      VITE_API_BASE_URL: https://gampongblangdigital.web.id/api
+      VITE_API_BASE_URL: https://gampongblangdigital.com/api
     steps:
       - name: Checkout
         uses: actions/checkout@v4

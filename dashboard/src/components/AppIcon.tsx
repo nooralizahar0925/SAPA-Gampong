@@ -30,6 +30,7 @@ export type IconName =
   | 'send'
   | 'settings'
   | 'users'
+  | 'video'
   | 'warning'
   | 'x';
 
@@ -259,6 +260,13 @@ function iconPath(name: IconName): ReactNode {
           <circle cx="9.5" cy="7" r="3" />
           <path d="M20 21v-2a4 4 0 0 0-3-3.9" />
           <path d="M16 4.1a3 3 0 0 1 0 5.8" />
+        </>
+      );
+    case 'video':
+      return (
+        <>
+          <rect x="3" y="6" width="12" height="12" rx="2" />
+          <path d="m15 10 5-3v10l-5-3Z" />
         </>
       );
     case 'warning':

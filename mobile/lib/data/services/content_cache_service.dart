@@ -8,6 +8,8 @@ class ContentCacheKeys {
   const ContentCacheKeys._();
 
   static const banners = 'content:banners';
+  static const gallery = 'content:gallery';
+  static const socialLinks = 'content:social-links';
   static const profile = 'content:profile';
   static const visionMission = 'content:vision-mission';
   static const officials = 'content:officials';

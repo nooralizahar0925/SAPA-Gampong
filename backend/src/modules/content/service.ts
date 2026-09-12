@@ -86,6 +86,19 @@ async function assertAudioFile(fileId: string | null | undefined): Promise<void>
   }
 }
 
+async function assertGalleryFile(fileId: string | null | undefined, mediaType: 'photo' | 'video'): Promise<void> {
+  if (!fileId) return;
+  const file = await prisma.file.findUnique({ where: { id: fileId }, select: { mime: true } });
+  if (!file) throw ApiError.notFound('File tidak ditemukan');
+
+  const valid = mediaType === 'photo' ? file.mime.startsWith('image/') : file.mime.startsWith('video/');
+  if (!valid) {
+    throw ApiError.validation('Data yang dikirim tidak valid', {
+      file_id: mediaType === 'photo' ? 'File galeri foto harus berupa gambar' : 'File galeri video harus berupa video',
+    });
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Banner slides                                                              */
 /* -------------------------------------------------------------------------- */
@@ -204,6 +217,262 @@ export async function reorderBanners(ids: string[]) {
   );
 
   return listBanners();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Gallery                                                                    */
+/* -------------------------------------------------------------------------- */
+
+type GalleryRow = Prisma.GalleryItemGetPayload<Record<string, never>>;
+
+function toGalleryItem(row: GalleryRow) {
+  return {
+    id: row.id,
+    media_type: row.mediaType as 'photo' | 'video',
+    file_id: row.fileId,
+    media_url: fileUrl(row.fileId),
+    title: row.title,
+    caption: row.caption,
+    order: row.order,
+    active: row.active,
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  };
+}
+
+export async function listGalleryItems(options: { includeInactive?: boolean } = {}) {
+  const rows = await prisma.galleryItem.findMany({
+    where: options.includeInactive ? undefined : { active: true },
+    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+  });
+  return rows.map(toGalleryItem);
+}
+
+export async function createGalleryItem(input: {
+  media_type: 'photo' | 'video';
+  file_id: string;
+  title: string;
+  caption?: string | null;
+  order?: number;
+  active?: boolean;
+}) {
+  await assertGalleryFile(input.file_id, input.media_type);
+
+  const row = await prisma.galleryItem.create({
+    data: {
+      mediaType: input.media_type,
+      fileId: input.file_id,
+      title: input.title,
+      caption: input.caption ?? null,
+      order: input.order ?? (await nextGalleryOrder()),
+      active: input.active ?? true,
+    },
+  });
+
+  return toGalleryItem(row);
+}
+
+async function nextGalleryOrder() {
+  const last = await prisma.galleryItem.findFirst({ orderBy: { order: 'desc' }, select: { order: true } });
+  return last ? last.order + 1 : 0;
+}
+
+export async function updateGalleryItem(
+  id: string,
+  input: {
+    media_type?: 'photo' | 'video';
+    file_id?: string;
+    title?: string;
+    caption?: string | null;
+    order?: number;
+    active?: boolean;
+  },
+) {
+  const existing = await getGalleryItemOrThrow(id);
+  const mediaType = input.media_type ?? (existing.mediaType as 'photo' | 'video');
+
+  if (isSupplied(input.file_id) || isSupplied(input.media_type)) {
+    await assertGalleryFile(input.file_id ?? existing.fileId, mediaType);
+  }
+
+  const row = await prisma.galleryItem.update({
+    where: { id },
+    data: definedOnly({
+      mediaType: input.media_type,
+      fileId: input.file_id,
+      title: input.title,
+      caption: input.caption,
+      order: input.order,
+      active: input.active,
+    }),
+  });
+
+  return toGalleryItem(row);
+}
+
+export async function deleteGalleryItem(id: string) {
+  await getGalleryItemOrThrow(id);
+  await prisma.galleryItem.delete({ where: { id } });
+}
+
+async function getGalleryItemOrThrow(id: string) {
+  const row = await prisma.galleryItem.findUnique({ where: { id } });
+  if (!row) throw ApiError.notFound('Media galeri tidak ditemukan');
+  return row;
+}
+
+export async function reorderGalleryItems(ids: string[]) {
+  const unique = new Set(ids);
+  if (unique.size !== ids.length) {
+    throw ApiError.validation('Daftar id galeri mengandung duplikat');
+  }
+
+  const found = await prisma.galleryItem.findMany({
+    where: { id: { in: ids } },
+    select: { id: true },
+  });
+
+  if (found.length !== ids.length) {
+    throw ApiError.notFound('Sebagian media galeri tidak ditemukan');
+  }
+
+  await prisma.$transaction(
+    ids.map((id, index) => prisma.galleryItem.update({ where: { id }, data: { order: index } })),
+  );
+
+  return listGalleryItems({ includeInactive: true });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Social media links                                                         */
+/* -------------------------------------------------------------------------- */
+
+const SOCIAL_ICON_DOMAINS: Record<string, string> = {
+  facebook: 'facebook.com',
+  instagram: 'instagram.com',
+  youtube: 'youtube.com',
+  tiktok: 'tiktok.com',
+  whatsapp: 'whatsapp.com',
+  x: 'x.com',
+  website: 'gampongblangdigital.com',
+  other: 'gampongblangdigital.com',
+};
+
+type SocialRow = Prisma.SocialMediaLinkGetPayload<Record<string, never>>;
+
+function defaultSocialIconUrl(platform: string) {
+  const domain = SOCIAL_ICON_DOMAINS[platform] ?? SOCIAL_ICON_DOMAINS.other;
+  return `https://www.google.com/s2/favicons?sz=64&domain_url=https://${domain}`;
+}
+
+function toSocialLink(row: SocialRow) {
+  return {
+    id: row.id,
+    platform: row.platform as 'facebook' | 'instagram' | 'youtube' | 'tiktok' | 'whatsapp' | 'x' | 'website' | 'other',
+    label: row.label,
+    url: row.url,
+    icon_url: row.iconUrl ?? defaultSocialIconUrl(row.platform),
+    order: row.order,
+    active: row.active,
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  };
+}
+
+export async function listSocialMediaLinks(options: { includeInactive?: boolean } = {}) {
+  const rows = await prisma.socialMediaLink.findMany({
+    where: options.includeInactive ? undefined : { active: true },
+    orderBy: [{ order: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toSocialLink);
+}
+
+export async function createSocialMediaLink(input: {
+  platform: 'facebook' | 'instagram' | 'youtube' | 'tiktok' | 'whatsapp' | 'x' | 'website' | 'other';
+  label: string;
+  url: string;
+  icon_url?: string | null;
+  order?: number;
+  active?: boolean;
+}) {
+  const row = await prisma.socialMediaLink.create({
+    data: {
+      platform: input.platform,
+      label: input.label,
+      url: input.url,
+      iconUrl: input.icon_url ?? null,
+      order: input.order ?? (await nextSocialLinkOrder()),
+      active: input.active ?? true,
+    },
+  });
+
+  return toSocialLink(row);
+}
+
+async function nextSocialLinkOrder() {
+  const last = await prisma.socialMediaLink.findFirst({ orderBy: { order: 'desc' }, select: { order: true } });
+  return last ? last.order + 1 : 0;
+}
+
+export async function updateSocialMediaLink(
+  id: string,
+  input: {
+    platform?: 'facebook' | 'instagram' | 'youtube' | 'tiktok' | 'whatsapp' | 'x' | 'website' | 'other';
+    label?: string;
+    url?: string;
+    icon_url?: string | null;
+    order?: number;
+    active?: boolean;
+  },
+) {
+  await getSocialMediaLinkOrThrow(id);
+
+  const row = await prisma.socialMediaLink.update({
+    where: { id },
+    data: definedOnly({
+      platform: input.platform,
+      label: input.label,
+      url: input.url,
+      iconUrl: input.icon_url,
+      order: input.order,
+      active: input.active,
+    }),
+  });
+
+  return toSocialLink(row);
+}
+
+export async function deleteSocialMediaLink(id: string) {
+  await getSocialMediaLinkOrThrow(id);
+  await prisma.socialMediaLink.delete({ where: { id } });
+}
+
+async function getSocialMediaLinkOrThrow(id: string) {
+  const row = await prisma.socialMediaLink.findUnique({ where: { id } });
+  if (!row) throw ApiError.notFound('Media sosial tidak ditemukan');
+  return row;
+}
+
+export async function reorderSocialMediaLinks(ids: string[]) {
+  const unique = new Set(ids);
+  if (unique.size !== ids.length) {
+    throw ApiError.validation('Daftar id media sosial mengandung duplikat');
+  }
+
+  const found = await prisma.socialMediaLink.findMany({
+    where: { id: { in: ids } },
+    select: { id: true },
+  });
+
+  if (found.length !== ids.length) {
+    throw ApiError.notFound('Sebagian media sosial tidak ditemukan');
+  }
+
+  await prisma.$transaction(
+    ids.map((id, index) => prisma.socialMediaLink.update({ where: { id }, data: { order: index } })),
+  );
+
+  return listSocialMediaLinks({ includeInactive: true });
 }
 
 /* -------------------------------------------------------------------------- */

@@ -331,8 +331,15 @@ describe('feedback module', () => {
       const sendMail = stubEmailTransport();
       const created = await submitFeedback();
       const sentPushes: Array<{ tokens: string[]; payload: PushPayload }> = [];
+      let statusAtPush: string | undefined;
       const restorePush = setPushTransportForTests({
         async sendToTokens(tokens, payload) {
+          statusAtPush = (
+            await testPrisma.feedback.findUnique({
+              where: { id: created.body.id },
+              select: { status: true },
+            })
+          )?.status;
           sentPushes.push({ tokens, payload });
           return { successCount: tokens.length, failureCount: 0, invalidTokens: [] };
         },
@@ -356,6 +363,7 @@ describe('feedback module', () => {
       expect(res.body.status).toBe('responded');
       expect(res.body.reply).toBe('Terima kasih, lokasi akan kami tinjau pekan ini.');
       expect(res.body.replied_at).toBeTruthy();
+      expect(statusAtPush).toBe('responded');
 
       expect(sendMail).toHaveBeenCalledTimes(1);
       const message = sendMail.mock.calls[0]![0];

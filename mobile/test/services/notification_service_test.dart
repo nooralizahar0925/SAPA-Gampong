@@ -66,6 +66,36 @@ void main() {
       }
     });
 
+    test('uses server-provided notification copy', () {
+      final notification = NotificationService.residentNotificationFromData({
+        'event': 'APPROVED',
+        'reference_code': 'GB-2026-000126',
+        'title': 'Surat disetujui petugas',
+        'body': 'Silakan pantau proses berikutnya.',
+      });
+
+      expect(notification, isNotNull);
+      expect(notification!.title, 'Surat disetujui petugas');
+      expect(notification.body, 'Silakan pantau proses berikutnya.');
+    });
+
+    test('keeps process notifications separate for the same request', () {
+      final reviewed = NotificationService.residentNotificationFromData({
+        'event': 'IN_REVIEW',
+        'reference_code': 'GB-2026-000127',
+      });
+      final approved = NotificationService.residentNotificationFromData({
+        'event': 'APPROVED',
+        'reference_code': 'GB-2026-000127',
+      });
+      final sent = NotificationService.residentNotificationFromData({
+        'event': 'SENT',
+        'reference_code': 'GB-2026-000127',
+      });
+
+      expect({reviewed!.id, approved!.id, sent!.id}, hasLength(3));
+    });
+
     test('ignores unrelated data messages', () {
       final notification = NotificationService.residentNotificationFromData({
         'event': 'UNKNOWN',

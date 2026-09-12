@@ -189,6 +189,8 @@ Revokes a request's `verification_token` so future scans return `{ "valid": fals
 | Resource | Public read | Admin write |
 |---|---|---|
 | Banner slides | `GET /content/banners` | `POST/PATCH/DELETE /content/banners[/:id]`, `POST /content/banners/reorder` |
+| Gallery photos/videos | `GET /content/gallery` | `GET /content/gallery/admin`, `POST/PATCH/DELETE /content/gallery[/:id]`, `POST /content/gallery/reorder` |
+| Social media links | `GET /content/social-links` | `GET /content/social-links/admin`, `POST/PATCH/DELETE /content/social-links[/:id]`, `POST /content/social-links/reorder` |
 | Village profile (singleton) | `GET /content/profile` | `PATCH /content/profile` |
 | Vision & mission | `GET /content/vision-mission` | `PATCH /content/vision-mission` |
 | Officials (perangkat) | `GET /content/officials` | `POST/PATCH/DELETE /content/officials[/:id]` |
@@ -200,6 +202,43 @@ Revokes a request's `verification_token` so future scans return `{ "valid": fals
 `GET /content/prayer-config` → `{ "lat": 4.7, "lng": 95.6, "calc_method": "Kemenag", "timezone": "Asia/Jakarta" }`. The **mobile app computes the 5 daily times locally** from these coordinates (offline-friendly); no per-day server call needed.
 
 `GET /content/demographics` → array of stat blocks: `{ key, label, type: "number|split|bar|pie", data, order, visible }` (brief §9 — data-driven).
+
+`GET /content/gallery` → active media ordered for residents:
+```json
+[
+  {
+    "id": "gal_01H...",
+    "media_type": "photo",
+    "file_id": "f_01H...",
+    "media_url": "https://.../signed",
+    "title": "Gotong royong dusun",
+    "caption": "Dokumentasi kegiatan warga.",
+    "order": 0,
+    "active": true,
+    "created_at": "2026-09-09T02:00:00Z",
+    "updated_at": "2026-09-09T02:00:00Z"
+  }
+]
+```
+`media_type` is `photo|video`. Admin uploads media through `POST /uploads` with `kind=photo` or `kind=video`; accepted gallery video MIME types are `video/mp4`, `video/webm`, and `video/quicktime`.
+
+`GET /content/social-links` → active social media links ordered for the Profil Desa screen:
+```json
+[
+  {
+    "id": "soc_01H...",
+    "platform": "instagram",
+    "label": "Instagram Gampong Blang",
+    "url": "https://www.instagram.com/gampongblang",
+    "icon_url": "https://www.google.com/s2/favicons?sz=64&domain_url=https://instagram.com",
+    "order": 0,
+    "active": true,
+    "created_at": "2026-09-10T02:00:00Z",
+    "updated_at": "2026-09-10T02:00:00Z"
+  }
+]
+```
+`platform` is `facebook|instagram|youtube|tiktok|whatsapp|x|website|other`. When `icon_url` is omitted, the backend returns a default favicon URL based on the platform.
 
 ---
 

@@ -180,7 +180,6 @@ export async function replyToFeedback(
   const reply = input.reply.trim();
 
   await notifyFeedbackReply({
-    feedbackId: found.id,
     reporterEmail: found.email,
     reporterName: found.name,
     referenceCode: found.referenceCode,
@@ -199,6 +198,16 @@ export async function replyToFeedback(
     },
     include: { attachments: { include: { file: true } } },
   });
+
+  try {
+    await notifyFeedbackStatusChanged({
+      feedbackId: found.id,
+      referenceCode: found.referenceCode,
+      status: 'responded',
+    });
+  } catch (error) {
+    console.error('Failed to send responded feedback notification', error);
+  }
 
   return serializeDetail(updated);
 }

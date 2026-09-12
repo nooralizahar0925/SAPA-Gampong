@@ -9,10 +9,11 @@ import { env } from '../config/env';
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const FIVE_MB = 5 * 1024 * 1024;
 const TWENTY_MB = 20 * 1024 * 1024;
+const FIFTY_MB = 50 * 1024 * 1024;
 
 export const storageRoot = resolve(process.cwd(), 'storage', env.NODE_ENV);
 
-export const uploadKindValues = ['KTP', 'KK', 'other', 'photo', 'document', 'audio'] as const;
+export const uploadKindValues = ['KTP', 'KK', 'other', 'photo', 'document', 'audio', 'video'] as const;
 
 type ProcessedUpload = {
   buffer: Buffer;
@@ -28,17 +29,17 @@ type UploadInput = {
 
 export async function storeUpload(input: UploadInput) {
   const mimeKind = validateMime(input.mime);
-  validateSize(input.buffer.length, mimeKind === 'audio' ? TWENTY_MB : FIVE_MB);
+  validateSize(input.buffer.length, uploadLimitFor(mimeKind));
 
   const processed = input.mime.startsWith('image/')
     ? await compressImage(input.buffer, input.mime)
     : {
         buffer: input.buffer,
         mime: input.mime,
-        extension: normalizeExtension(input.originalName, mimeKind === 'audio' ? '.mp3' : '.pdf'),
+        extension: normalizeExtension(input.originalName, fallbackExtensionFor(mimeKind)),
       };
 
-  if (mimeKind !== 'audio') validateSize(processed.buffer.length);
+  if (mimeKind === 'image' || mimeKind === 'pdf') validateSize(processed.buffer.length);
 
   const file = await persistStoredFile({
     buffer: processed.buffer,
@@ -108,15 +109,28 @@ function sign(fileId: string, exp: number) {
   return createHmac('sha256', env.JWT_SECRET).update(`${fileId}:${exp}`).digest('hex');
 }
 
-function validateMime(mime: string): 'image' | 'pdf' | 'audio' {
+function validateMime(mime: string): 'image' | 'pdf' | 'audio' | 'video' {
   if (mime === 'application/pdf') return 'pdf';
   if (mime.startsWith('image/')) return 'image';
   if (mime === 'audio/mpeg' || mime === 'audio/mp4' || mime === 'audio/ogg' || mime === 'audio/wav')
     return 'audio';
+  if (mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/quicktime') return 'video';
 
   throw ApiError.validation('Data yang dikirim tidak valid', {
-    file: 'Tipe file harus gambar, PDF, atau audio (MP3/M4A)',
+    file: 'Tipe file harus gambar, video, PDF, atau audio (MP3/M4A)',
   });
+}
+
+function uploadLimitFor(mimeKind: 'image' | 'pdf' | 'audio' | 'video') {
+  if (mimeKind === 'audio') return TWENTY_MB;
+  if (mimeKind === 'video') return FIFTY_MB;
+  return FIVE_MB;
+}
+
+function fallbackExtensionFor(mimeKind: 'image' | 'pdf' | 'audio' | 'video') {
+  if (mimeKind === 'audio') return '.mp3';
+  if (mimeKind === 'video') return '.mp4';
+  return '.pdf';
 }
 
 function validateSize(size: number, limit = FIVE_MB) {
@@ -202,6 +216,9 @@ function extensionFromMime(mime: string) {
     case 'audio/mp4': return '.m4a';
     case 'audio/ogg': return '.ogg';
     case 'audio/wav': return '.wav';
+    case 'video/mp4': return '.mp4';
+    case 'video/webm': return '.webm';
+    case 'video/quicktime': return '.mov';
     default: return '.bin';
   }
 }
