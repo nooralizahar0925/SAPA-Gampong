@@ -126,6 +126,6 @@ jobs:
 
       - name: Smoke test
         run: |
-          curl -fsS https://gampongblangdigital.web.id/api/health
+          curl -fsS --retry 12 --retry-delay 2 --retry-all-errors https://gampongblangdigital.web.id/api/health
           curl -fsSI https://gampongblangdigital.web.id/
           curl -fsSI https://gampongblangdigital.web.id/mobile-app/latest.apk
