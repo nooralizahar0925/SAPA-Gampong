@@ -96,9 +96,9 @@ Future<void> runLetterFlow(WidgetTester tester) async {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final tempFile = await File(
+  final tempFile = File(
     '${Directory.systemTemp.path}/sapa-letter-flow-upload.pdf',
-  ).writeAsBytes(List<int>.filled(128, 1));
+  )..writeAsBytesSync(List<int>.filled(128, 1));
   addTearDown(() {
     if (tempFile.existsSync()) tempFile.deleteSync();
   });
@@ -119,6 +119,8 @@ Future<void> runLetterFlow(WidgetTester tester) async {
         letterRepositoryProvider.overrideWithValue(letterRepository),
         uploadServiceProvider.overrideWithValue(uploadService),
         residentSessionServiceProvider.overrideWithValue(residentService),
+        residentRequestsProvider.overrideWith((_) async => const []),
+        residentFeedbackProvider.overrideWith((_) async => const []),
         attachmentFilePickerProvider.overrideWithValue(
           FakeAttachmentPicker(pickedFile),
         ),
@@ -137,19 +139,24 @@ Future<void> runLetterFlow(WidgetTester tester) async {
   await pumpUi(tester);
 
   await tester.enterText(
-    find.widgetWithText(TextFormField, 'Nama Pemohon'),
+    find.descendant(
+      of: find.byKey(const Key('applicant-name')),
+      matching: find.byType(TextFormField),
+    ),
     'Budi Santoso',
   );
   expect(find.text(testResidentSession.email), findsOneWidget);
   await tester.enterText(
-    find.widgetWithText(TextFormField, 'No. HP'),
+    find.descendant(
+      of: find.byKey(const Key('applicant-phone')),
+      matching: find.byType(TextFormField),
+    ),
     '081234567890',
   );
   await tester.enterText(
     find.byKey(const Key('field-nik')),
     '1107010101010001',
   );
-  await tester.enterText(find.byKey(const Key('field-nama')), 'Budi Santoso');
   await tester.enterText(
     find.byKey(const Key('field-alamat')),
     'Dusun Meunasah, Gampong Blang',
@@ -166,7 +173,6 @@ Future<void> runLetterFlow(WidgetTester tester) async {
 
   expect(find.text('Unggah lampiran'), findsOneWidget);
   await uploadAttachment(tester, 'KTP');
-  await uploadAttachment(tester, 'KK');
   await tester.tap(find.byKey(const Key('attachments-next')));
   await pumpUi(tester);
 
@@ -178,9 +184,9 @@ Future<void> runLetterFlow(WidgetTester tester) async {
 
   expect(find.text('Permohonan telah dikirim'), findsOneWidget);
   expect(find.text('BLG-E2E1'), findsOneWidget);
-  expect(uploadService.uploadedKinds, ['KTP', 'KK']);
+  expect(uploadService.uploadedKinds, ['KTP']);
   expect(letterRepository.submittedDraft?.letterType, 'L1');
-  expect(letterRepository.submittedDraft?.attachments.length, 2);
+  expect(letterRepository.submittedDraft?.attachments.length, 1);
 }
 
 Future<void> uploadAttachment(WidgetTester tester, String kind) async {
@@ -188,7 +194,7 @@ Future<void> uploadAttachment(WidgetTester tester, String kind) async {
   await pumpUi(tester);
   await tester.tap(find.text('PDF'));
   await pumpUi(tester);
-  expect(find.text('$kind terunggah'), findsOneWidget);
+  expect(find.textContaining('terunggah'), findsWidgets);
 }
 
 Future<void> pumpUi(

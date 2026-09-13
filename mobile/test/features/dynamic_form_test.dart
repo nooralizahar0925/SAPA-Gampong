@@ -66,19 +66,23 @@ GoRouter _makeRouter(LetterType type) => GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (_, __) => LetterFormScreen(letterType: type),
+      builder: (_, _) => LetterFormScreen(letterType: type),
     ),
     GoRoute(
       path: '/layanan/surat/tujuan',
       name: 'purpose',
-      builder: (_, __) => const Scaffold(body: Text('tujuan')),
+      builder: (_, _) => const Scaffold(body: Text('tujuan')),
     ),
   ],
 );
 
 void main() {
   group('LetterFormScreen — dynamic form engine', () {
-    Future<Widget> buildApp(LetterType type) async {
+    Future<Widget> buildApp(WidgetTester tester, LetterType type) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
       final residentService = await residentSessionService();
       return ProviderScope(
         overrides: [
@@ -91,24 +95,24 @@ void main() {
     testWidgets('renders applicant block for every letter type', (
       tester,
     ) async {
-      await tester.pumpWidget(await buildApp(_basicType));
+      await tester.pumpWidget(await buildApp(tester, _basicType));
       await tester.pumpAndSettle();
 
       expect(find.text('Data Pemohon'), findsOneWidget);
-      expect(
-        find.widgetWithText(TextFormField, 'Nama Pemohon'),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('applicant-name')), findsOneWidget);
       expect(find.text('Alamat Email'), findsOneWidget);
       expect(find.text(testResidentSession.email), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'No. HP'), findsOneWidget);
+      expect(find.byKey(const Key('applicant-phone')), findsOneWidget);
     });
 
     testWidgets(
       'renders separate subject fields when subject differs from applicant',
       (tester) async {
         await tester.pumpWidget(
-          await buildApp(_basicType.copyWith(subjectIsApplicant: false)),
+          await buildApp(
+            tester,
+            _basicType.copyWith(subjectIsApplicant: false),
+          ),
         );
         await tester.pumpAndSettle();
 
@@ -120,7 +124,7 @@ void main() {
     testWidgets(
       'hides applicant-derived subject fields when subject is applicant',
       (tester) async {
-        await tester.pumpWidget(await buildApp(_basicType));
+        await tester.pumpWidget(await buildApp(tester, _basicType));
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('field-nama')), findsNothing);
@@ -153,7 +157,7 @@ void main() {
           ],
         );
 
-        await tester.pumpWidget(await buildApp(l2));
+        await tester.pumpWidget(await buildApp(tester, l2));
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('field-nama_pemohon')), findsOneWidget);
@@ -180,7 +184,7 @@ void main() {
           ],
         );
 
-        await tester.pumpWidget(await buildApp(l10));
+        await tester.pumpWidget(await buildApp(tester, l10));
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('field-nama_pemohon')), findsOneWidget);
@@ -206,14 +210,14 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(await buildApp(l6));
+      await tester.pumpWidget(await buildApp(tester, l6));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('field-nama_anak')), findsNothing);
     });
 
     testWidgets('date field shows calendar icon', (tester) async {
-      await tester.pumpWidget(await buildApp(_dateType));
+      await tester.pumpWidget(await buildApp(tester, _dateType));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('field-tgl_lahir')), findsOneWidget);
@@ -223,7 +227,7 @@ void main() {
     testWidgets('NIK field rejects value shorter than 16 digits', (
       tester,
     ) async {
-      await tester.pumpWidget(await buildApp(_nikType));
+      await tester.pumpWidget(await buildApp(tester, _nikType));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byKey(const Key('field-nik')), '12345');
@@ -244,7 +248,7 @@ void main() {
         requiredAttachments: ['KTP'],
         fields: [],
       );
-      await tester.pumpWidget(await buildApp(l6));
+      await tester.pumpWidget(await buildApp(tester, l6));
       await tester.pumpAndSettle();
 
       expect(
@@ -256,11 +260,14 @@ void main() {
     });
 
     testWidgets('applicant fields start empty', (tester) async {
-      await tester.pumpWidget(await buildApp(_basicType));
+      await tester.pumpWidget(await buildApp(tester, _basicType));
       await tester.pumpAndSettle();
 
       final nameField = tester.widget<TextFormField>(
-        find.widgetWithText(TextFormField, 'Nama Pemohon'),
+        find.descendant(
+          of: find.byKey(const Key('applicant-name')),
+          matching: find.byType(TextFormField),
+        ),
       );
       expect(nameField.controller?.text, isEmpty);
     });

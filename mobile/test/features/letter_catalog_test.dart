@@ -37,11 +37,11 @@ const _twoTypes = [
 
 GoRouter _makeRouter() => GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const LetterCatalogScreen()),
+    GoRoute(path: '/', builder: (_, _) => const LetterCatalogScreen()),
     GoRoute(
       path: '/layanan/surat/form',
       name: 'letterForm',
-      builder: (_, __) => const Scaffold(body: Text('form')),
+      builder: (_, _) => const Scaffold(body: Text('form')),
     ),
   ],
 );

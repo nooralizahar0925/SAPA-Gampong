@@ -41,7 +41,7 @@ GoRouter _makeRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (_, __) => AttachmentScreen(flowDraft: draft),
+      builder: (_, _) => AttachmentScreen(flowDraft: draft),
     ),
     GoRoute(
       path: '/layanan/surat/ringkasan',

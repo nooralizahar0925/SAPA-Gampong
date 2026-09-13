@@ -186,6 +186,7 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
                 ),
               const SectionTitle('Data Pemohon'),
               SapaTextField(
+                key: const Key('applicant-name'),
                 controller: applicantName,
                 label: 'Nama Pemohon',
                 validator: Validators.required,
@@ -193,12 +194,14 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
               ),
               const SizedBox(height: 12),
               SapaDisplayField(
+                key: const Key('applicant-email'),
                 label: 'Alamat Email',
                 value: session?.email ?? '-',
                 helperText: 'Surat jadi hanya dikirim ke email ini.',
               ),
               const SizedBox(height: 12),
               SapaTextField(
+                key: const Key('applicant-phone'),
                 controller: applicantPhone,
                 label: 'No. HP',
                 keyboardType: TextInputType.phone,

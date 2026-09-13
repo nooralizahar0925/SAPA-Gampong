@@ -99,7 +99,7 @@ Widget _buildApp({
     child: MaterialApp.router(
       routerConfig: GoRouter(
         initialLocation: '/',
-        routes: [GoRoute(path: '/', builder: (_, __) => const ProfileScreen())],
+        routes: [GoRoute(path: '/', builder: (_, _) => const ProfileScreen())],
       ),
     ),
   );
@@ -146,7 +146,7 @@ void main() {
           routerConfig: GoRouter(
             initialLocation: '/',
             routes: [
-              GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
+              GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
             ],
           ),
         ),
@@ -207,7 +207,7 @@ void main() {
           routerConfig: GoRouter(
             initialLocation: '/',
             routes: [
-              GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
+              GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
             ],
           ),
         ),
@@ -283,7 +283,7 @@ void main() {
           routerConfig: GoRouter(
             initialLocation: '/',
             routes: [
-              GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
+              GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
             ],
           ),
         ),
