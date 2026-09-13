@@ -67,7 +67,7 @@ jobs:
           MOBILE_API_BASE_URL="${MOBILE_WEB_API_BASE_URL:-$API_BASE_URL}"
           RUN_SEED="${{ github.event.inputs.run_seed }}"
           BUILD_MOBILE_WEB="${{ github.event.inputs.build_mobile_web }}"
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/production_key -p "$PORT" "$PRODUCTION_USER@$PRODUCTION_HOST" \
+          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -i ~/.ssh/production_key -p "$PORT" "$PRODUCTION_USER@$PRODUCTION_HOST" \
             "set -euo pipefail
              cd '$APP_DIR'
              git fetch origin '$DEPLOY_BRANCH'

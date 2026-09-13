@@ -61,7 +61,7 @@ jobs:
           PORT="${STAGING_PORT:-22}"
           APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
           API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.web.id/api}"
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
+          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
             "set -euo pipefail
              cd '$APP_DIR'
              git fetch origin '$DEPLOY_BRANCH'
