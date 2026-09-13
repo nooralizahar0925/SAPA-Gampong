@@ -45,6 +45,14 @@ The deploy job SSHes into the VPS, updates the Git checkout, and runs:
 scripts/deploy-staging.sh
 ```
 
+Future staging deploy work should also publish a tester Android APK for client testing. Keep this staging-only:
+
+- Build the APK from the `staging` branch.
+- Sign it with a staging/testing key, not the production Play Store upload key.
+- Use a staging package id suffix and app label so it can be installed beside production.
+- Upload it to the staging server under a stable HTTPS path such as `/mobile-app/latest.apk`.
+- Show the install option only in the staging dashboard, with version, build date, release notes, QR code, and download action.
+
 ### Production Deploy
 
 File:

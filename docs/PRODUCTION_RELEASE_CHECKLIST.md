@@ -68,6 +68,10 @@ mobile/build/app/outputs/bundle/release/app-release.aab
 
 The Android manifest currently requests location, camera, notifications, exact alarm, boot completed, image/media access, dial intent, and WhatsApp/view intents. These need matching explanations in Play Console and the privacy policy.
 
+### Staging Tester APK
+
+For client testing before Play Store release, staging may publish a direct-install APK from the dashboard. This APK must stay separate from production: use a staging package id, staging app label, staging signing key, and staging API URL. Do not distribute the production Play Store upload key through this flow.
+
 ## Production Web
 
 ### Access And Secrets Needed

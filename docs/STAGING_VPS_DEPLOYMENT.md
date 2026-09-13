@@ -307,6 +307,21 @@ The mobile web build output is:
 /opt/gampong-blang/staging/SAPA-Gampong/mobile/build/web
 ```
 
+## 8.1 Staging Android Tester Install
+
+Future staging releases should support direct Android tester installation from the admin dashboard. This is for staging only, so clients can install and test new app features before the Play Store release.
+
+Recommended design:
+
+- Build a signed staging APK from the `staging` branch, separate from the production Play Store AAB.
+- Use a staging package id suffix, for example `id.gampongblang.sapa_gampong.staging`, so testers can install staging and production side by side.
+- Use a staging app label, for example `Gampong Blang Digital Staging`, so testers do not confuse it with production.
+- Publish the latest staging APK under the staging domain, for example `https://gampongblangdigital.web.id/mobile-app/latest.apk`.
+- Add a staging-only dashboard panel with version, build date, release notes, QR code, and a clickable APK download button.
+- Hide this dashboard panel outside staging builds.
+
+Testers must allow Android installation from the browser because this is a direct APK download, not a Play Store release. Production Android releases should still use Play Console and `.aab` uploads.
+
 ## 9. Nginx
 
 Create the Nginx site:
