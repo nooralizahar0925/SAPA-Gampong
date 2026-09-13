@@ -7,7 +7,10 @@ Use this checklist before publishing the Android app to Google Play and the web 
 - Android package id: `id.gampongblang.sapa_gampong`
 - Android app label: `Gampong Blang Digital`
 - Android compile SDK: `36`
-- Android release signing: prepared through `mobile/android/key.properties`, but the real upload keystore is still required.
+- Android release signing: configured locally with alias `upload`; the private files are ignored by Git.
+- Signed release candidate: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+1`).
+- Upload certificate SHA-1: `C8:96:B9:FE:FA:C6:B1:73:D9:D6:5B:27:9C:5F:88:F2:F1:44:9B:6B`.
+- Upload certificate SHA-256: `6A:3D:7F:AC:18:F4:34:4F:E0:B0:98:16:B2:3F:C8:F2:E0:16:93:1B:03:0C:EB:A7:E6:69:73:4B:3D:4F:F6:97`.
 - Web deployment: staging and production are live on the VPS with HTTPS and automated deployment.
 - Production Firebase Admin: configured for project `sapa-gampong`.
 - Privacy policy: available at `https://gampongblangdigital.com/privacy-policy` after the corresponding production deployment.
@@ -129,7 +132,7 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 
 ## Release Blockers
 
-- Real Android upload keystore and passwords.
+- Copy the upload keystore backup to secure off-device storage; the current protected backup and passwords are on this Mac.
 - Google Play Console access.
 - Store listing assets and screenshots.
 - Complete the Play Console Data Safety form using `docs/PLAY_CONSOLE_DATA_SAFETY.md`.
