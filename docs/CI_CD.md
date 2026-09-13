@@ -36,10 +36,10 @@ File:
 
 Runs after CI verification:
 
-- automatically on pushes to `main` that touch backend, dashboard, deploy script, or deploy workflow files
+- automatically on pushes to `staging` that touch backend, dashboard, deploy script, or deploy workflow files
 - manually from GitHub Actions with `workflow_dispatch`
 
-The deploy job SSHes into the VPS, updates the Git checkout, and runs:
+The deploy job runs on the `gbd-vps-deploy` self-hosted runner, updates the Git checkout on the VPS, and runs:
 
 ```bash
 scripts/deploy-staging.sh
@@ -63,7 +63,7 @@ File:
 
 Runs manually from GitHub Actions after CI verification. It does not auto-deploy on push.
 
-The deploy job SSHes into the production VPS, updates the Git checkout, and runs:
+The deploy job runs on the `gbd-vps-deploy` self-hosted runner, updates the Git checkout on the VPS, and runs:
 
 ```bash
 scripts/deploy-production.sh
@@ -77,42 +77,34 @@ Add these in:
 GitHub repo -> Settings -> Secrets and variables -> Actions -> Repository secrets
 ```
 
-Required:
+Staging optional:
 
 ```text
-STAGING_HOST=<VPS_PUBLIC_IP_OR_DOMAIN>
-STAGING_USER=gbd
-STAGING_SSH_KEY=<PRIVATE_SSH_KEY_ALLOWED_TO_LOGIN_TO_VPS>
-```
-
-Optional:
-
-```text
-STAGING_PORT=22
 STAGING_APP_DIR=/opt/gampong-blang/staging/SAPA-Gampong
 STAGING_DASHBOARD_API_BASE_URL=https://gampongblangdigital.web.id/api
-```
-
-Production required:
-
-```text
-PRODUCTION_HOST=<VPS_PUBLIC_IP_OR_DOMAIN>
-PRODUCTION_USER=gbd
-PRODUCTION_SSH_KEY=<PRIVATE_SSH_KEY_ALLOWED_TO_LOGIN_TO_VPS>
 ```
 
 Production optional:
 
 ```text
-PRODUCTION_PORT=22
 PRODUCTION_APP_DIR=/opt/gampong-blang/production/SAPA-Gampong
 PRODUCTION_DASHBOARD_API_BASE_URL=https://gampongblangdigital.com/api
 PRODUCTION_MOBILE_WEB_API_BASE_URL=https://gampongblangdigital.com/api
 ```
 
+The older SSH deploy secrets are no longer used when the self-hosted runner is online.
+
 ## VPS Requirements
 
 The VPS must already be prepared using `docs/STAGING_VPS_DEPLOYMENT.md`.
+
+The repository must have a self-hosted runner installed on the VPS with labels:
+
+```text
+self-hosted
+gbd-vps
+deploy
+```
 
 The deploy user should be able to run these commands without an interactive password prompt:
 

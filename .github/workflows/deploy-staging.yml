@@ -27,47 +27,23 @@ jobs:
 
   deploy:
     name: Deploy To VPS
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, gbd-vps, deploy]
     needs: verify
     environment: staging
     env:
       DEPLOY_BRANCH: ${{ github.event.inputs.deploy_branch || github.ref_name }}
-      STAGING_HOST: ${{ secrets.STAGING_HOST }}
-      STAGING_USER: ${{ secrets.STAGING_USER }}
-      STAGING_PORT: ${{ secrets.STAGING_PORT }}
       STAGING_APP_DIR: ${{ secrets.STAGING_APP_DIR }}
-      STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
       DASHBOARD_API_BASE_URL: ${{ secrets.STAGING_DASHBOARD_API_BASE_URL }}
     steps:
-      - name: Validate required secrets
-        run: |
-          test -n "$STAGING_HOST" || (echo "Missing STAGING_HOST" && exit 1)
-          test -n "$STAGING_USER" || (echo "Missing STAGING_USER" && exit 1)
-          test -n "$STAGING_SSH_KEY" || (echo "Missing STAGING_SSH_KEY" && exit 1)
-
-      - name: Prepare SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s' "$STAGING_SSH_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > ~/.ssh/staging_key
-          printf '\n' >> ~/.ssh/staging_key
-          chmod 600 ~/.ssh/staging_key
-          ssh-keygen -y -f ~/.ssh/staging_key > /dev/null
-          PORT="${STAGING_PORT:-22}"
-          ssh-keyscan -p "$PORT" "$STAGING_HOST" >> ~/.ssh/known_hosts || true
-
       - name: Deploy safely on VPS
         run: |
-          PORT="${STAGING_PORT:-22}"
           APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
           API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.web.id/api}"
-          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
-            "set -euo pipefail
-             cd '$APP_DIR'
-             git fetch origin '$DEPLOY_BRANCH'
-             git checkout '$DEPLOY_BRANCH'
-             git pull --ff-only origin '$DEPLOY_BRANCH'
-             SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL='$API_BASE_URL' bash scripts/deploy-staging.sh"
+          cd "$APP_DIR"
+          git fetch origin "$DEPLOY_BRANCH"
+          git checkout "$DEPLOY_BRANCH"
+          git pull --ff-only origin "$DEPLOY_BRANCH"
+          SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL="$API_BASE_URL" bash scripts/deploy-staging.sh
 
       - name: Smoke test
         run: |

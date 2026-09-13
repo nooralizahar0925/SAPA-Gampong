@@ -346,24 +346,23 @@ BUILD_MOBILE_WEB=true DEPLOY_BRANCH=production bash scripts/deploy-production.sh
 
 ## 9. GitHub Actions Production Deploy
 
-The production workflow is manual-only:
+The production workflow is manual-only and runs on the `gbd-vps-deploy` self-hosted runner:
 
 ```text
 .github/workflows/deploy-production.yml
 ```
 
-Add these repository secrets:
+Required runner labels:
 
 ```text
-PRODUCTION_HOST=<VPS_PUBLIC_IP_OR_DOMAIN>
-PRODUCTION_USER=gbd
-PRODUCTION_SSH_KEY=<PRIVATE_SSH_KEY_ALLOWED_TO_LOGIN_TO_VPS>
+self-hosted
+gbd-vps
+deploy
 ```
 
 Optional secrets:
 
 ```text
-PRODUCTION_PORT=22
 PRODUCTION_APP_DIR=/opt/gampong-blang/production/SAPA-Gampong
 PRODUCTION_DASHBOARD_API_BASE_URL=https://gampongblangdigital.com/api
 PRODUCTION_MOBILE_WEB_API_BASE_URL=https://gampongblangdigital.com/api

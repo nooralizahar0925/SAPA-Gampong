@@ -29,51 +29,27 @@ jobs:
 
   deploy:
     name: Deploy To Production VPS
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, gbd-vps, deploy]
     needs: verify
     environment: production
     env:
       DEPLOY_BRANCH: ${{ github.event.inputs.deploy_branch || github.ref_name }}
-      PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
-      PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
-      PRODUCTION_PORT: ${{ secrets.PRODUCTION_PORT }}
       PRODUCTION_APP_DIR: ${{ secrets.PRODUCTION_APP_DIR }}
-      PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
       DASHBOARD_API_BASE_URL: ${{ secrets.PRODUCTION_DASHBOARD_API_BASE_URL }}
       MOBILE_WEB_API_BASE_URL: ${{ secrets.PRODUCTION_MOBILE_WEB_API_BASE_URL }}
     steps:
-      - name: Validate required secrets
-        run: |
-          test -n "$PRODUCTION_HOST" || (echo "Missing PRODUCTION_HOST" && exit 1)
-          test -n "$PRODUCTION_USER" || (echo "Missing PRODUCTION_USER" && exit 1)
-          test -n "$PRODUCTION_SSH_KEY" || (echo "Missing PRODUCTION_SSH_KEY" && exit 1)
-
-      - name: Prepare SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s' "$PRODUCTION_SSH_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > ~/.ssh/production_key
-          printf '\n' >> ~/.ssh/production_key
-          chmod 600 ~/.ssh/production_key
-          ssh-keygen -y -f ~/.ssh/production_key > /dev/null
-          PORT="${PRODUCTION_PORT:-22}"
-          ssh-keyscan -p "$PORT" "$PRODUCTION_HOST" >> ~/.ssh/known_hosts || true
-
       - name: Deploy safely on VPS
         run: |
-          PORT="${PRODUCTION_PORT:-22}"
           APP_DIR="${PRODUCTION_APP_DIR:-/opt/gampong-blang/production/SAPA-Gampong}"
           API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.com/api}"
           MOBILE_API_BASE_URL="${MOBILE_WEB_API_BASE_URL:-$API_BASE_URL}"
           RUN_SEED="${{ github.event.inputs.run_seed }}"
           BUILD_MOBILE_WEB="${{ github.event.inputs.build_mobile_web }}"
-          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -i ~/.ssh/production_key -p "$PORT" "$PRODUCTION_USER@$PRODUCTION_HOST" \
-            "set -euo pipefail
-             cd '$APP_DIR'
-             git fetch origin '$DEPLOY_BRANCH'
-             git checkout '$DEPLOY_BRANCH'
-             git pull --ff-only origin '$DEPLOY_BRANCH'
-             SKIP_GIT_UPDATE=true RUN_SEED='$RUN_SEED' BUILD_MOBILE_WEB='$BUILD_MOBILE_WEB' DASHBOARD_API_BASE_URL='$API_BASE_URL' MOBILE_WEB_API_BASE_URL='$MOBILE_API_BASE_URL' bash scripts/deploy-production.sh"
+          cd "$APP_DIR"
+          git fetch origin "$DEPLOY_BRANCH"
+          git checkout "$DEPLOY_BRANCH"
+          git pull --ff-only origin "$DEPLOY_BRANCH"
+          SKIP_GIT_UPDATE=true RUN_SEED="$RUN_SEED" BUILD_MOBILE_WEB="$BUILD_MOBILE_WEB" DASHBOARD_API_BASE_URL="$API_BASE_URL" MOBILE_WEB_API_BASE_URL="$MOBILE_API_BASE_URL" bash scripts/deploy-production.sh
 
       - name: Smoke test
         run: |
