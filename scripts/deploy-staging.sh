@@ -12,6 +12,7 @@ RESTART_SERVICES="${RESTART_SERVICES:-true}"
 STAGING_APK_SOURCE="${STAGING_APK_SOURCE:-}"
 STAGING_APK_METADATA_SOURCE="${STAGING_APK_METADATA_SOURCE:-}"
 STAGING_APK_PUBLIC_PATH="${STAGING_APK_PUBLIC_PATH:-$APP_DIR/dashboard/dist/mobile-app}"
+STAGING_MOBILE_WEB_SOURCE="${STAGING_MOBILE_WEB_SOURCE:-}"
 APK_PRESERVE_DIR=""
 
 cleanup() {
@@ -102,6 +103,20 @@ publish_staging_apk() {
   fi
 }
 
+publish_staging_mobile_web() {
+  if [ -z "$STAGING_MOBILE_WEB_SOURCE" ]; then
+    log "Keeping the existing staging mobile web build"
+    return
+  fi
+
+  [ -d "$STAGING_MOBILE_WEB_SOURCE" ] || fail "staging mobile web build is missing: $STAGING_MOBILE_WEB_SOURCE"
+  require_file "$STAGING_MOBILE_WEB_SOURCE/index.html"
+  log "Publishing staging mobile web build"
+  rm -rf "$APP_DIR/mobile/build/web"
+  mkdir -p "$APP_DIR/mobile/build/web"
+  cp -a "$STAGING_MOBILE_WEB_SOURCE/." "$APP_DIR/mobile/build/web/"
+}
+
 log "Starting staging deploy"
 cd "$APP_DIR"
 require_file "$APP_DIR/backend/.env"
@@ -146,6 +161,7 @@ printf 'VITE_STAGING_ANDROID_APK_METADATA_URL=%s\n' 'https://gampongblangdigital
 preserve_staging_apk
 npm run build
 publish_staging_apk
+publish_staging_mobile_web
 
 if [ "$RESTART_SERVICES" = "true" ]; then
   log "Restarting backend service and reloading nginx"

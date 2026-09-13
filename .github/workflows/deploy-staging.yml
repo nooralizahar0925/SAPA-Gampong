@@ -66,10 +66,20 @@ jobs:
             --dart-define=APP_ENV=staging \
             --dart-define=API_BASE_URL="$STAGING_API_BASE_URL"
 
+      - name: Build staging mobile web
+        working-directory: mobile
+        run: |
+          flutter build web \
+            --release \
+            --base-href=/mobile/ \
+            --dart-define=APP_ENV=staging \
+            --dart-define=API_BASE_URL="$STAGING_API_BASE_URL"
+
       - name: Prepare artifact
         run: |
           mkdir -p staging-mobile-app
           cp mobile/build/app/outputs/flutter-apk/app-staging-debug.apk staging-mobile-app/latest.apk
+          cp -a mobile/build/web staging-mobile-app/web
           node <<'NODE'
           const fs = require('fs');
           const pubspec = fs.readFileSync('mobile/pubspec.yaml', 'utf8');
@@ -122,10 +132,11 @@ jobs:
           git fetch origin "$DEPLOY_BRANCH"
           git checkout "$DEPLOY_BRANCH"
           git pull --ff-only origin "$DEPLOY_BRANCH"
-          SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL="$API_BASE_URL" STAGING_APK_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/latest.apk" STAGING_APK_METADATA_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/metadata.json" bash scripts/deploy-staging.sh
+          SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL="$API_BASE_URL" STAGING_APK_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/latest.apk" STAGING_APK_METADATA_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/metadata.json" STAGING_MOBILE_WEB_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/web" bash scripts/deploy-staging.sh
 
       - name: Smoke test
         run: |
           curl -fsS --retry 12 --retry-delay 2 --retry-all-errors https://gampongblangdigital.web.id/api/health
           curl -fsSI https://gampongblangdigital.web.id/
+          curl -fsSI https://gampongblangdigital.web.id/mobile/
           curl -fsSI https://gampongblangdigital.web.id/mobile-app/latest.apk

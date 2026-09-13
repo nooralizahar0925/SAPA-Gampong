@@ -49,8 +49,8 @@ The staging deploy also publishes a tester Android APK for client testing. Keep 
 
 - The `Build Staging Android APK` job builds `--debug --flavor staging` from the `staging` branch.
 - The APK uses package id `id.gampongblang.sapa_gampong.staging` and app label `Gampong Blang Digital Staging`.
-- The artifact contains `latest.apk` and `metadata.json`.
-- The VPS deploy job downloads the artifact and publishes it under `/mobile-app/`.
+- The artifact contains `latest.apk`, `metadata.json`, and the Flutter web build.
+- The VPS deploy job publishes the APK under `/mobile-app/` and the resident web app under `/mobile/`.
 - The install option appears only in the staging dashboard because `scripts/deploy-staging.sh` writes `VITE_ENABLE_STAGING_APP_INSTALL=true`.
 - Production Android releases still use Play Console and `.aab` uploads.
 
