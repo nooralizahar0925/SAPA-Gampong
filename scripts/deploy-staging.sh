@@ -78,6 +78,7 @@ scan_destructive_migrations
 log "Installing backend dependencies"
 cd "$APP_DIR/backend"
 npm ci
+npx playwright install chromium
 npx prisma generate
 npm run build
 

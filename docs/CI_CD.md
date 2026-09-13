@@ -19,6 +19,7 @@ Runs on pull requests and pushes to `main`.
 It verifies:
 
 - Backend `npm ci`
+- Playwright Chromium install
 - Prisma client generation
 - Test database migrations with `prisma migrate deploy`
 - Backend typecheck, tests, and build

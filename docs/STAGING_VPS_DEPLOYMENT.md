@@ -38,10 +38,9 @@ apt update
 apt install -y curl git nginx postgresql postgresql-contrib sudo ufw unzip
 ```
 
-Install Node.js 20:
+Install Node.js 22:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 node -v
 npm -v
@@ -205,8 +204,8 @@ node -e "require('dotenv').config(); JSON.parse(process.env.FIREBASE_SERVICE_ACC
 ```bash
 cd /opt/gampong-blang/staging/SAPA-Gampong/backend
 npm ci
+npx playwright install chromium
 npx prisma generate
-npx playwright install --with-deps chromium
 npm run build
 npm run db:deploy
 npm run db:seed
