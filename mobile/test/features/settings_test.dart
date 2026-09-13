@@ -76,6 +76,28 @@ Widget _wrap({
 }
 
 void main() {
+  testWidgets('shows privacy and data deletion entry', (tester) async {
+    final preferences = AppPreferencesService.memory();
+    final notifications = _FakeNotificationService();
+
+    await tester.pumpWidget(
+      _wrap(preferences: preferences, notifications: notifications),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Privasi & Penghapusan Data'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Privasi & Penghapusan Data'), findsOneWidget);
+    expect(
+      find.text('Baca kebijakan atau ajukan penghapusan data'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('alarm azan switch persists enabled preference and schedules', (
     tester,
   ) async {

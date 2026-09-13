@@ -8,7 +8,9 @@ Use this checklist before publishing the Android app to Google Play and the web 
 - Android app label: `Gampong Blang Digital`
 - Android compile SDK: `36`
 - Android release signing: prepared through `mobile/android/key.properties`, but the real upload keystore is still required.
-- Web deployment: staging VPS automation exists in `scripts/deploy-staging.sh`; production needs real server, domain, database, and secret values.
+- Web deployment: staging and production are live on the VPS with HTTPS and automated deployment.
+- Production Firebase Admin: configured for project `sapa-gampong`.
+- Privacy policy: available at `https://gampongblangdigital.com/privacy-policy` after the corresponding production deployment.
 
 ## Android Play Store
 
@@ -59,7 +61,7 @@ mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
 
 - App name, short description, full description in Bahasa Indonesia.
 - App icon `512x512`, feature graphic `1024x500`, and phone screenshots.
-- Public privacy policy URL.
+- Public privacy policy URL: `https://gampongblangdigital.com/privacy-policy`.
 - Support email and website URL.
 - Content rating questionnaire.
 - Data safety form.
@@ -130,7 +132,6 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Real Android upload keystore and passwords.
 - Google Play Console access.
 - Store listing assets and screenshots.
-- Public privacy policy URL.
-- Production server/domain/database access.
-- Production secrets for backend, email, Firebase, and first admin account.
-- Production DNS for `gampongblangdigital.com`.
+- Complete the Play Console Data Safety form using `docs/PLAY_CONSOLE_DATA_SAFETY.md`.
+- Verify the configured Gmail provider with a production test email.
+- Obtain responsible village-official or legal review of the privacy policy.

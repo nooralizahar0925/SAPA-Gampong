@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
+import '../../core/config/env.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/contact_actions.dart';
 import '../../core/widgets/resident_email_gate.dart';
@@ -99,6 +100,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: 'Gampong Blang Digital · Versi 1.0.0',
             trailing: const SizedBox.shrink(),
             onTap: () {},
+          ),
+          SapaListTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privasi & Penghapusan Data',
+            subtitle: 'Baca kebijakan atau ajukan penghapusan data',
+            onTap: () => unawaited(
+              openExternalWebsite(context, Env.privacyPolicyUrl),
+            ),
           ),
         ],
       ),

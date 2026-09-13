@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import crestLogo from '../assets/logo.webp';
 
 type AuthShellProps = {
@@ -50,6 +51,9 @@ export function AuthShell({ title, copy, children }: AuthShellProps) {
             <h2>{title}</h2>
             <p className="login-form-copy">{copy}</p>
             {children}
+            <div className="auth-privacy-link">
+              <Link to="/privacy-policy">Kebijakan Privasi</Link>
+            </div>
           </div>
         </section>
       </div>

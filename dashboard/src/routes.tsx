@@ -13,6 +13,7 @@ import { LetterTemplateSettingsPage } from './pages/LetterTemplateSettings';
 import { QueuePage } from './pages/Queue';
 import { GeneratePage } from './pages/Generate';
 import { ProfilePage } from './pages/Profile';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicy';
 import { RequestDetailPage } from './pages/RequestDetail';
 import { ResetPasswordPage } from './pages/ResetPassword';
 import { StagingAppInstallPage } from './pages/StagingAppInstall';
@@ -30,6 +31,7 @@ export function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route element={<AuthGuard />}>
           <Route path="/requests" element={<QueuePage />} />
           <Route path="/requests/:id" element={<RequestDetailPage />} />

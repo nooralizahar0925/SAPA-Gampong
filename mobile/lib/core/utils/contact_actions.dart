@@ -12,6 +12,23 @@ String resolveOfficePhone(String? phone) {
   return value == null || value.isEmpty ? fallbackOfficePhone : value;
 }
 
+Future<void> openExternalWebsite(
+  BuildContext context,
+  String url, {
+  String errorMessage = 'Tautan belum bisa dibuka di perangkat ini.',
+}) async {
+  try {
+    final uri = Uri.parse(url);
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  } catch (_) {
+    // Use one clear message for invalid URLs and launcher failures.
+  }
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(errorMessage)),
+  );
+}
+
 Future<void> showOfficeContactActions(BuildContext context, String phone) {
   final normalized = _normalizeIndonesianPhone(phone);
   return showModalBottomSheet<void>(
