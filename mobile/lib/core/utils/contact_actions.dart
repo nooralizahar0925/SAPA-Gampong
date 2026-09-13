@@ -24,9 +24,9 @@ Future<void> openExternalWebsite(
     // Use one clear message for invalid URLs and launcher failures.
   }
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(errorMessage)),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(errorMessage)));
 }
 
 Future<void> showOfficeContactActions(BuildContext context, String phone) {
@@ -37,7 +37,7 @@ Future<void> showOfficeContactActions(BuildContext context, String phone) {
     showDragHandle: true,
     builder: (sheetContext) {
       return SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,

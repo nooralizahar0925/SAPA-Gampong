@@ -185,14 +185,19 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
       backgroundColor: AppTheme.g50,
       surfaceTintColor: AppTheme.g50,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: viewportHeight > 48 ? viewportHeight - 48 : 0,
+        ),
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -214,28 +214,30 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     return showModalBottomSheet<AttachmentPickSource>(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const Key('feedback-attachment-camera'),
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Kamera'),
-              onTap: () => Navigator.pop(ctx, AttachmentPickSource.camera),
-            ),
-            ListTile(
-              key: const Key('feedback-attachment-gallery'),
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Galeri'),
-              onTap: () => Navigator.pop(ctx, AttachmentPickSource.gallery),
-            ),
-            ListTile(
-              key: const Key('feedback-attachment-pdf'),
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: const Text('PDF'),
-              onTap: () => Navigator.pop(ctx, AttachmentPickSource.pdf),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                key: const Key('feedback-attachment-camera'),
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Kamera'),
+                onTap: () => Navigator.pop(ctx, AttachmentPickSource.camera),
+              ),
+              ListTile(
+                key: const Key('feedback-attachment-gallery'),
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Galeri'),
+                onTap: () => Navigator.pop(ctx, AttachmentPickSource.gallery),
+              ),
+              ListTile(
+                key: const Key('feedback-attachment-pdf'),
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: const Text('PDF'),
+                onTap: () => Navigator.pop(ctx, AttachmentPickSource.pdf),
+              ),
+            ],
+          ),
         ),
       ),
     );

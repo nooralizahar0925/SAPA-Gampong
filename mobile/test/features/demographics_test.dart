@@ -11,12 +11,25 @@ import 'package:sapa_gampong/features/demographics/demographics_screen.dart';
 
 GoRouter _makeRouter() => GoRouter(
   initialLocation: '/',
-  routes: [GoRoute(path: '/', builder: (_, __) => const DemographicsScreen())],
+  routes: [GoRoute(path: '/', builder: (_, _) => const DemographicsScreen())],
 );
 
 Widget _buildApp(List<DemographicBlock> blocks) => ProviderScope(
   overrides: [demographicsProvider.overrideWith((_) async => blocks)],
   child: MaterialApp.router(routerConfig: _makeRouter()),
+);
+
+Widget _buildScaledApp(List<DemographicBlock> blocks) => ProviderScope(
+  overrides: [demographicsProvider.overrideWith((_) async => blocks)],
+  child: MaterialApp.router(
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: const TextScaler.linear(1.3)),
+      child: child!,
+    ),
+    routerConfig: _makeRouter(),
+  ),
 );
 
 final _numberBlock = DemographicBlock(
@@ -123,6 +136,18 @@ void main() {
     expect(find.text('SMA'), findsOneWidget);
     expect(find.text('SLTP'), findsNothing);
     expect(find.text('SLTA'), findsNothing);
+  });
+
+  testWidgets('bar chart fits a narrow phone with larger text', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildScaledApp([_barBlock]));
+    await tester.pump();
+
+    expect(find.text('SMA'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('pie block shows horizontal bars', (tester) async {

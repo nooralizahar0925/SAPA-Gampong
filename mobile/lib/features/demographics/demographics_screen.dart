@@ -621,7 +621,6 @@ class _BarChart extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         '${bar.value}',
@@ -632,13 +631,19 @@ class _BarChart extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6),
-                        ),
-                        child: Container(
-                          height: chartH * frac * 0.85,
-                          color: bar.color,
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: FractionallySizedBox(
+                            widthFactor: 1,
+                            heightFactor: frac.clamp(0.0, 1.0),
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(6),
+                              ),
+                              child: ColoredBox(color: bar.color),
+                            ),
+                          ),
                         ),
                       ),
                     ],

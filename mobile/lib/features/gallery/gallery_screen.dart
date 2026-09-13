@@ -296,7 +296,7 @@ void _showGalleryDetail(BuildContext context, GalleryItem item) {
     ),
     builder: (context) {
       return SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
