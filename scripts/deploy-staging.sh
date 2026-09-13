@@ -9,6 +9,18 @@ BACKUP_DIR="${BACKUP_DIR:-/opt/gampong-blang/backups/staging}"
 SKIP_GIT_UPDATE="${SKIP_GIT_UPDATE:-false}"
 RUN_SEED="${RUN_SEED:-false}"
 RESTART_SERVICES="${RESTART_SERVICES:-true}"
+STAGING_APK_SOURCE="${STAGING_APK_SOURCE:-}"
+STAGING_APK_METADATA_SOURCE="${STAGING_APK_METADATA_SOURCE:-}"
+STAGING_APK_PUBLIC_PATH="${STAGING_APK_PUBLIC_PATH:-$APP_DIR/dashboard/dist/mobile-app}"
+APK_PRESERVE_DIR=""
+
+cleanup() {
+  if [ -n "$APK_PRESERVE_DIR" ] && [ -d "$APK_PRESERVE_DIR" ]; then
+    rm -rf "$APK_PRESERVE_DIR"
+  fi
+}
+
+trap cleanup EXIT
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*"
@@ -59,6 +71,37 @@ protect_storage() {
   [ -d "$APP_DIR/backend/storage/production" ] || fail "storage folder is not available"
 }
 
+preserve_staging_apk() {
+  if [ -d "$STAGING_APK_PUBLIC_PATH" ]; then
+    APK_PRESERVE_DIR="$(mktemp -d)"
+    cp -a "$STAGING_APK_PUBLIC_PATH" "$APK_PRESERVE_DIR/mobile-app"
+  fi
+}
+
+publish_staging_apk() {
+  if [ -n "$STAGING_APK_SOURCE" ]; then
+    require_file "$STAGING_APK_SOURCE"
+    log "Publishing staging Android APK"
+    mkdir -p "$STAGING_APK_PUBLIC_PATH"
+    cp "$STAGING_APK_SOURCE" "$STAGING_APK_PUBLIC_PATH/latest.apk"
+    chmod 644 "$STAGING_APK_PUBLIC_PATH/latest.apk"
+
+    if [ -n "$STAGING_APK_METADATA_SOURCE" ]; then
+      require_file "$STAGING_APK_METADATA_SOURCE"
+      cp "$STAGING_APK_METADATA_SOURCE" "$STAGING_APK_PUBLIC_PATH/metadata.json"
+      chmod 644 "$STAGING_APK_PUBLIC_PATH/metadata.json"
+    fi
+    return
+  fi
+
+  if [ -n "$APK_PRESERVE_DIR" ] && [ -d "$APK_PRESERVE_DIR/mobile-app" ]; then
+    log "Restoring existing staging Android APK"
+    mkdir -p "$(dirname "$STAGING_APK_PUBLIC_PATH")"
+    rm -rf "$STAGING_APK_PUBLIC_PATH"
+    cp -a "$APK_PRESERVE_DIR/mobile-app" "$STAGING_APK_PUBLIC_PATH"
+  fi
+}
+
 log "Starting staging deploy"
 cd "$APP_DIR"
 require_file "$APP_DIR/backend/.env"
@@ -97,7 +140,12 @@ log "Installing dashboard dependencies"
 cd "$APP_DIR/dashboard"
 npm ci
 printf 'VITE_API_BASE_URL=%s\n' "$DASHBOARD_API_BASE_URL" > .env.production
+printf 'VITE_ENABLE_STAGING_APP_INSTALL=true\n' >> .env.production
+printf 'VITE_STAGING_ANDROID_APK_URL=%s\n' 'https://gampongblangdigital.web.id/mobile-app/latest.apk' >> .env.production
+printf 'VITE_STAGING_ANDROID_APK_METADATA_URL=%s\n' 'https://gampongblangdigital.web.id/mobile-app/metadata.json' >> .env.production
+preserve_staging_apk
 npm run build
+publish_staging_apk
 
 if [ "$RESTART_SERVICES" = "true" ]; then
   log "Restarting backend service and reloading nginx"

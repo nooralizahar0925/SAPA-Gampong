@@ -13,6 +13,7 @@ on:
     paths:
       - backend/**
       - dashboard/**
+      - mobile/**
       - scripts/deploy-staging.sh
       - .github/workflows/deploy-staging.yml
 
@@ -25,16 +26,94 @@ jobs:
     name: Verify Backend And Dashboard
     uses: ./.github/workflows/ci.yml
 
+  build-android-staging:
+    name: Build Staging Android APK
+    runs-on: ubuntu-latest
+    env:
+      STAGING_API_BASE_URL: https://gampongblangdigital.web.id/api
+      APK_PUBLIC_URL: https://gampongblangdigital.web.id/mobile-app/latest.apk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Generate Dart files
+        working-directory: mobile
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        working-directory: mobile
+        run: |
+          flutter build apk \
+            --debug \
+            --flavor staging \
+            --dart-define=APP_ENV=staging \
+            --dart-define=API_BASE_URL="$STAGING_API_BASE_URL"
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p staging-mobile-app
+          cp mobile/build/app/outputs/flutter-apk/app-staging-debug.apk staging-mobile-app/latest.apk
+          node <<'NODE'
+          const fs = require('fs');
+          const pubspec = fs.readFileSync('mobile/pubspec.yaml', 'utf8');
+          const versionLine = pubspec.split(/\r?\n/).find((line) => line.startsWith('version:')) || 'version: 1.0.0+1';
+          const version = versionLine.replace('version:', '').trim();
+          const [versionName = '1.0.0', versionCode = '1'] = version.split('+');
+          const metadata = {
+            app_name: 'Gampong Blang Digital Staging',
+            package_name: 'id.gampongblang.sapa_gampong.staging',
+            version_name: `${versionName}-staging`,
+            version_code: versionCode,
+            build_number: process.env.GITHUB_RUN_NUMBER,
+            commit_sha: process.env.GITHUB_SHA,
+            built_at: new Date().toISOString(),
+            apk_url: process.env.APK_PUBLIC_URL,
+          };
+          fs.writeFileSync('staging-mobile-app/metadata.json', `${JSON.stringify(metadata, null, 2)}\n`);
+          NODE
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-mobile-app
+          path: staging-mobile-app
+          retention-days: 14
+
   deploy:
     name: Deploy To VPS
     runs-on: [self-hosted, gbd-vps, deploy]
-    needs: verify
+    needs:
+      - verify
+      - build-android-staging
     environment: staging
     env:
       DEPLOY_BRANCH: ${{ github.event.inputs.deploy_branch || github.ref_name }}
       STAGING_APP_DIR: ${{ secrets.STAGING_APP_DIR }}
       DASHBOARD_API_BASE_URL: ${{ secrets.STAGING_DASHBOARD_API_BASE_URL }}
     steps:
+      - name: Download staging APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-mobile-app
+          path: staging-mobile-app
+
       - name: Deploy safely on VPS
         run: |
           APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
@@ -43,9 +122,10 @@ jobs:
           git fetch origin "$DEPLOY_BRANCH"
           git checkout "$DEPLOY_BRANCH"
           git pull --ff-only origin "$DEPLOY_BRANCH"
-          SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL="$API_BASE_URL" bash scripts/deploy-staging.sh
+          SKIP_GIT_UPDATE=true DASHBOARD_API_BASE_URL="$API_BASE_URL" STAGING_APK_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/latest.apk" STAGING_APK_METADATA_SOURCE="$GITHUB_WORKSPACE/staging-mobile-app/metadata.json" bash scripts/deploy-staging.sh
 
       - name: Smoke test
         run: |
           curl -fsS https://gampongblangdigital.web.id/api/health
           curl -fsSI https://gampongblangdigital.web.id/
+          curl -fsSI https://gampongblangdigital.web.id/mobile-app/latest.apk

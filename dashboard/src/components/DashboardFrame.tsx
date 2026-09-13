@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import crestLogo from '../assets/logo.webp';
 import { getRequestCountsRequest, listFeedbackRequest } from '../api/client';
 import { clearStoredSession, getStoredSession, isSystemAdmin } from '../auth/session';
+import { STAGING_APP_INSTALL_ENABLED } from '../lib/staging-app';
 import { AppIcon, type IconName } from './AppIcon';
 
 type DashboardFrameProps = {
@@ -103,6 +104,22 @@ export function DashboardFrame({
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const visibleSections = NAV_SECTIONS.filter((section) => section.title !== 'Sistem' || isSystemAdmin());
+  const navSections = STAGING_APP_INSTALL_ENABLED
+    ? [
+        ...visibleSections,
+        {
+          title: 'Pengujian',
+          items: [
+            {
+              label: 'Aplikasi Staging',
+              icon: 'phone' as const,
+              to: '/staging-app',
+              matchPrefix: '/staging-app',
+            },
+          ],
+        },
+      ]
+    : visibleSections;
 
   // The unread badge shows on every page, so the frame fetches it unless the page
   // already has the number. Shares the ['feedback'] key, so inbox writes refresh it.
@@ -144,7 +161,7 @@ export function DashboardFrame({
           </div>
         </div>
 
-        {visibleSections.map((section) => (
+        {navSections.map((section) => (
           <div key={section.title}>
             <div className="dashboard-group">{section.title}</div>
             {section.items.map((item) => {

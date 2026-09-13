@@ -15,6 +15,7 @@ import { GeneratePage } from './pages/Generate';
 import { ProfilePage } from './pages/Profile';
 import { RequestDetailPage } from './pages/RequestDetail';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { StagingAppInstallPage } from './pages/StagingAppInstall';
 import { UserSettingsPage } from './pages/UserSettings';
 
 export function AppRoutes() {
@@ -36,6 +37,7 @@ export function AppRoutes() {
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/content" element={<Navigate to="/content/banners" replace />} />
           <Route path="/content/:tab" element={<ContentPage />} />
+          <Route path="/staging-app" element={<StagingAppInstallPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         <Route element={<AdminGuard />}>

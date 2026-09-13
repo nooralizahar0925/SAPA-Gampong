@@ -9,6 +9,7 @@ export type IconName =
   | 'chevronDown'
   | 'chevronUp'
   | 'clock'
+  | 'download'
   | 'edit'
   | 'eye'
   | 'file'
@@ -25,6 +26,7 @@ export type IconName =
   | 'menu'
   | 'mosque'
   | 'phone'
+  | 'qr'
   | 'refresh'
   | 'search'
   | 'send'
@@ -97,6 +99,14 @@ function iconPath(name: IconName): ReactNode {
         <>
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v5l3 2" />
+        </>
+      );
+    case 'download':
+      return (
+        <>
+          <path d="M12 3v11" />
+          <path d="m7 10 5 5 5-5" />
+          <path d="M5 21h14" />
         </>
       );
     case 'edit':
@@ -221,6 +231,18 @@ function iconPath(name: IconName): ReactNode {
       return (
         <>
           <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7.5 10a16 16 0 0 0 6.5 6.5l1.5-1.5a2 2 0 0 1 1.8-.6l3 .5A2 2 0 0 1 22 16.9Z" />
+        </>
+      );
+    case 'qr':
+      return (
+        <>
+          <path d="M4 4h6v6H4z" />
+          <path d="M14 4h6v6h-6z" />
+          <path d="M4 14h6v6H4z" />
+          <path d="M14 14h2" />
+          <path d="M18 14h2v2" />
+          <path d="M14 18h2v2" />
+          <path d="M18 20h2" />
         </>
       );
     case 'refresh':

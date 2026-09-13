@@ -45,13 +45,17 @@ The deploy job runs on the `gbd-vps-deploy` self-hosted runner, updates the Git 
 scripts/deploy-staging.sh
 ```
 
-Future staging deploy work should also publish a tester Android APK for client testing. Keep this staging-only:
+The staging deploy also publishes a tester Android APK for client testing. Keep this staging-only:
 
-- Build the APK from the `staging` branch.
-- Sign it with a staging/testing key, not the production Play Store upload key.
-- Use a staging package id suffix and app label so it can be installed beside production.
-- Upload it to the staging server under a stable HTTPS path such as `/mobile-app/latest.apk`.
-- Show the install option only in the staging dashboard, with version, build date, release notes, QR code, and download action.
+- The `Build Staging Android APK` job builds `--debug --flavor staging` from the `staging` branch.
+- The APK uses package id `id.gampongblang.sapa_gampong.staging` and app label `Gampong Blang Digital Staging`.
+- The artifact contains `latest.apk` and `metadata.json`.
+- The VPS deploy job downloads the artifact and publishes it under `/mobile-app/`.
+- The install option appears only in the staging dashboard because `scripts/deploy-staging.sh` writes `VITE_ENABLE_STAGING_APP_INSTALL=true`.
+- Production Android releases still use Play Console and `.aab` uploads.
+
+The staging APK uses a debug build for tester distribution and the dedicated
+`sapa-gampong-staging` Firebase project for push notifications.
 
 ### Production Deploy
 

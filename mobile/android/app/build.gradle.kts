@@ -34,10 +34,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "id.gampongblang.sapa_gampong"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -60,19 +57,34 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
     }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("production") {
+            dimension = "environment"
+            manifestPlaceholders["appLabel"] = "Gampong Blang Digital"
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            manifestPlaceholders["appLabel"] = "Gampong Blang Digital Staging"
+        }
+    }
 }
 
 gradle.taskGraph.whenReady {
-    val releaseBuildRequested = allTasks.any { task ->
+    val productionReleaseBuildRequested = allTasks.any { task ->
         val name = task.name.lowercase()
-        name.contains("release") &&
+        name.contains("production") &&
+            name.contains("release") &&
             (name.contains("assemble") || name.contains("bundle") || name.contains("package"))
     }
 
-    if (releaseBuildRequested && !hasReleaseKeystore) {
+    if (productionReleaseBuildRequested && !hasReleaseKeystore) {
         throw GradleException(
             "Missing mobile/android/key.properties. Copy key.properties.example, " +
-                "fill it with the upload keystore values, then rebuild the release artifact."
+                "fill it with the upload keystore values, then rebuild the production release artifact."
         )
     }
 }

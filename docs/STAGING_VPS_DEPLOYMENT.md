@@ -298,6 +298,7 @@ flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 flutter build web \
   --base-href=/mobile/ \
+  --dart-define=APP_ENV=staging \
   --dart-define=API_BASE_URL=https://gampongblangdigital.web.id/api
 ```
 
@@ -309,16 +310,21 @@ The mobile web build output is:
 
 ## 8.1 Staging Android Tester Install
 
-Future staging releases should support direct Android tester installation from the admin dashboard. This is for staging only, so clients can install and test new app features before the Play Store release.
+Staging releases support direct Android tester installation from the admin dashboard. This is for staging only, so clients can install and test new app features before the Play Store release.
 
-Recommended design:
+Implemented flow:
 
-- Build a signed staging APK from the `staging` branch, separate from the production Play Store AAB.
+- GitHub Actions builds a debug staging APK from the `staging` branch.
 - Use a staging package id suffix, for example `id.gampongblang.sapa_gampong.staging`, so testers can install staging and production side by side.
-- Use a staging app label, for example `Gampong Blang Digital Staging`, so testers do not confuse it with production.
-- Publish the latest staging APK under the staging domain, for example `https://gampongblangdigital.web.id/mobile-app/latest.apk`.
-- Add a staging-only dashboard panel with version, build date, release notes, QR code, and a clickable APK download button.
-- Hide this dashboard panel outside staging builds.
+- Use the staging app label `Gampong Blang Digital Staging`, so testers do not confuse it with production.
+- Publish the latest staging APK at `https://gampongblangdigital.web.id/mobile-app/latest.apk`.
+- Publish build metadata at `https://gampongblangdigital.web.id/mobile-app/metadata.json`.
+- Show the staging-only dashboard page at `/staging-app` with version, build date, QR code, and download button.
+- Hide the sidebar entry outside staging by setting `VITE_ENABLE_STAGING_APP_INSTALL=true` only during staging deploy.
+
+The current staging APK is a debug build for client testing. It uses the dedicated
+`sapa-gampong-staging` Firebase project through the Android package
+`id.gampongblang.sapa_gampong.staging`.
 
 Testers must allow Android installation from the browser because this is a direct APK download, not a Play Store release. Production Android releases should still use Play Console and `.aab` uploads.
 

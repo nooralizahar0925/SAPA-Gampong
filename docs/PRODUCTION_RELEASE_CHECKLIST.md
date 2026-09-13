@@ -46,13 +46,13 @@ Then fill `mobile/android/key.properties` with the real passwords. Do not commit
 cd mobile
 flutter pub get
 flutter test
-flutter build appbundle --release --dart-define=API_BASE_URL=https://gampongblangdigital.com/api
+flutter build appbundle --release --flavor production --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://gampongblangdigital.com/api
 ```
 
 The artifact will be created at:
 
 ```text
-mobile/build/app/outputs/bundle/release/app-release.aab
+mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
 ```
 
 ### Play Console Content Required

@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
+import 'core/config/env.dart';
+
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -13,7 +15,7 @@ class DefaultFirebaseOptions {
     }
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => android,
+      TargetPlatform.android => Env.isStaging ? stagingAndroid : android,
       TargetPlatform.iOS => ios,
       _ => throw UnsupportedError(
         'Firebase options are only configured for Android and iOS.',
@@ -27,6 +29,14 @@ class DefaultFirebaseOptions {
     messagingSenderId: '962715437463',
     projectId: 'sapa-gampong',
     storageBucket: 'sapa-gampong.firebasestorage.app',
+  );
+
+  static const FirebaseOptions stagingAndroid = FirebaseOptions(
+    apiKey: 'AIzaSyDUyMzUwQQ3pwgZ8Uheu05lzC_gys8dg98',
+    appId: '1:836955764520:android:c67998d72bf80da4ec021d',
+    messagingSenderId: '836955764520',
+    projectId: 'sapa-gampong-staging',
+    storageBucket: 'sapa-gampong-staging.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

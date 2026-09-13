@@ -21,10 +21,14 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8081/api    # 10.0.2.2 = 
 ## Flavors / environments
 Pass the API base url per environment:
 ```bash
-flutter run     --dart-define=API_BASE_URL=http://10.0.2.2:8081/api          # dev
-flutter build appbundle --dart-define=API_BASE_URL=https://<railway>/api      # staging
+flutter run --flavor production --dart-define=API_BASE_URL=http://10.0.2.2:8081/api
+flutter build apk --debug --flavor staging --dart-define=APP_ENV=staging --dart-define=API_BASE_URL=https://gampongblangdigital.web.id/api
+flutter build appbundle --release --flavor production --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://gampongblangdigital.com/api
 ```
-`lib/core/config/env.dart` reads `API_BASE_URL`.
+`lib/core/config/env.dart` reads `APP_ENV` and `API_BASE_URL`. Staging builds must use
+`--dart-define=APP_ENV=staging` so Firebase and the API stay isolated from production.
+
+The staging APK uses package id `id.gampongblang.sapa_gampong.staging` and label `Gampong Blang Digital Staging`, so testers can install it beside the production app.
 
 ## Tests
 ```bash
