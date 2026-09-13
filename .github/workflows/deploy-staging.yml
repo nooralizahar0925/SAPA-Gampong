@@ -54,14 +54,14 @@ jobs:
           chmod 600 ~/.ssh/staging_key
           ssh-keygen -y -f ~/.ssh/staging_key > /dev/null
           PORT="${STAGING_PORT:-22}"
-          ssh-keyscan -p "$PORT" "$STAGING_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$PORT" "$STAGING_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Deploy safely on VPS
         run: |
           PORT="${STAGING_PORT:-22}"
           APP_DIR="${STAGING_APP_DIR:-/opt/gampong-blang/staging/SAPA-Gampong}"
           API_BASE_URL="${DASHBOARD_API_BASE_URL:-https://gampongblangdigital.web.id/api}"
-          ssh -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/staging_key -p "$PORT" "$STAGING_USER@$STAGING_HOST" \
             "set -euo pipefail
              cd '$APP_DIR'
              git fetch origin '$DEPLOY_BRANCH'

@@ -57,7 +57,7 @@ jobs:
           chmod 600 ~/.ssh/production_key
           ssh-keygen -y -f ~/.ssh/production_key > /dev/null
           PORT="${PRODUCTION_PORT:-22}"
-          ssh-keyscan -p "$PORT" "$PRODUCTION_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$PORT" "$PRODUCTION_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Deploy safely on VPS
         run: |
@@ -67,7 +67,7 @@ jobs:
           MOBILE_API_BASE_URL="${MOBILE_WEB_API_BASE_URL:-$API_BASE_URL}"
           RUN_SEED="${{ github.event.inputs.run_seed }}"
           BUILD_MOBILE_WEB="${{ github.event.inputs.build_mobile_web }}"
-          ssh -i ~/.ssh/production_key -p "$PORT" "$PRODUCTION_USER@$PRODUCTION_HOST" \
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/production_key -p "$PORT" "$PRODUCTION_USER@$PRODUCTION_HOST" \
             "set -euo pipefail
              cd '$APP_DIR'
              git fetch origin '$DEPLOY_BRANCH'
