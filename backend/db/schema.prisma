@@ -437,6 +437,18 @@ model AppConfig {
   secretaryTitle   String?
   secretaryName    String?
 
+  // Public Android distribution landing page. Downloads stay off until an admin
+  // confirms that the production artifact and signing strategy are ready.
+  appDistributionChannel String  @default("direct_apk")
+  appDownloadEnabled     Boolean @default(false)
+  appApkUrl               String?
+  appPlayStoreUrl         String?
+  appVersionName          String?
+  appReleaseDate          String?
+  appFileSize             String?
+  appSha256               String?
+  appDownloadNotice       String?
+
   letterTemplatesSeeded Boolean @default(false)
 
   updatedAt           DateTime      @updatedAt

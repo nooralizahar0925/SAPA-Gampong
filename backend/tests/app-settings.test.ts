@@ -1,13 +1,18 @@
 import bcrypt from 'bcryptjs';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
+import { androidApkMetadataPath, androidApkPath } from '../src/services/app-release.service';
 import { testPrisma, truncateAll } from './helpers/db';
 
 const app = createApp();
 
 beforeEach(async () => {
   await truncateAll();
+  await rm(androidApkPath, { force: true });
+  await rm(androidApkMetadataPath, { force: true });
   await testPrisma.adminUser.create({
     data: {
       name: 'Admin Gampong',
@@ -111,6 +116,125 @@ describe('app settings', () => {
   it('requires authentication for both read and write', async () => {
     expect((await request(app).get('/api/settings/app')).status).toBe(401);
     expect((await request(app).patch('/api/settings/app').send({ keuchik_name: 'X' })).status).toBe(401);
+  });
+});
+
+describe('app distribution settings', () => {
+  it('is publicly readable but disabled by default', async () => {
+    const res = await request(app).get('/api/app-distribution');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      channel: 'direct_apk',
+      enabled: false,
+      apk_url: null,
+      play_store_url: null,
+    });
+  });
+
+  it('lets an admin configure APK distribution without exposing authentication', async () => {
+    const token = await login();
+    const sha256 = 'a'.repeat(64);
+
+    const patch = await request(app)
+      .patch('/api/settings/app-distribution')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        channel: 'direct_apk',
+        enabled: true,
+        apk_url: '/api/app-distribution/android.apk',
+        version_name: '1.0.0',
+        release_date: '2026-09-15',
+        file_size: '42 MB',
+        sha256,
+        notice: 'Publikasi Google Play sedang diproses.',
+      });
+
+    expect(patch.status).toBe(200);
+    expect(patch.body).toMatchObject({
+      channel: 'direct_apk',
+      enabled: true,
+      apk_url: '/api/app-distribution/android.apk',
+      sha256,
+    });
+
+    const publicResult = await request(app).get('/api/app-distribution');
+    expect(publicResult.body.notice).toBe('Publikasi Google Play sedang diproses.');
+  });
+
+  it('requires an admin for writes and rejects unsafe download URLs', async () => {
+    expect(
+      (
+        await request(app)
+          .patch('/api/settings/app-distribution')
+          .send({ enabled: true, apk_url: 'http://insecure.example/app.apk' })
+      ).status,
+    ).toBe(401);
+
+    const token = await login();
+    const invalid = await request(app)
+      .patch('/api/settings/app-distribution')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ apk_url: 'http://insecure.example/app.apk' });
+
+    expect(invalid.status).toBe(400);
+  });
+
+  it('does not enable a channel until its destination URL is configured', async () => {
+    const token = await login();
+
+    const res = await request(app)
+      .patch('/api/settings/app-distribution')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ channel: 'google_play', enabled: true });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.fields.play_store_url).toBeDefined();
+  });
+
+  it('keeps the APK unavailable while public distribution is disabled', async () => {
+    await mkdir(dirname(androidApkPath), { recursive: true });
+    await writeFile(androidApkPath, 'signed-apk-fixture');
+
+    const res = await request(app).get('/api/app-distribution/android.apk');
+
+    expect(res.status).toBe(404);
+  });
+
+  it('streams the APK only while direct distribution is active', async () => {
+    const token = await login();
+    await mkdir(dirname(androidApkPath), { recursive: true });
+    await writeFile(androidApkPath, 'signed-apk-fixture');
+    await request(app)
+      .patch('/api/settings/app-distribution')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        channel: 'direct_apk',
+        enabled: true,
+        apk_url: '/api/app-distribution/android.apk',
+        version_name: '1.0.0',
+      });
+
+    const res = await request(app).get('/api/app-distribution/android.apk');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/vnd.android.package-archive');
+    expect(res.headers['content-disposition']).toContain('gampong-blang-digital-1.0.0.apk');
+    expect(res.headers['content-length']).toBe(Buffer.byteLength('signed-apk-fixture').toString());
+  });
+
+  it('reads direct APK release metadata automatically from the private artifact', async () => {
+    await mkdir(dirname(androidApkPath), { recursive: true });
+    await writeFile(androidApkPath, 'signed-apk-fixture');
+    await writeFile(androidApkMetadataPath, JSON.stringify({ version_name: '2.3.4' }));
+
+    const res = await request(app).get('/api/app-distribution');
+
+    expect(res.status).toBe(200);
+    expect(res.body.version_name).toBe('2.3.4');
+    expect(res.body.file_size).toBe('0.0 MB');
+    expect(res.body.sha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(res.body.release_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
 

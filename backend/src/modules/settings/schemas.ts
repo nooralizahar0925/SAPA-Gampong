@@ -120,6 +120,54 @@ export const UpdateAppSettingsBody = registry.register(
 );
 
 /* -------------------------------------------------------------------------- */
+/* Public Android app distribution                                             */
+/* -------------------------------------------------------------------------- */
+
+export const AppDistributionChannel = registry.register(
+  'AppDistributionChannel',
+  z.enum(['direct_apk', 'google_play']),
+);
+
+export const AppDistributionResponse = registry.register(
+  'AppDistributionResponse',
+  z.object({
+    channel: AppDistributionChannel,
+    enabled: z.boolean(),
+    apk_url: z.string().nullable(),
+    play_store_url: z.string().nullable(),
+    version_name: z.string().nullable(),
+    release_date: z.string().nullable(),
+    file_size: z.string().nullable(),
+    sha256: z.string().nullable(),
+    notice: z.string().nullable(),
+    updated_at: z.string().nullable(),
+  }),
+);
+
+const publicDownloadUrl = z
+  .string()
+  .max(2048)
+  .refine(
+    (value) => value.startsWith('/') || /^https:\/\//i.test(value),
+    'URL harus berupa alamat HTTPS atau path yang diawali /',
+  );
+
+export const UpdateAppDistributionBody = registry.register(
+  'UpdateAppDistributionBody',
+  z.object({
+    channel: AppDistributionChannel.optional(),
+    enabled: z.boolean().optional(),
+    apk_url: publicDownloadUrl.nullish(),
+    play_store_url: publicDownloadUrl.nullish(),
+    version_name: z.string().max(40).nullish(),
+    release_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+    file_size: z.string().max(40).nullish(),
+    sha256: z.string().regex(/^[a-fA-F0-9]{64}$/).nullish(),
+    notice: z.string().max(300).nullish(),
+  }),
+);
+
+/* -------------------------------------------------------------------------- */
 /* Letter number counters                                                     */
 /* -------------------------------------------------------------------------- */
 

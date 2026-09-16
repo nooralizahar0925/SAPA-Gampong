@@ -1,6 +1,7 @@
 import type { EmailProvider } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
+import { getDirectApkReleaseMetadata } from '../../services/app-release.service';
 import {
   EmailService,
   getDefaultEmailProvider,
@@ -111,6 +112,83 @@ export async function updateAppSettings(input: AppSettingsInput) {
   });
 
   return getAppSettings();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public Android app distribution                                             */
+/* -------------------------------------------------------------------------- */
+
+type AppDistributionInput = {
+  channel?: 'direct_apk' | 'google_play';
+  enabled?: boolean;
+  apk_url?: string | null;
+  play_store_url?: string | null;
+  version_name?: string | null;
+  release_date?: string | null;
+  file_size?: string | null;
+  sha256?: string | null;
+  notice?: string | null;
+};
+
+export async function getAppDistribution() {
+  const config = await prisma.appConfig.findUnique({ where: { id: APP_CONFIG_ID } });
+  const channel =
+    config?.appDistributionChannel === 'google_play' ? ('google_play' as const) : ('direct_apk' as const);
+  const apkMetadata = channel === 'direct_apk' ? await getDirectApkReleaseMetadata() : null;
+
+  return {
+    channel,
+    enabled: config?.appDownloadEnabled ?? false,
+    apk_url: config?.appApkUrl ?? null,
+    play_store_url: config?.appPlayStoreUrl ?? null,
+    version_name: apkMetadata?.version_name ?? config?.appVersionName ?? null,
+    release_date: apkMetadata?.release_date ?? config?.appReleaseDate ?? null,
+    file_size: apkMetadata?.file_size ?? config?.appFileSize ?? null,
+    sha256: apkMetadata?.sha256 ?? config?.appSha256 ?? null,
+    notice: config?.appDownloadNotice ?? null,
+    updated_at: config ? config.updatedAt.toISOString() : null,
+  };
+}
+
+export async function updateAppDistribution(input: AppDistributionInput) {
+  const current = await getAppDistribution();
+  const nextChannel = input.channel ?? current.channel;
+  const nextEnabled = input.enabled ?? current.enabled;
+  const nextUrl =
+    nextChannel === 'google_play'
+      ? input.play_store_url === undefined
+        ? current.play_store_url
+        : input.play_store_url
+      : input.apk_url === undefined
+        ? current.apk_url
+        : input.apk_url;
+
+  if (nextEnabled && !nextUrl) {
+    const field = nextChannel === 'google_play' ? 'play_store_url' : 'apk_url';
+    throw ApiError.validation('URL saluran aktif wajib diisi sebelum unduhan dipublikasikan.', {
+      [field]: 'URL wajib diisi saat publik aktif',
+    });
+  }
+
+  const data = definedOnly({
+    appDistributionChannel: input.channel,
+    appDownloadEnabled: input.enabled,
+    appApkUrl: input.apk_url,
+    appPlayStoreUrl: input.play_store_url,
+    appVersionName: input.version_name,
+    appReleaseDate: input.release_date,
+    appFileSize: input.file_size,
+    appSha256: input.sha256?.toLowerCase(),
+    appDownloadNotice: input.notice,
+  });
+
+  await prisma.appConfig.upsert({
+    where: { id: APP_CONFIG_ID },
+    create: { id: APP_CONFIG_ID, ...data },
+    update: data,
+  });
+
+  return getAppDistribution();
 }
 
 /* -------------------------------------------------------------------------- */

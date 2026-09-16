@@ -155,11 +155,16 @@ log "Installing dashboard dependencies"
 cd "$APP_DIR/dashboard"
 npm ci
 printf 'VITE_API_BASE_URL=%s\n' "$DASHBOARD_API_BASE_URL" > .env.production
+printf 'VITE_DEPLOY_ENV=staging\n' >> .env.production
 printf 'VITE_ENABLE_STAGING_APP_INSTALL=true\n' >> .env.production
 printf 'VITE_STAGING_ANDROID_APK_URL=%s\n' 'https://gampongblangdigital.web.id/mobile-app/latest.apk' >> .env.production
 printf 'VITE_STAGING_ANDROID_APK_METADATA_URL=%s\n' 'https://gampongblangdigital.web.id/mobile-app/metadata.json' >> .env.production
 preserve_staging_apk
 npm run build
+# Belt-and-suspenders protection: robots.txt discourages discovery, while the
+# noindex directive also covers a staging URL that somebody links directly.
+printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+find dist -name '*.html' -type f -exec sed -i 's/content="index, follow, max-image-preview:large"/content="noindex, nofollow, noarchive"/g' {} +
 publish_staging_apk
 publish_staging_mobile_web
 

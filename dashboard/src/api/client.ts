@@ -957,6 +957,21 @@ export type AppSettings = {
   updated_at: string | null;
 };
 
+export type AppDistributionChannel = 'direct_apk' | 'google_play';
+
+export type AppDistribution = {
+  channel: AppDistributionChannel;
+  enabled: boolean;
+  apk_url: string | null;
+  play_store_url: string | null;
+  version_name: string | null;
+  release_date: string | null;
+  file_size: string | null;
+  sha256: string | null;
+  notice: string | null;
+  updated_at: string | null;
+};
+
 export type LetterCounterEntry = {
   letter_type: LetterTypeCode;
   last_number: number;
@@ -973,6 +988,23 @@ export function getAppSettingsRequest() {
 
 export function updateAppSettingsRequest(input: Partial<Omit<AppSettings, 'updated_at'>>) {
   return apiRequest<AppSettings>('/settings/app', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function getPublicAppDistributionRequest() {
+  return apiRequest<AppDistribution>('/app-distribution');
+}
+
+export function getAppDistributionRequest() {
+  return apiRequest<AppDistribution>('/settings/app-distribution');
+}
+
+export function updateAppDistributionRequest(
+  input: Partial<Omit<AppDistribution, 'updated_at'>>,
+) {
+  return apiRequest<AppDistribution>('/settings/app-distribution', {
     method: 'PATCH',
     body: JSON.stringify(input),
   });

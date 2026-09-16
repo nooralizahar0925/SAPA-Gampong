@@ -59,6 +59,7 @@ backup_database() {
 protect_storage() {
   log "Checking persistent storage folder"
   mkdir -p "$APP_DIR/backend/storage/production"
+  mkdir -p "$APP_DIR/backend/storage/production/releases/android"
   [ -d "$APP_DIR/backend/storage/production" ] || fail "storage folder is not available"
 }
 
@@ -100,7 +101,12 @@ log "Installing dashboard dependencies"
 cd "$APP_DIR/dashboard"
 npm ci
 printf 'VITE_API_BASE_URL=%s\n' "$DASHBOARD_API_BASE_URL" > .env.production
+printf 'VITE_DEPLOY_ENV=production\n' >> .env.production
 npm run build
+cp "$APP_DIR/docs/play-store-assets/app-icon-512.png" dist/app-icon.png
+cp "$APP_DIR/docs/play-store-assets/feature-graphic-1024x500.png" dist/social-preview.png
+printf 'User-agent: *\nAllow: /\nAllow: /privacy-policy\nAllow: /assets/\nAllow: /app-icon.png\nAllow: /social-preview.png\nAllow: /api/app-distribution\nDisallow: /api/\nDisallow: /login\nDisallow: /settings/\nDisallow: /requests/\nDisallow: /content/\nDisallow: /feedback\nDisallow: /profile\nDisallow: /staging-app\nSitemap: https://gampongblangdigital.com/sitemap.xml\n' > dist/robots.txt
+printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' '  <url><loc>https://gampongblangdigital.com/</loc><changefreq>weekly</changefreq></url>' '  <url><loc>https://gampongblangdigital.com/privacy-policy</loc><changefreq>monthly</changefreq></url>' '</urlset>' > dist/sitemap.xml
 
 if [ "$BUILD_MOBILE_WEB" = "true" ]; then
   command -v flutter >/dev/null 2>&1 || fail "Flutter is required when BUILD_MOBILE_WEB=true"

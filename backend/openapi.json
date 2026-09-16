@@ -3694,6 +3694,144 @@
           }
         }
       },
+      "AppDistributionChannel": {
+        "type": "string",
+        "enum": [
+          "direct_apk",
+          "google_play"
+        ]
+      },
+      "AppDistributionResponse": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/AppDistributionChannel"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "apk_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "play_store_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "release_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "channel",
+          "enabled",
+          "apk_url",
+          "play_store_url",
+          "version_name",
+          "release_date",
+          "file_size",
+          "sha256",
+          "notice",
+          "updated_at"
+        ]
+      },
+      "UpdateAppDistributionBody": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/AppDistributionChannel"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "apk_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "play_store_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "version_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "release_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "file_size": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "notice": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          }
+        }
+      },
       "LetterTypeEnum": {
         "type": "string",
         "enum": [
@@ -7667,6 +7805,57 @@
         }
       }
     },
+    "/api/app-distribution": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get the public Android app distribution configuration",
+        "responses": {
+          "200": {
+            "description": "Current public distribution channel and release details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppDistributionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app-distribution/android.apk": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Download the official Android APK when direct distribution is active",
+        "responses": {
+          "200": {
+            "description": "Signed Android application package",
+            "content": {
+              "application/vnd.android.package-archive": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APK distribution is disabled or the release file is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/email-provider": {
       "get": {
         "tags": [
@@ -7948,6 +8137,93 @@
           },
           "400": {
             "description": "Invalid application settings payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/app-distribution": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get Android app distribution settings for administrators",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current app distribution settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppDistributionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update the public Android app distribution settings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppDistributionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated app distribution settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppDistributionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid app distribution settings",
             "content": {
               "application/json": {
                 "schema": {

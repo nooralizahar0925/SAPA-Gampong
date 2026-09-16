@@ -348,6 +348,9 @@ server {
     root /opt/gampong-blang/staging/SAPA-Gampong/dashboard/dist;
     index index.html;
 
+    # Staging is intentionally unlisted and must never be indexed.
+    add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
+
     location /api/ {
         proxy_pass http://127.0.0.1:8081/api/;
         proxy_http_version 1.1;

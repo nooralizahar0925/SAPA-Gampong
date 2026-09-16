@@ -1,7 +1,12 @@
 import { Router } from 'express';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { ApiError } from '../../lib/errors';
+import { androidApkPath } from '../../services/app-release.service';
 import { errorResponse } from '../../openapi/components';
 import { defineRoute } from '../../openapi/define-route';
 import {
+  AppDistributionResponse,
   AppSettingsResponse,
   EmailProviderSettingsResponse,
   LetterCountersQuery,
@@ -9,22 +14,96 @@ import {
   SettingsMessageResponse,
   TestEmailProviderBody,
   UpdateAppSettingsBody,
+  UpdateAppDistributionBody,
   UpdateEmailProviderBody,
   UpdateEmailProviderConfigBody,
   UpdateLetterCounterBody,
 } from './schemas';
 import {
+  getAppDistribution,
   getAppSettings,
   getEmailProviderSettings,
   getLetterCounters,
   sendEmailProviderTestEmail,
   updateAppSettings,
+  updateAppDistribution,
   updateEmailProvider,
   updateEmailProviderConfig,
   updateLetterCounter,
 } from './service';
 
 export const settingsRouter = Router();
+export const appDistributionRouter = Router();
+export { androidApkPath } from '../../services/app-release.service';
+
+defineRoute(appDistributionRouter, {
+  method: 'get',
+  path: '/',
+  fullPath: '/api/app-distribution',
+  tags: ['Settings'],
+  summary: 'Get the public Android app distribution configuration',
+  responses: {
+    200: {
+      description: 'Current public distribution channel and release details',
+      content: { 'application/json': { schema: AppDistributionResponse } },
+    },
+  },
+  handler: async ({ res }) => {
+    res.json(await getAppDistribution());
+  },
+});
+
+defineRoute(appDistributionRouter, {
+  method: 'get',
+  path: '/android.apk',
+  fullPath: '/api/app-distribution/android.apk',
+  tags: ['Settings'],
+  summary: 'Download the official Android APK when direct distribution is active',
+  responses: {
+    200: {
+      description: 'Signed Android application package',
+      content: {
+        'application/vnd.android.package-archive': {
+          schema: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+    404: errorResponse('APK distribution is disabled or the release file is unavailable'),
+  },
+  handler: async ({ res }) => {
+    const distribution = await getAppDistribution();
+    if (!distribution.enabled || distribution.channel !== 'direct_apk') {
+      throw ApiError.notFound('Unduhan aplikasi belum tersedia');
+    }
+
+    let apkSize: number;
+    try {
+      apkSize = (await stat(androidApkPath)).size;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw ApiError.notFound('Berkas aplikasi belum tersedia');
+      }
+      throw error;
+    }
+
+    const version = distribution.version_name?.replace(/[^a-zA-Z0-9._-]/g, '-') || 'latest';
+    res
+      .status(200)
+      .type('application/vnd.android.package-archive')
+      .setHeader('Content-Length', apkSize.toString())
+      .setHeader('Content-Disposition', `attachment; filename="gampong-blang-digital-${version}.apk"`)
+      .setHeader('Cache-Control', 'private, no-store')
+      .setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
+      .setHeader('X-Content-Type-Options', 'nosniff');
+
+    await new Promise<void>((resolveStream, rejectStream) => {
+      const stream = createReadStream(androidApkPath);
+      stream.on('error', rejectStream);
+      stream.on('end', resolveStream);
+      stream.pipe(res);
+    });
+  },
+});
 
 defineRoute(settingsRouter, {
   method: 'get',
@@ -126,6 +205,46 @@ defineRoute(settingsRouter, {
   },
   handler: async ({ res }) => {
     res.json(await getAppSettings());
+  },
+});
+
+defineRoute(settingsRouter, {
+  method: 'get',
+  path: '/app-distribution',
+  fullPath: '/api/settings/app-distribution',
+  tags: ['Settings'],
+  summary: 'Get Android app distribution settings for administrators',
+  auth: { roles: ['admin'] },
+  responses: {
+    200: {
+      description: 'Current app distribution settings',
+      content: { 'application/json': { schema: AppDistributionResponse } },
+    },
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ res }) => {
+    res.json(await getAppDistribution());
+  },
+});
+
+defineRoute(settingsRouter, {
+  method: 'patch',
+  path: '/app-distribution',
+  fullPath: '/api/settings/app-distribution',
+  tags: ['Settings'],
+  summary: 'Update the public Android app distribution settings',
+  auth: { roles: ['admin'] },
+  body: UpdateAppDistributionBody,
+  responses: {
+    200: {
+      description: 'Updated app distribution settings',
+      content: { 'application/json': { schema: AppDistributionResponse } },
+    },
+    400: errorResponse('Invalid app distribution settings'),
+    401: errorResponse('Authentication is required'),
+  },
+  handler: async ({ body, res }) => {
+    res.json(await updateAppDistribution(body));
   },
 });
 

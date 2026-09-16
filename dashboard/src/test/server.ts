@@ -1,6 +1,7 @@
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import type {
+  AppDistribution,
   AppSettings,
   BannerSlide,
   DemographicBlock,
@@ -335,6 +336,7 @@ function initialContentState(): {
   prayerConfig: PrayerConfig;
   demographics: DemographicBlock[];
   appSettings: AppSettings;
+  appDistribution: AppDistribution;
   letterCounters: Array<{ letter_type: string; last_number: number }>;
   letterTemplates: LetterTemplateDefinition[];
 } {
@@ -523,6 +525,18 @@ function initialContentState(): {
       secretary_title: 'Sekretaris Gampong a.n. Keuchik',
       secretary_name: 'AFZALUL ZIKRI, S.P',
       updated_at: '2026-07-20T10:00:00.000Z',
+    },
+    appDistribution: {
+      channel: 'direct_apk',
+      enabled: false,
+      apk_url: '/api/app-distribution/android.apk',
+      play_store_url: null,
+      version_name: '1.0.0',
+      release_date: '2026-09-15',
+      file_size: '42 MB',
+      sha256: null,
+      notice: 'Aplikasi sedang dalam proses publikasi di Google Play.',
+      updated_at: '2026-09-15T02:00:00.000Z',
     },
     // The API returns all ten types, reporting 0 for the ones never used.
     letterCounters: [
@@ -1444,6 +1458,22 @@ export const server = setupServer(
     const body = (await request.json()) as Record<string, unknown>;
     contentState.appSettings = { ...contentState.appSettings, ...body };
     return HttpResponse.json(contentState.appSettings);
+  }),
+
+  http.get('http://localhost:8080/api/app-distribution', () =>
+    HttpResponse.json(contentState.appDistribution),
+  ),
+  http.get('http://localhost:8080/api/settings/app-distribution', () =>
+    HttpResponse.json(contentState.appDistribution),
+  ),
+  http.patch('http://localhost:8080/api/settings/app-distribution', async ({ request }) => {
+    const body = (await request.json()) as Partial<AppDistribution>;
+    contentState.appDistribution = {
+      ...contentState.appDistribution,
+      ...body,
+      updated_at: '2026-09-15T03:00:00.000Z',
+    };
+    return HttpResponse.json(contentState.appDistribution);
   }),
 
   http.get('http://localhost:8080/api/settings/letter-counters', ({ request }) => {
