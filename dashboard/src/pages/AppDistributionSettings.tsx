@@ -124,38 +124,49 @@ export function AppDistributionSettingsPage() {
               </label>
             </div>
 
-            <div className="distribution-channel-picker" role="radiogroup" aria-label="Saluran distribusi">
-              <ChannelOption
-                title="Unduh APK langsung"
-                description="Untuk distribusi sementara melalui website resmi."
-                checked={form.channel === 'direct_apk'}
-                onChange={() => setField('channel', 'direct_apk')}
-              />
-              <ChannelOption
-                title="Google Play"
-                description="Gunakan setelah halaman aplikasi resmi sudah tersedia."
-                checked={form.channel === 'google_play'}
-                onChange={() => setField('channel', 'google_play')}
-              />
-            </div>
+            {form.enabled ? (
+              <>
+                <div className="distribution-channel-picker" role="radiogroup" aria-label="Saluran distribusi">
+                  <ChannelOption
+                    title="Unduh APK langsung"
+                    description="Untuk distribusi sementara melalui website resmi."
+                    checked={form.channel === 'direct_apk'}
+                    onChange={() => setField('channel', 'direct_apk')}
+                  />
+                  <ChannelOption
+                    title="Google Play"
+                    description="Gunakan setelah halaman aplikasi resmi sudah tersedia."
+                    checked={form.channel === 'google_play'}
+                    onChange={() => setField('channel', 'google_play')}
+                  />
+                </div>
 
-            <div className="content-form-grid">
-              <TextField
-                id="distribution-apk-url"
-                label="URL APK produksi"
-                value={form.apk_url ?? ''}
-                placeholder="/api/app-distribution/android.apk"
-                hint="Endpoint resmi ini memblokir unduhan selama Publik nonaktif."
-                onChange={(value) => setField('apk_url', value)}
-              />
-              <TextField
-                id="distribution-play-url"
-                label="URL Google Play"
-                value={form.play_store_url ?? ''}
-                placeholder="https://play.google.com/store/apps/details?id=..."
-                onChange={(value) => setField('play_store_url', value)}
-              />
-            </div>
+                <div className="content-form-grid">
+                  {form.channel === 'direct_apk' ? (
+                    <TextField
+                      id="distribution-apk-url"
+                      label="URL APK produksi"
+                      value={form.apk_url ?? ''}
+                      placeholder="/api/app-distribution/android.apk"
+                      hint="Endpoint resmi ini hanya tersedia ketika saluran APK aktif."
+                      onChange={(value) => setField('apk_url', value)}
+                    />
+                  ) : (
+                    <TextField
+                      id="distribution-play-url"
+                      label="URL Google Play"
+                      value={form.play_store_url ?? ''}
+                      placeholder="https://play.google.com/store/apps/details?id=..."
+                      onChange={(value) => setField('play_store_url', value)}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="distribution-inactive-note">
+                Saluran dan alamat unduhan disembunyikan sampai Publik aktif dipilih.
+              </div>
+            )}
           </section>
 
           <section className="detail-card">
@@ -163,48 +174,55 @@ export function AppDistributionSettingsPage() {
               <div>
                 <h2>Informasi Rilis</h2>
                 <small className="detail-card-note">
-                  {metadataIsAutomatic
-                    ? 'Versi, tanggal, ukuran, dan checksum dibaca otomatis dari APK produksi.'
+                  {!form.enabled
+                    ? 'Atur tanggal rencana peluncuran dan pengumuman yang dilihat warga.'
+                    : metadataIsAutomatic
+                    ? 'Versi, ukuran, dan checksum dibaca otomatis dari APK produksi. Tanggal rilis dapat dijadwalkan.'
                     : 'Ditampilkan untuk membantu warga mengenali rilis resmi.'}
                 </small>
               </div>
             </div>
             <div className="content-form-grid">
-              <TextField
-                id="distribution-version"
-                label="Versi aplikasi"
-                value={form.version_name ?? ''}
-                placeholder="1.0.0"
-                disabled={metadataIsAutomatic}
-                onChange={(value) => setField('version_name', value)}
-              />
+              {form.enabled ? (
+                <TextField
+                  id="distribution-version"
+                  label="Versi aplikasi"
+                  value={form.version_name ?? ''}
+                  placeholder="1.0.0"
+                  disabled={metadataIsAutomatic}
+                  onChange={(value) => setField('version_name', value)}
+                />
+              ) : null}
               <div className="field">
                 <label htmlFor="distribution-date">Tanggal rilis</label>
                 <input
                   id="distribution-date"
                   type="date"
                   value={form.release_date ?? ''}
-                  disabled={metadataIsAutomatic}
                   onChange={(event) => setField('release_date', event.target.value)}
                 />
               </div>
-              <TextField
-                id="distribution-size"
-                label="Ukuran berkas"
-                value={form.file_size ?? ''}
-                placeholder="42 MB"
-                disabled={metadataIsAutomatic}
-                onChange={(value) => setField('file_size', value)}
-              />
-              <TextField
-                id="distribution-sha"
-                label="SHA-256 APK"
-                value={form.sha256 ?? ''}
-                placeholder="64 karakter heksadesimal"
-                hint="Opsional, tetapi disarankan untuk APK langsung."
-                disabled={metadataIsAutomatic}
-                onChange={(value) => setField('sha256', value.replace(/\s/g, ''))}
-              />
+              {form.enabled ? (
+                <>
+                  <TextField
+                    id="distribution-size"
+                    label="Ukuran berkas"
+                    value={form.file_size ?? ''}
+                    placeholder="42 MB"
+                    disabled={metadataIsAutomatic}
+                    onChange={(value) => setField('file_size', value)}
+                  />
+                  <TextField
+                    id="distribution-sha"
+                    label="SHA-256 APK"
+                    value={form.sha256 ?? ''}
+                    placeholder="64 karakter heksadesimal"
+                    hint="Opsional, tetapi disarankan untuk APK langsung."
+                    disabled={metadataIsAutomatic}
+                    onChange={(value) => setField('sha256', value.replace(/\s/g, ''))}
+                  />
+                </>
+              ) : null}
               <div className="field span-2">
                 <label htmlFor="distribution-notice">Pengumuman singkat</label>
                 <textarea

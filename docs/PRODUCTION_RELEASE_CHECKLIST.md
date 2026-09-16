@@ -82,7 +82,7 @@ The Android manifest currently requests location, camera, notifications, exact a
 - Configure the active destination in Dashboard → Pengaturan → Distribusi Aplikasi.
 - Keep `Publik nonaktif` while preparing the release; enable it manually on launch day.
 - For direct distribution, keep the signed file outside the web root at `backend/storage/production/releases/android/latest.apk` and configure `/api/app-distribution/android.apk` as the APK URL. The backend returns `404` unless direct distribution is active and `Publik aktif` is enabled.
-- Generate and upload `metadata.json` beside the APK with `scripts/prepare-production-apk.sh`. The dashboard reads the version from this file and calculates release date, size, and SHA-256 directly from the private APK; clients do not enter these fields manually.
+- Generate and upload `metadata.json` beside the APK with `scripts/prepare-production-apk.sh`. The dashboard reads the version from this file and calculates size and SHA-256 directly from the private APK. The client can set a planned release date, including while public distribution is disabled.
 - The direct APK is signed with the existing cross-channel app-signing key. During initial Play App Signing setup, provide this same key so direct and Play installs remain update-compatible.
 - After the store listing launches, save its URL, select `Google Play`, and enable the public CTA. The QR does not need to change.
 

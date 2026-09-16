@@ -3333,6 +3333,16 @@ select.field-input:focus {
   margin: 0;
 }
 
+.distribution-inactive-note {
+  padding: 14px 16px;
+  border: 1px dashed var(--g200);
+  border-radius: 12px;
+  color: var(--ink500);
+  background: var(--g50);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
 @media (max-width: 900px) {
   .download-hero,
   .download-trust-section {

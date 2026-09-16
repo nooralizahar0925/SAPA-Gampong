@@ -108,7 +108,12 @@ export function DownloadPage() {
           ) : (
             <div className="download-unavailable">
               <strong>Aplikasi segera tersedia</strong>
-              <span>Kami sedang menyiapkan rilis resmi. Informasi unduhan akan tampil di halaman ini setelah peluncuran.</span>
+              <span>
+                {distribution?.release_date
+                  ? `Rencana rilis: ${formatReleaseDate(distribution.release_date)}. `
+                  : 'Jadwal rilis akan diumumkan segera. '}
+                Informasi unduhan akan tampil di halaman ini setelah peluncuran.
+              </span>
             </div>
           )}
 

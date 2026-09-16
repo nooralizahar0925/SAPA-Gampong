@@ -39,6 +39,7 @@ describe('public app download page', () => {
 
     expect(await screen.findByRole('heading', { name: /pelayanan gampong kini lebih dekat/i })).toBeInTheDocument();
     expect(await screen.findByText('Aplikasi segera tersedia')).toBeInTheDocument();
+    expect(screen.getByText(/rencana rilis: 15 september 2026/i)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /unduh aplikasi android/i })).not.toBeInTheDocument();
     expect(screen.queryByText('Panduan pemasangan')).not.toBeInTheDocument();
   });
@@ -72,12 +73,22 @@ describe('public app download page', () => {
 
 describe('app distribution dashboard', () => {
   it('shows direct APK metadata as automatic read-only fields', async () => {
+    const user = userEvent.setup();
     renderRoutes('/settings/distribution', true);
 
     await screen.findByRole('heading', { name: 'Distribusi Aplikasi' });
-    expect(screen.getByText(/dibaca otomatis dari APK produksi/i)).toBeInTheDocument();
+    expect(screen.queryByText('Unduh APK langsung')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('URL APK produksi')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('URL Google Play')).not.toBeInTheDocument();
+    expect(screen.getByText(/saluran dan alamat unduhan disembunyikan/i)).toBeInTheDocument();
+    expect(screen.getByText(/atur tanggal rencana peluncuran/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Versi aplikasi')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Tanggal rilis')).toBeEnabled();
+
+    await user.click(screen.getByLabelText('Publik nonaktif'));
+    expect(screen.getByText(/tanggal rilis dapat dijadwalkan/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Versi aplikasi')).toBeDisabled();
-    expect(screen.getByLabelText('Tanggal rilis')).toBeDisabled();
+    expect(screen.getByLabelText('Tanggal rilis')).toBeEnabled();
     expect(screen.getByLabelText('Ukuran berkas')).toBeDisabled();
     expect(screen.getByLabelText('SHA-256 APK')).toBeDisabled();
   });
@@ -87,12 +98,15 @@ describe('app distribution dashboard', () => {
     renderRoutes('/settings/distribution', true);
 
     await screen.findByRole('heading', { name: 'Distribusi Aplikasi' });
+    await user.click(screen.getByLabelText('Publik nonaktif'));
+    expect(screen.getByLabelText('URL APK produksi')).toBeInTheDocument();
+    expect(screen.queryByLabelText('URL Google Play')).not.toBeInTheDocument();
     await user.click(screen.getByText('Google Play'));
+    expect(screen.queryByLabelText('URL APK produksi')).not.toBeInTheDocument();
     await user.type(
       screen.getByLabelText('URL Google Play'),
       'https://play.google.com/store/apps/details?id=id.gampongblang.sapa_gampong',
     );
-    await user.click(screen.getByLabelText('Publik nonaktif'));
     await user.click(screen.getByRole('button', { name: /simpan perubahan/i }));
 
     await waitFor(() => {

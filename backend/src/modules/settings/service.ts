@@ -142,7 +142,7 @@ export async function getAppDistribution() {
     apk_url: config?.appApkUrl ?? null,
     play_store_url: config?.appPlayStoreUrl ?? null,
     version_name: apkMetadata?.version_name ?? config?.appVersionName ?? null,
-    release_date: apkMetadata?.release_date ?? config?.appReleaseDate ?? null,
+    release_date: config?.appReleaseDate ?? apkMetadata?.release_date ?? null,
     file_size: apkMetadata?.file_size ?? config?.appFileSize ?? null,
     sha256: apkMetadata?.sha256 ?? config?.appSha256 ?? null,
     notice: config?.appDownloadNotice ?? null,

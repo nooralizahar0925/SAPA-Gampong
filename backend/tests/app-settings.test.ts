@@ -227,6 +227,9 @@ describe('app distribution settings', () => {
     await mkdir(dirname(androidApkPath), { recursive: true });
     await writeFile(androidApkPath, 'signed-apk-fixture');
     await writeFile(androidApkMetadataPath, JSON.stringify({ version_name: '2.3.4' }));
+    await testPrisma.appConfig.create({
+      data: { id: 'singleton', appReleaseDate: '2026-10-01' },
+    });
 
     const res = await request(app).get('/api/app-distribution');
 
@@ -234,7 +237,7 @@ describe('app distribution settings', () => {
     expect(res.body.version_name).toBe('2.3.4');
     expect(res.body.file_size).toBe('0.0 MB');
     expect(res.body.sha256).toMatch(/^[a-f0-9]{64}$/);
-    expect(res.body.release_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(res.body.release_date).toBe('2026-10-01');
   });
 });
 
