@@ -351,6 +351,11 @@ server {
     # Staging is intentionally unlisted and must never be indexed.
     add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
 
+    location = /robots.txt {
+        default_type text/plain;
+        return 200 "User-agent: *\nDisallow: /\n";
+    }
+
     location /api/ {
         proxy_pass http://127.0.0.1:8081/api/;
         proxy_http_version 1.1;

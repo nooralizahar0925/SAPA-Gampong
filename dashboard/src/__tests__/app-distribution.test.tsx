@@ -34,6 +34,18 @@ function renderRoutes(path: string, authenticated = false) {
 }
 
 describe('public app download page', () => {
+  it('shows an undated coming-soon state without promising news availability', async () => {
+    contentState.appDistribution.release_date = null;
+    contentState.appDistribution.channel = 'google_play';
+    renderRoutes('/');
+
+    expect(await screen.findByText('Aplikasi segera tersedia')).toBeInTheDocument();
+    expect(screen.getByText(/jadwal rilis akan diumumkan segera/i)).toBeInTheDocument();
+    expect(screen.getByText(/berita dan pengumuman segera hadir/i)).toBeInTheDocument();
+    expect(screen.queryByText(/rencana rilis:/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /dapatkan di google play|unduh aplikasi android/i })).not.toBeInTheDocument();
+  });
+
   it('is public and keeps downloads unavailable while disabled', async () => {
     renderRoutes('/');
 

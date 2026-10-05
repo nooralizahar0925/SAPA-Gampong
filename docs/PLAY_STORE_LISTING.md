@@ -27,7 +27,9 @@ Fitur utama:
 - Lihat profil, demografi, perangkat, potensi, dan media sosial desa.
 - Temukan foto dan video kegiatan pada Galeri Desa.
 - Lihat jadwal sholat dan aktifkan pengingat azan.
-- Terima pengumuman serta pemberitahuan perkembangan layanan.
+- Terima pemberitahuan perkembangan permohonan surat dan laporan warga.
+
+Pada versi 1.0.0, fitur Berita dan notifikasi pengumuman gampong masih dalam pengembangan dan akan tersedia pada pembaruan berikutnya.
 
 Beberapa layanan memerlukan verifikasi email dengan kode OTP agar riwayat permohonan dan laporan hanya dapat diakses oleh pemilik email. Data yang diberikan digunakan untuk menjalankan layanan desa dan tidak digunakan untuk iklan.
 
@@ -41,7 +43,7 @@ Gampong Blang Digital membantu warga mengakses pelayanan gampong secara praktis,
 - Category: Productivity
 - Tags to consider: Local services, Government, Community
 - Contains ads: No
-- Target audience: 13 years and older; the app is intended for residents using village information and administrative services
+- Target audience: 18 years and older; the app is intended for residents using village information and administrative services
 - Content rating: Complete the IARC questionnaire using the actual app behavior; no violent, sexual, gambling, or controlled-substance content is built into the app
 
 ## Contact Details
@@ -58,16 +60,16 @@ Rilis pertama Gampong Blang Digital. Warga dapat mengakses informasi desa, menga
 
 Most public content can be reviewed without an account: village profile, demographics, gallery, prayer schedule, letter verification, and public service information.
 
-Submitting a letter request or report and viewing personal history requires resident email verification. On the verification dialog, enter an email address that the reviewer can access; the app sends a one-time password to that address. No permanent password is required.
+Submitting a letter request or report and viewing personal history requires resident email verification. Ordinary residents use an emailed OTP. Reviewers instead use the reusable `play-review@gampongblangdigital.com` account: enter the email, tap Lanjutkan, then enter the non-expiring reviewer access code supplied securely in Play Console. Reviewers do not need their own mailbox or an OTP. Never store the code in this document or Git.
 
-The administrator dashboard is a separate web application and is not required to review the resident Android app. Contact `sapagampong@gmail.com` if Google Play review requires a pre-arranged OTP mailbox or specific submission data.
+The administrator dashboard is a separate web application and is not required to review the resident Android app. Contact `sapagampong@gmail.com` if Google Play review requires assistance or specific submission data.
 
 ## Permission Explanations
 
 - Precise and approximate location: calculate prayer times only after the user chooses location-based scheduling.
 - Camera: scan a letter QR code or capture an attachment after a user action.
 - Photos and media: select an optional or service-required image attachment.
-- Notifications: deliver village announcements and status updates when enabled.
+- Notifications: deliver letter-request and resident-report status updates when enabled. Village-announcement notifications are not available in version 1.0.0.
 - Exact alarm and boot completed: restore user-enabled daily azan reminders at the selected prayer times.
 - Internet: load village information, submit services, and synchronize status.
 
@@ -76,4 +78,3 @@ The administrator dashboard is a separate web application and is not required to
 - App icon: `docs/play-store-assets/app-icon-512.png`
 - Feature graphic: `docs/play-store-assets/feature-graphic-1024x500.png`
 - Screenshot instructions: `docs/play-store-assets/SCREENSHOTS.md`
-

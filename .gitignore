@@ -61,6 +61,7 @@ mobile/.metadata
 # Android
 mobile/android/**/gradle-wrapper.jar
 mobile/android/.gradle/
+mobile/android/.kotlin/
 mobile/android/captures/
 mobile/android/local.properties
 mobile/android/**/GeneratedPluginRegistrant.java

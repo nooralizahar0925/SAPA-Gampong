@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sapa_gampong/core/network/dio_client.dart';
+import 'package:sapa_gampong/core/theme/app_theme.dart';
 import 'package:sapa_gampong/data/models/verification_result.dart';
 import 'package:sapa_gampong/data/providers/verification_providers.dart';
 import 'package:sapa_gampong/data/repositories/verification_repository.dart';
@@ -23,11 +24,25 @@ class _FakeVerificationRepository extends VerificationRepository {
 Widget _wrap(_FakeVerificationRepository repository, {String? initialToken}) {
   return ProviderScope(
     overrides: [verificationRepositoryProvider.overrideWithValue(repository)],
-    child: MaterialApp(home: VerificationScreen(initialToken: initialToken)),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: VerificationScreen(initialToken: initialToken),
+    ),
   );
 }
 
 void main() {
+  testWidgets('verification label is readable on the light card', (tester) async {
+    final repository = _FakeVerificationRepository(
+      const VerificationResult.invalid(),
+    );
+    await tester.pumpWidget(_wrap(repository));
+    final label = tester.widget<Text>(
+      find.text('Tautan atau token verifikasi'),
+    );
+    expect(label.style?.color, AppTheme.ink900);
+  });
+
   testWidgets('verifies a pasted QR URL and shows letter details', (
     tester,
   ) async {

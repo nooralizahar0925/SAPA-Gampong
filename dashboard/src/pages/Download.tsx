@@ -9,7 +9,7 @@ import crestLogo from '../assets/logo.webp';
 const FEATURES = [
   ['file', 'Layanan surat', 'Ajukan surat administrasi dan pantau perkembangannya langsung dari aplikasi.'],
   ['megaphone', 'Laporan warga', 'Sampaikan laporan dan masukan kepada aparatur Gampong Blang.'],
-  ['bell', 'Informasi terbaru', 'Terima berita, pengumuman, dan pemberitahuan perkembangan layanan.'],
+  ['bell', 'Status layanan', 'Terima pemberitahuan perkembangan permohonan surat dan laporan warga. Berita dan pengumuman segera hadir.'],
   ['landmark', 'Profil gampong', 'Akses profil, demografi, galeri kegiatan, dan informasi penting gampong.'],
 ] as const;
 

@@ -79,6 +79,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
                     key: const Key('verification-input'),
                     controller: _controller,
                     label: 'Tautan atau token verifikasi',
+                    labelColor: AppTheme.ink900,
                     hintText: 'https://.../verify/abcdef',
                     suffixIcon: IconButton(
                       key: const Key('verification-clear'),

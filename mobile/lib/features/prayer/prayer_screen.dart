@@ -436,7 +436,9 @@ class _CountdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final hijriDate = _approximateHijri(now);
+    final calendarLabel =
+        prayerTimes.hijriDateFor(now) ??
+        MaterialLocalizations.of(context).formatFullDate(now);
     final countdown = prayerCountdown(prayerTimes);
 
     return Container(
@@ -449,7 +451,7 @@ class _CountdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            hijriDate,
+            calendarLabel,
             style: const TextStyle(
               color: Color(0xFFCDEBDD),
               fontSize: 13,
@@ -490,28 +492,6 @@ class _CountdownCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _approximateHijri(DateTime date) {
-    final months = [
-      'Muharram',
-      'Safar',
-      "Rabi'ul Awal",
-      "Rabi'ul Akhir",
-      'Jumadil Awal',
-      'Jumadil Akhir',
-      'Rajab',
-      "Sya'ban",
-      'Ramadan',
-      'Syawal',
-      "Dzul Qa'dah",
-      'Dzul Hijjah',
-    ];
-    final epoch = DateTime(622, 7, 16);
-    final daysSinceEpoch = date.difference(epoch).inDays;
-    final hijriYear = 1 + (daysSinceEpoch / 354.37).floor();
-    final monthIndex = ((date.month + 8) % 12);
-    return '${date.day} ${months[monthIndex]} $hijriYear H';
   }
 }
 

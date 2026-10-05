@@ -4,6 +4,65 @@ import 'package:sapa_gampong/data/services/content_cache_service.dart';
 import 'package:sapa_gampong/data/services/prayer_times_service.dart';
 
 void main() {
+  Map<String, dynamic> responseWithDate(Object? date) => {
+    'data': {
+      'timings': {
+        'Fajr': '05:07',
+        'Dhuhr': '12:26',
+        'Asr': '15:41',
+        'Maghrib': '18:28',
+        'Isha': '19:37',
+      },
+      'date': date,
+    },
+  };
+
+  test('uses the sourced Hijri date only for its matching calendar day', () {
+    final times = PrayerTimes.fromAladhanJson(
+      responseWithDate({
+        'gregorian': {'date': '05-10-2026'},
+        'hijri': {
+          'day': '24',
+          'month': {'number': 4},
+          'year': '1448',
+        },
+      }),
+      latitude: 4.7,
+      longitude: 95.6,
+    );
+    expect(
+      times.hijriDateFor(DateTime(2026, 10, 5, 20)),
+      "24 Rabi'ul Akhir 1448 H",
+    );
+    expect(times.hijriDateFor(DateTime(2026, 10, 6)), isNull);
+    final cached = PrayerTimes.fromCacheJson(times.toCacheJson());
+    expect(cached.hijriDateFor(DateTime(2026, 10, 5)), times.hijriDate);
+  });
+
+  test('missing or invalid calendar data does not invent a Hijri date', () {
+    for (final date in [
+      null,
+      {},
+      {
+        'gregorian': {'date': '31-02-2026'},
+        'hijri': {
+          'day': '31',
+          'month': {'number': 13},
+          'year': '1448',
+        },
+      },
+    ]) {
+      final times = PrayerTimes.fromAladhanJson(
+        responseWithDate(date),
+        latitude: 4.7,
+        longitude: 95.6,
+      );
+      expect(times.hijriDateFor(DateTime(2026, 10, 5)), isNull);
+      expect(times.subuh, '05:07');
+    }
+    expect(PrayerTimes.fallback().hijriDate, isNull);
+  });
+
   test('parses AlAdhan timings and strips timezone suffixes', () {
     final times = PrayerTimes.fromAladhanJson(
       {

@@ -26,6 +26,8 @@ class PrayerTimes {
     this.latitude,
     this.longitude,
     this.fromFallback = false,
+    this.hijriDate,
+    this.calendarDate,
   });
 
   final String subuh;
@@ -38,6 +40,19 @@ class PrayerTimes {
   final double? latitude;
   final double? longitude;
   final bool fromFallback;
+  final String? hijriDate;
+  final DateTime? calendarDate;
+
+  String? hijriDateFor(DateTime date) {
+    final calendar = calendarDate;
+    if (calendar == null ||
+        calendar.year != date.year ||
+        calendar.month != date.month ||
+        calendar.day != date.day) {
+      return null;
+    }
+    return hijriDate;
+  }
 
   // Hard-coded fallback used before any config is available.
   static PrayerTimes fallback({DateTime? fetchedAt}) {
@@ -102,6 +117,8 @@ class PrayerTimes {
       fetchedAt: fetchedAt ?? DateTime.now(),
       latitude: latitude,
       longitude: longitude,
+      hijriDate: _hijriLabel(data['date']),
+      calendarDate: _calendarDate(data['date']),
     );
   }
 
@@ -119,6 +136,8 @@ class PrayerTimes {
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       fromFallback: json['from_fallback'] as bool? ?? false,
+      hijriDate: json['hijri_date'] as String?,
+      calendarDate: DateTime.tryParse(json['calendar_date'] as String? ?? ''),
     );
   }
 
@@ -134,6 +153,8 @@ class PrayerTimes {
       'latitude': latitude,
       'longitude': longitude,
       'from_fallback': fromFallback,
+      'hijri_date': hijriDate,
+      'calendar_date': calendarDate?.toIso8601String(),
     };
   }
 
@@ -145,6 +166,51 @@ class PrayerTimes {
     }
 
     return match.group(1)!;
+  }
+
+  static String? _hijriLabel(Object? value) {
+    if (value is! Map) return null;
+    final hijri = value['hijri'];
+    if (hijri is! Map || hijri['month'] is! Map) return null;
+    final day = int.tryParse('${hijri['day']}');
+    final month = int.tryParse('${(hijri['month'] as Map)['number']}');
+    final year = int.tryParse('${hijri['year']}');
+    if (day == null ||
+        day < 1 ||
+        day > 30 ||
+        month == null ||
+        month < 1 ||
+        month > 12 ||
+        year == null ||
+        year < 1) {
+      return null;
+    }
+    const months = [
+      'Muharram',
+      'Safar',
+      "Rabi'ul Awal",
+      "Rabi'ul Akhir",
+      'Jumadil Awal',
+      'Jumadil Akhir',
+      'Rajab',
+      "Sya'ban",
+      'Ramadan',
+      'Syawal',
+      "Dzul Qa'dah",
+      'Dzul Hijjah',
+    ];
+    return '$day ${months[month - 1]} $year H';
+  }
+
+  static DateTime? _calendarDate(Object? value) {
+    if (value is! Map || value['gregorian'] is! Map) return null;
+    final raw = (value['gregorian'] as Map)['date'];
+    if (raw is! String) return null;
+    try {
+      return DateFormat('dd-MM-yyyy').parseStrict(raw);
+    } on FormatException {
+      return null;
+    }
   }
 }
 
@@ -312,6 +378,8 @@ class PrayerTimesService {
       fetchedAt: times.fetchedAt,
       latitude: times.latitude,
       longitude: times.longitude,
+      hijriDate: times.hijriDate,
+      calendarDate: times.calendarDate,
     );
   }
 
