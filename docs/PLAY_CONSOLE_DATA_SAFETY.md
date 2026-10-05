@@ -27,7 +27,7 @@ It reflects the production app as reviewed on 2026-10-05. Recheck it whenever SD
 | Photos | User-selected image attachments | App functionality | Optional or required by a selected service |
 | Files and docs | Identity and supporting documents | App functionality | Optional or required by a selected service |
 | App activity - Other user-generated content | Reports, request purpose, and form responses | App functionality | Required when submitting that service |
-| Device or other IDs | Firebase messaging token and platform | App functionality, communications | Optional; used when notifications are enabled |
+| Device or other IDs | Firebase messaging token and platform | App functionality, developer communications | Required; token registration runs at startup even if notification delivery is disabled |
 
 Collection is user-facing and tied to service delivery. Data is not used for advertising or profiling.
 
@@ -46,9 +46,11 @@ GPS prayer-time lookup. A service-provider exemption has not been established fo
 service, so do not assume that exemption. Other listed processors are used for service delivery.
 Recheck these answers if a provider uses data for its own purposes.
 
-For Play's app-wide optional/required question, these data types are optional: residents can browse
+For Play's app-wide optional/required question, all types except device IDs are optional: residents can browse
 public information without signing in, submitting a service request, enabling notifications, or
-using GPS. Individual service forms may still require fields as described above. Service submissions
+using GPS. Turning off notification delivery does not stop Firebase token registration in the current
+build, so device IDs must not be declared optional. Individual service forms may still require fields
+as described above. Service submissions
 are stored, not processed ephemerally; do not claim ephemeral processing for the external location
 provider without evidence of its retention behavior.
 
