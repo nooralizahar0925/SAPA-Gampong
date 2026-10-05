@@ -65,8 +65,8 @@ provider without evidence of its retention behavior.
 
 ## Final Manual Checks
 
-- Verify Gmail test email succeeds in the production dashboard.
-- Verify Firebase production push notification succeeds on a release-signed test device.
+- Production Gmail test message delivery and ordinary OTP API verification were confirmed on 2026-10-05.
+- Production Firebase push delivery was confirmed on the locally release-signed Android emulator on 2026-10-05. Repeat on a Play-installed physical device before public launch.
 - Confirm Play Console's exact category labels; Google can rename or reorganize form choices.
 - Review all third-party SDK disclosures immediately before submission.
 - Have the final privacy policy reviewed by the responsible village official or legal adviser.

@@ -8,7 +8,7 @@ Use this checklist before publishing the Android app to Google Play and the web 
 - Android app label: `Gampong Blang Digital`
 - Android compile SDK: `36`
 - Android upload signing: configured locally with alias `upload`; private files are ignored by Git. Google Play uses a separate Google-managed app-signing key.
-- Signed release candidate: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+2`).
+- Signed release candidate: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+4`).
 - Upload/direct-local-APK certificate SHA-1: `C8:96:B9:FE:FA:C6:B1:73:D9:D6:5B:27:9C:5F:88:F2:F1:44:9B:6B`.
 - Upload/direct-local-APK certificate SHA-256: `6A:3D:7F:AC:18:F4:34:4F:E0:B0:98:16:B2:3F:C8:F2:E0:16:93:1B:03:0C:EB:A7:E6:69:73:4B:3D:4F:F6:97`.
 - Google Play app-signing certificate SHA-256: `CA:DF:F8:88:47:87:C4:70:29:7D:7B:63:CC:E4:FE:C8:9F:6D:93:63:78:BB:53:99:10:48:34:0B:3D:F8:AA:D2`.
@@ -156,16 +156,32 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Store listing, screenshots, support details, government declaration, content rating, target audience, and Data Safety are saved.
 - Reusable reviewer access is configured and backend authentication was smoke-tested without exposing credentials.
 - Version `1.0.0 (2)` is available to internal testers.
-- Production candidate `1.0.0 (2) – Production` is saved; Console showed **Ready to release**. Indonesia is the sole selected country and pricing is free.
+- The unsubmitted production candidate `1.0.0 (2)` was discarded from Publishing overview to prevent an unintended first public release. Its artifact remains in the library; internal testing is unaffected. Indonesia is the sole selected country and pricing is free.
 - Managed publishing is on as an additional safeguard. The first production submission has **not** been sent for review; Google's help documents limitations for first-time publication, so do not assume this toggle alone guarantees a first-launch hold.
-- Google quick checks completed: Publishing overview states **Your changes can now be sent for review**. App content states **You're all caught up**, with no outstanding declarations. Google may still find issues during review.
-- Website distribution remains `enabled: false`; APK route returns `404`. The configured planned release date is still `2026-09-19` and should be cleared or replaced with the confirmed launch date before launch.
-- Web runtime deployed at `83701c2`; subsequent commits only update documentation. Health and rendered privacy/deletion disclosures passed smoke checks; CI passed.
+- App content has no outstanding declarations. Quick checks restart when review content changes; Google may still find issues during review.
+- Website distribution remains `enabled: false`, channel `google_play`, release date `null`; the APK route returns `404`. The user explicitly requested clearing the old date.
+- With explicit user approval, dashboard wording was deployed at `47d1b48`; backend runtime is unchanged at `83701c2`. No database migration or seed was needed. Previous dashboard assets are recoverable at `/opt/gampong-blang/backups/production/dashboard-dist-20261005-wording`.
+- Live landing page now describes status notifications accurately and labels news/announcements as coming soon, as approved for version 1.0.0. Office phone was confirmed correct by the user and kept unchanged.
+- Staging `gampongblangdigital.web.id` now returns `X-Robots-Tag: noindex, nofollow, noarchive` on pages/API and a real `robots.txt` with `Disallow: /`. This discourages compliant crawlers; it is not authentication or a private-access guarantee.
+
+## Release testing evidence on 2026-10-05
+
+- Backend: 183 tests passed against an isolated test database, including all letter types, PDF generation, verification, state transitions, uploads, and authentication. Typecheck and build passed.
+- Dashboard: 107 tests passed; typecheck and production build passed. Live post-deployment checks confirmed truthful coming-soon wording, no public download CTA, no planned date, healthy API, and private APK 404.
+- Mobile: 133 tests passed and `flutter analyze` found no issues. Regression tests cover the corrected source-based Hijri date and readable verification label.
+- Native Flutter integration: letter flow passed on the staging-flavor emulator with mocked repositories/uploads/picker. This is not a production submission end-to-end test.
+- Locally upload-signed production APK tested on Android API 36 emulator: boot, public content, ten letter types, reviewer access, persisted authentication, forms/required validation, offline cached profile, file-picker cancellation, and camera/location denial. No fake resident requests or reports were created in production.
+- Production Gmail test message arrived in the inbox; ordinary resident OTP request and verification succeeded through the API. Reviewer authentication was exercised in the native app.
+- Production Firebase delivered a targeted status notification to the test emulator only; Android displayed it. No mass notification was sent to residents.
+- Prayer API date/timings and village fallback were checked. Five alarms were scheduled with inexact fallback when exact-alarm access was unavailable. Disabling Alarm Azan cancelled all five (Android alarm cancellation records checked); test alarms are left off. Physical-device alarm delivery remains a launch check.
+- Candidate 4 was built as a signed AAB and APK; APK certificate matches the registered upload key, APK 16-KB zip alignment passes, and all 14 arm64/x86-64 native libraries pass 16-KB ELF alignment. Native verification label readability and unknown-token rejection were rechecked on candidate 4.
+- Candidate 4 AAB SHA-256: `0f59409cf7ce1fcbacf514e795ac8b860fd85150b79efaca3e936d29222b014f`.
+- Berita and announcement notifications intentionally remain coming soon for version 1.0.0. Store description and website wording reflect this limitation.
 
 ## Remaining launch checks
 
 - Copy the upload keystore backup to secure off-device storage; the current protected backup and passwords are on this Mac.
-- Verify the configured Gmail provider with a production test email.
-- Test the latest Play-installed bundle on a real device, including ordinary OTP, reviewer access, submissions, and Firebase push.
+- Complete restricted closed-testing review of candidate 4 and inspect Google's pre-launch report when available. Do not submit a production binary before explicit launch authorization.
+- Test the latest Play-installed bundle on a real device, including ordinary OTP, reviewer access, legitimate submissions, Firebase push, and prayer-alarm delivery. Emulator/local APK checks do not establish Play-installed physical-device behavior.
 - Obtain responsible village-official or legal review of the privacy policy.
 - Obtain explicit launch authorization before submitting any release that might automatically become public or activating website downloads.
