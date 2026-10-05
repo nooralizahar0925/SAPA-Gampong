@@ -33,6 +33,8 @@ const EnvSchema = z.object({
   GMAIL_APP_PASSWORD: z.string().min(1).optional(),
   GMAIL_FROM_EMAIL: z.string().email().optional(),
   GMAIL_FROM_NAME: z.string().min(1).optional(),
+  PLAY_REVIEW_EMAIL: z.string().email().optional(),
+  PLAY_REVIEW_PASSWORD: z.string().min(24).optional(),
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   ANDROID_APK_PATH: z.string().min(1).optional(),
   ANDROID_APK_METADATA_PATH: z.string().min(1).optional(),
@@ -40,7 +42,10 @@ const EnvSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
-});
+}).refine(
+  (value) => Boolean(value.PLAY_REVIEW_EMAIL) === Boolean(value.PLAY_REVIEW_PASSWORD),
+  { message: 'PLAY_REVIEW_EMAIL and PLAY_REVIEW_PASSWORD must be set together' },
+);
 
 const parsed = EnvSchema.safeParse(process.env);
 

@@ -20,7 +20,10 @@ export const ResidentVerifyOtpBody = registry.register(
   'ResidentVerifyOtpBody',
   z.object({
     email: z.string().trim().email('Email tidak valid'),
-    otp: z.string().trim().regex(/^\d{6}$/, 'Kode OTP harus 6 digit'),
+    otp: z.string().trim().max(128).refine(
+      (value) => /^\d{6}$/.test(value) || value.length >= 24,
+      'Kode OTP harus 6 digit atau kode akses peninjau yang valid',
+    ),
   }),
 );
 
@@ -28,7 +31,8 @@ export const ResidentOtpResponse = registry.register(
   'ResidentOtpResponse',
   z.object({
     message: z.string(),
-    expires_at: z.string().datetime(),
+    expires_at: z.string().datetime().optional(),
+    review_access: z.boolean().optional(),
     dev_otp: z.string().optional(),
   }),
 );

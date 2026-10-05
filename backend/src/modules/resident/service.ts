@@ -35,6 +35,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 export async function requestResidentOtp(input: ResidentEmailBodyType) {
   const email = normalizeEmail(input.email);
+  if (isPlayReviewer(email)) {
+    return {
+      message: 'Gunakan kode akses peninjau yang diberikan untuk akun ini.',
+      review_access: true,
+    };
+  }
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
@@ -78,6 +84,19 @@ export async function requestResidentOtp(input: ResidentEmailBodyType) {
 
 export async function verifyResidentOtp(input: ResidentVerifyOtpBodyType) {
   const email = normalizeEmail(input.email);
+  if (isPlayReviewer(email)) {
+    if (!safeEqual(hashSecret(input.otp), hashSecret(env.PLAY_REVIEW_PASSWORD!))) {
+      throw ApiError.validation('Kode akses peninjau tidak valid', {
+        otp: 'Kode salah',
+      });
+    }
+    return createResidentSession(email);
+  }
+  if (!/^\d{6}$/.test(input.otp)) {
+    throw ApiError.validation('Kode OTP harus 6 digit', {
+      otp: 'Kode salah',
+    });
+  }
   const found = await prisma.residentEmailSession.findUnique({ where: { email } });
 
   if (!found?.otpHash || !found.otpExpiresAt || found.otpExpiresAt.getTime() < Date.now()) {
@@ -98,11 +117,24 @@ export async function verifyResidentOtp(input: ResidentVerifyOtpBodyType) {
     throw ApiError.validation('Kode OTP tidak valid', { otp: 'Kode salah' });
   }
 
+  return createResidentSession(email);
+}
+
+async function createResidentSession(email: string) {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await prisma.residentEmailSession.update({
+  await prisma.residentEmailSession.upsert({
     where: { email },
-    data: {
+    create: {
+      email,
+      otpHash: null,
+      otpExpiresAt: null,
+      otpAttempts: 0,
+      sessionTokenHash: hashSecret(token),
+      sessionExpiresAt: expiresAt,
+      verifiedAt: new Date(),
+    },
+    update: {
       otpHash: null,
       otpExpiresAt: null,
       otpAttempts: 0,
@@ -117,6 +149,14 @@ export async function verifyResidentOtp(input: ResidentVerifyOtpBodyType) {
     token,
     expires_at: expiresAt.toISOString(),
   };
+}
+
+function isPlayReviewer(email: string) {
+  return Boolean(
+    env.PLAY_REVIEW_EMAIL &&
+    env.PLAY_REVIEW_PASSWORD &&
+    email === normalizeEmail(env.PLAY_REVIEW_EMAIL),
+  );
 }
 
 export async function requireResidentSession(req: Request) {

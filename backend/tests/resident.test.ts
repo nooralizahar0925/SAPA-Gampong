@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
+import { env } from '../src/config/env';
 import {
   setEmailProviderConfigsForTests,
   setEmailTransportForTests,
@@ -33,11 +34,42 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  env.PLAY_REVIEW_EMAIL = undefined;
+  env.PLAY_REVIEW_PASSWORD = undefined;
   setEmailTransportForTests(null);
   setEmailProviderConfigsForTests(null);
 });
 
 describe('resident email session', () => {
+  it('allows a reusable Play reviewer credential without sending an OTP', async () => {
+    env.PLAY_REVIEW_EMAIL = 'review@example.com';
+    env.PLAY_REVIEW_PASSWORD = 'a-long-test-only-review-password';
+    const sendMail = vi.fn(async () => ({ messageId: 'not-sent' }));
+    setEmailTransportForTests({ sendMail });
+
+    const challenge = await request(app)
+      .post('/api/resident/email/request-otp')
+      .send({ email: 'REVIEW@example.com' });
+    expect(challenge.status).toBe(200);
+    expect(challenge.body.review_access).toBe(true);
+    expect(challenge.body.dev_otp).toBeUndefined();
+    expect(sendMail).not.toHaveBeenCalled();
+
+    const rejected = await request(app)
+      .post('/api/resident/email/verify-otp')
+      .send({ email: 'review@example.com', otp: 'wrong-review-password-that-is-long' });
+    expect(rejected.status).toBe(400);
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const verified = await request(app)
+        .post('/api/resident/email/verify-otp')
+        .send({ email: 'review@example.com', otp: env.PLAY_REVIEW_PASSWORD });
+      expect(verified.status).toBe(200);
+      expect(verified.body.email).toBe('review@example.com');
+      expect(verified.body.token).toEqual(expect.any(String));
+    }
+  });
+
   it('sends OTP, verifies it, and lists resident requests and feedback by email', async () => {
     const sendMail = vi.fn(async () => ({ messageId: 'resident-otp' }));
     setEmailTransportForTests({ sendMail });

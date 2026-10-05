@@ -166,6 +166,7 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
   bool _otpSent = false;
   bool _loading = false;
   bool _verifyingOtp = false;
+  bool _reviewAccess = false;
   String? _challengeEmail;
   String? _error;
 
@@ -204,7 +205,9 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _otpSent ? 'Masukkan OTP' : 'Email warga',
+                _otpSent
+                    ? (_reviewAccess ? 'Akses peninjau' : 'Masukkan OTP')
+                    : 'Email warga',
                 style: const TextStyle(
                   color: AppTheme.inputText,
                   fontSize: 25,
@@ -230,7 +233,7 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
                         ? 'Memproses...'
                         : _otpSent
                         ? 'Verifikasi'
-                        : 'Kirim OTP',
+                        : 'Lanjutkan',
                   ),
                 ),
               ),
@@ -276,10 +279,12 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
           key: _otpKey,
           child: SapaTextField(
             controller: _otp,
-            label: 'Kode OTP',
+            label: _reviewAccess ? 'Kode akses peninjau' : 'Kode OTP',
             labelColor: AppTheme.ink700,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
+            keyboardType: _reviewAccess
+                ? TextInputType.text
+                : TextInputType.number,
+            maxLength: _reviewAccess ? 128 : 6,
             counterText: '',
             validator: Validators.required,
           ),
@@ -287,18 +292,22 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
         if (_challengeEmail != null) ...[
           const SizedBox(height: 12),
           _DialogMessage(
-            message: 'Kode dikirim ke $_challengeEmail',
+            message: _reviewAccess
+                ? 'Masukkan kode akses peninjau untuk $_challengeEmail.'
+                : 'Kode dikirim ke $_challengeEmail',
             icon: Icons.mail_outline,
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _loading ? null : _requestOtp,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Kirim ulang OTP'),
+          if (!_reviewAccess) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _loading ? null : _requestOtp,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Kirim ulang OTP'),
+              ),
             ),
-          ),
+          ],
         ],
       ],
     );
@@ -314,10 +323,13 @@ class _ResidentEmailDialogState extends ConsumerState<_ResidentEmailDialog> {
       if (!_otpSent) _challengeEmail = null;
     });
     try {
-      await ref.read(residentRepositoryProvider).requestOtp(email);
+      final challenge = await ref
+          .read(residentRepositoryProvider)
+          .requestOtp(email);
       if (!mounted) return;
       setState(() {
         _otpSent = true;
+        _reviewAccess = challenge.reviewAccess;
         _challengeEmail = email;
         _otp.clear();
         _loading = false;

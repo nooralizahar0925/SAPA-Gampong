@@ -51,7 +51,7 @@ void main() {
     await tester.tap(find.text('Buka verifikasi'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField), 'warga@example.com');
-    await tester.tap(find.text('Kirim OTP'));
+    await tester.tap(find.text('Lanjutkan'));
     await tester.pumpAndSettle();
 
     expect(find.text('Masukkan OTP'), findsOneWidget);

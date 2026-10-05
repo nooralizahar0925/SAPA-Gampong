@@ -28,7 +28,7 @@ export function PrivacyPolicyPage() {
             Kebijakan ini menjelaskan cara aplikasi Gampong Blang Digital mengelola data warga
             saat menyediakan informasi gampong, layanan surat, pelaporan, dan notifikasi.
           </p>
-          <time dateTime="2026-09-13">Berlaku sejak 13 September 2026</time>
+          <time dateTime="2026-10-05">Diperbarui 5 Oktober 2026</time>
         </div>
 
         <PolicySection title="1. Pengelola layanan">
@@ -68,7 +68,7 @@ export function PrivacyPolicyPage() {
           <p>Aplikasi dapat meminta izin berikut hanya untuk fungsi yang berkaitan:</p>
           <ul>
             <li>Kamera untuk memindai QR dan mengambil lampiran.</li>
-            <li>Foto dan berkas untuk memilih dokumen yang akan dikirim.</li>
+            <li>Foto dan berkas yang dipilih melalui pemilih sistem untuk lampiran; aplikasi tidak meminta akses ke seluruh galeri.</li>
             <li>Lokasi untuk jadwal salat saat pengguna memilih GPS.</li>
             <li>Notifikasi untuk status layanan dan informasi gampong.</li>
             <li>Alarm tepat waktu untuk pengingat azan yang diaktifkan pengguna.</li>
@@ -99,19 +99,27 @@ export function PrivacyPolicyPage() {
           </p>
         </PolicySection>
 
-        <PolicySection title="7. Permintaan akses dan penghapusan data">
+        <PolicySection title="7. Hapus akun dan data" id="hapus-akun">
           <p>
-            Warga dapat meminta salinan, koreksi, atau penghapusan data dengan mengirim email ke{' '}
+            Untuk meminta penghapusan akun email terverifikasi dan data terkait, atau hanya data
+            tertentu tanpa menghapus akun, kirim email ke{' '}
             <a href="mailto:sapagampong@gmail.com?subject=Permintaan%20Penghapusan%20Data%20Gampong%20Blang%20Digital">
               sapagampong@gmail.com
             </a>
-            . Sertakan alamat email yang digunakan dan kode referensi terkait. Kami akan melakukan
-            verifikasi untuk mencegah penghapusan oleh pihak yang tidak berhak.
+            {' '}dengan subjek <strong>Permintaan Penghapusan Akun atau Data Gampong Blang Digital</strong>.
+            Sebutkan alamat email yang digunakan, apakah ingin menghapus akun beserta data terkait
+            atau hanya data tertentu, dan kode referensi layanan jika ada. Permintaan dapat diajukan
+            tanpa membuka aplikasi. Kami akan memverifikasi kepemilikan email sebelum memprosesnya.
           </p>
           <p>
-            Sebagian data mungkin tetap disimpan apabila diwajibkan untuk arsip pemerintahan,
-            penyelesaian layanan, pencegahan penyalahgunaan, atau kewajiban hukum. Alasan pembatasan
-            akan dijelaskan saat permintaan diproses.
+            Jika akun dihapus, sesi verifikasi email akan dicabut dan data terkait yang tidak lagi
+            diperlukan akan dihapus atau dianonimkan. Sebagian permohonan, laporan, dan dokumen
+            pendukung mungkin tetap disimpan untuk arsip pemerintahan, penyelesaian layanan,
+            pencegahan penyalahgunaan, atau kewajiban hukum. Kami akan menjelaskan data yang
+            dipertahankan dan alasannya dalam tanggapan kepada pemohon.
+          </p>
+          <p>
+            Warga juga dapat meminta salinan atau koreksi data melalui alamat email yang sama.
           </p>
         </PolicySection>
 
@@ -138,9 +146,9 @@ export function PrivacyPolicyPage() {
   );
 }
 
-function PolicySection({ title, children }: { title: string; children: ReactNode }) {
+function PolicySection({ title, children, id }: { title: string; children: ReactNode; id?: string }) {
   return (
-    <section className="privacy-section">
+    <section className="privacy-section" id={id}>
       <h2>{title}</h2>
       {children}
     </section>

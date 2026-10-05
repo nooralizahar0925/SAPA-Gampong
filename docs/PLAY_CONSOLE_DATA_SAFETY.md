@@ -8,7 +8,7 @@ It reflects the production app as reviewed on 2026-09-13. Recheck it whenever SD
 - Does the app collect or share required user data types? **Yes**
 - Is all user data encrypted in transit? **Yes**, production API and public files use HTTPS.
 - Can users request deletion? **Yes**
-- Deletion request URL: `https://gampongblangdigital.com/privacy-policy`
+- Deletion request URL: `https://gampongblangdigital.com/privacy-policy#hapus-akun`
 - Privacy policy URL: `https://gampongblangdigital.com/privacy-policy`
 - Does the app contain ads? **No**
 
@@ -21,7 +21,7 @@ It reflects the production app as reviewed on 2026-09-13. Recheck it whenever SD
 | Personal info - Phone number | Letter request or report contact | App functionality, communications | Optional where the form permits |
 | Personal info - Address | Letter form and subject details | App functionality | Required for relevant letter types |
 | Personal info - User IDs / Other info | NIK and other civil-administration fields | App functionality | Required for relevant letter types |
-| Location - Precise location | GPS coordinates selected for prayer times | App functionality | Optional |
+| Location - Approximate and precise location | GPS coordinates selected for prayer times; approximate location may be provided by Android | App functionality | Optional |
 | Photos | User-selected image attachments | App functionality | Optional or required by a selected service |
 | Files and docs | Identity and supporting documents | App functionality | Optional or required by a selected service |
 | App activity - Other user-generated content | Reports, request purpose, and form responses | App functionality | Required when submitting that service |
@@ -47,7 +47,7 @@ data type to **shared** in Play Console and revise the privacy policy.
 - Production traffic uses HTTPS.
 - Administration requires authenticated role-based access.
 - User-facing verification pages mask names and NIK values.
-- Residents request access, correction, or deletion through `sapagampong@gmail.com`.
+- Residents request account deletion, data deletion, access, or correction through `sapagampong@gmail.com`; the public privacy page documents the steps and possible legal retention.
 - Some records may be retained for government archives, service completion, security, or legal duties.
 - The mobile Settings screen links directly to the public privacy and deletion instructions.
 

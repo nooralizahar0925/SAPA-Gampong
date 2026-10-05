@@ -2952,7 +2952,7 @@
           },
           "otp": {
             "type": "string",
-            "pattern": "^\\d{6}$"
+            "maxLength": 128
           }
         },
         "required": [
@@ -2970,13 +2970,15 @@
             "type": "string",
             "format": "date-time"
           },
+          "review_access": {
+            "type": "boolean"
+          },
           "dev_otp": {
             "type": "string"
           }
         },
         "required": [
-          "message",
-          "expires_at"
+          "message"
         ]
       },
       "ResidentSessionResponse": {

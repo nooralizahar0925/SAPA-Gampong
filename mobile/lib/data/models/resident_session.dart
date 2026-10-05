@@ -35,21 +35,22 @@ class ResidentSession {
 class ResidentOtpChallenge {
   const ResidentOtpChallenge({
     required this.message,
-    required this.expiresAt,
+    this.expiresAt,
     this.devOtp,
+    this.reviewAccess = false,
   });
 
   final String message;
-  final DateTime expiresAt;
+  final DateTime? expiresAt;
   final String? devOtp;
+  final bool reviewAccess;
 
   factory ResidentOtpChallenge.fromJson(Map<String, Object?> json) {
     return ResidentOtpChallenge(
       message: json['message'] as String? ?? 'Kode OTP telah dikirim.',
-      expiresAt:
-          DateTime.tryParse(json['expires_at'] as String? ?? '') ??
-          DateTime.now(),
+      expiresAt: DateTime.tryParse(json['expires_at'] as String? ?? ''),
       devOtp: json['dev_otp'] as String?,
+      reviewAccess: json['review_access'] == true,
     );
   }
 }

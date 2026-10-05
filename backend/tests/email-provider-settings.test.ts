@@ -47,6 +47,7 @@ describe('email provider settings', () => {
         fromEmail: 'smtp@gampongblang.id',
         host: 'smtp.example.test',
         port: 587,
+        appPassword: undefined,
       },
     });
 
@@ -105,7 +106,7 @@ describe('email provider settings', () => {
     setEmailProviderConfigsForTests({
       mailersend: { fromEmail: 'no-reply@gampongblang.id', apiKey: 'mailersend-key' },
       mailgun: { fromEmail: 'mailgun@gampongblang.id', apiKey: 'mailgun-key', domain: 'mg.example.test' },
-      gmail: { fromEmail: 'admin@gampongblang.id' },
+      gmail: { fromEmail: 'admin@gampongblang.id', appPassword: undefined },
       smtp: { fromEmail: 'smtp@gampongblang.id', host: 'smtp.example.test', port: 587 },
     });
 
@@ -129,7 +130,7 @@ describe('email provider settings', () => {
     setEmailProviderConfigsForTests({
       mailersend: { fromEmail: 'no-reply@gampongblang.id', apiKey: 'mailersend-key' },
       mailgun: { fromEmail: 'mailgun@gampongblang.id' },
-      gmail: { fromEmail: 'admin@gampongblang.id' },
+      gmail: { fromEmail: 'admin@gampongblang.id', appPassword: undefined },
       smtp: { fromEmail: 'smtp@gampongblang.id' },
     });
 

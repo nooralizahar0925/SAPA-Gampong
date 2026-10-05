@@ -8,7 +8,7 @@ Use this checklist before publishing the Android app to Google Play and the web 
 - Android app label: `Gampong Blang Digital`
 - Android compile SDK: `36`
 - Android release signing: configured locally with alias `upload`; the private files are ignored by Git. Despite the historical alias, this certificate is the cross-channel **app-signing key** for direct APK and Google Play releases.
-- Signed release candidate: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+1`).
+- Signed release candidate: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+2`).
 - App-signing certificate SHA-1: `C8:96:B9:FE:FA:C6:B1:73:D9:D6:5B:27:9C:5F:88:F2:F1:44:9B:6B`.
 - App-signing certificate SHA-256: `6A:3D:7F:AC:18:F4:34:4F:E0:B0:98:16:B2:3F:C8:F2:E0:16:93:1B:03:0C:EB:A7:E6:69:73:4B:3D:4F:F6:97`.
 - Web deployment: staging and production are live on the VPS with HTTPS and automated deployment.
@@ -70,10 +70,15 @@ mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
 - Support email and website URL.
 - Content rating questionnaire.
 - Data safety form.
-- App access/test account notes if reviewers need login access.
+- Reusable reviewer email and access code in Play Console → Sign-in details. Set
+  `PLAY_REVIEW_EMAIL` and a random `PLAY_REVIEW_PASSWORD` (at least 24 characters)
+  in the production backend environment, never in Git. The reviewer enters the
+  email, taps Lanjutkan, then enters the access code; ordinary residents still use OTP.
 - Permissions declarations where required.
 
-The Android manifest currently requests location, camera, notifications, exact alarm, boot completed, image/media access, dial intent, and WhatsApp/view intents. These need matching explanations in Play Console and the privacy policy.
+The Android manifest requests location, camera, notifications, exact alarm, and
+boot completed. User-selected attachments use system pickers; the app does not
+request broad photo or storage read permissions.
 
 ### Temporary Website Distribution
 
@@ -107,6 +112,7 @@ For client testing before Play Store release, staging may publish a direct-insta
   - `DASHBOARD_BASE_URL`
   - `CORS_ORIGINS`
   - email provider credentials
+  - `PLAY_REVIEW_EMAIL` and `PLAY_REVIEW_PASSWORD` for Play review
   - `FIREBASE_SERVICE_ACCOUNT_JSON`
   - `SEED_ADMIN_EMAIL`
   - `SEED_ADMIN_PASSWORD`
