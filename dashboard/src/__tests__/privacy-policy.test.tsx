@@ -18,7 +18,7 @@ describe('privacy policy', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Kebijakan Privasi', level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/permintaan akses dan penghapusan data/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '7. Hapus akun dan data' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'sapagampong@gmail.com' })).not.toHaveLength(0);
   });
 });
