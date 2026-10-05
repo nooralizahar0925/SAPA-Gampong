@@ -156,6 +156,7 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Store listing, screenshots, support details, government declaration, content rating, target audience, and Data Safety are saved.
 - Reusable reviewer access is configured and backend authentication was smoke-tested without exposing credentials.
 - Version `1.0.0 (2)` is available to internal testers.
+- Corrected candidate `1.0.0 (4) – Closed Testing` was uploaded and validated as **Ready to release**, then submitted with 13 changes for restricted Alpha review at approximately 21:15 WIB. Publishing overview shows **Changes in review** with quick checks still running and automatic dispatch after they pass. Only the existing Developer email list can test; no production binary rollout was included.
 - The unsubmitted production candidate `1.0.0 (2)` was discarded from Publishing overview to prevent an unintended first public release. Its artifact remains in the library; internal testing is unaffected. Indonesia is the sole selected country and pricing is free.
 - Managed publishing is on as an additional safeguard. The first production submission has **not** been sent for review; Google's help documents limitations for first-time publication, so do not assume this toggle alone guarantees a first-launch hold.
 - App content has no outstanding declarations. Quick checks restart when review content changes; Google may still find issues during review.
@@ -176,6 +177,7 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Prayer API date/timings and village fallback were checked. Five alarms were scheduled with inexact fallback when exact-alarm access was unavailable. Disabling Alarm Azan cancelled all five (Android alarm cancellation records checked); test alarms are left off. Physical-device alarm delivery remains a launch check.
 - Candidate 4 was built as a signed AAB and APK; APK certificate matches the registered upload key, APK 16-KB zip alignment passes, and all 14 arm64/x86-64 native libraries pass 16-KB ELF alignment. Native verification label readability and unknown-token rejection were rechecked on candidate 4.
 - Candidate 4 AAB SHA-256: `0f59409cf7ce1fcbacf514e795ac8b860fd85150b79efaca3e936d29222b014f`.
+- GitHub CI run `37321659017` passed for runtime commit `47d1b48`. Google's pre-launch report is not yet available; do not interpret the absence of a report as a pass.
 - Berita and announcement notifications intentionally remain coming soon for version 1.0.0. Store description and website wording reflect this limitation.
 
 ## Remaining launch checks
