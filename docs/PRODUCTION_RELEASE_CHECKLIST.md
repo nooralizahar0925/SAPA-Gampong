@@ -158,7 +158,7 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Version `1.0.0 (2)` is available to internal testers.
 - Production candidate `1.0.0 (2) – Production` is saved; Console showed **Ready to release**. Indonesia is the sole selected country and pricing is free.
 - Managed publishing is on as an additional safeguard. The first production submission has **not** been sent for review; Google's help documents limitations for first-time publication, so do not assume this toggle alone guarantees a first-launch hold.
-- Google quick checks were still running at the final preparation check. Recheck Publishing overview before submission.
+- Google quick checks completed: Publishing overview states **Your changes can now be sent for review**. App content states **You're all caught up**, with no outstanding declarations. Google may still find issues during review.
 - Website distribution remains `enabled: false`; APK route returns `404`. The configured planned release date is still `2026-09-19` and should be cleared or replaced with the confirmed launch date before launch.
 - Web runtime deployed at `83701c2`; subsequent commits only update documentation. Health and rendered privacy/deletion disclosures passed smoke checks; CI passed.
 
