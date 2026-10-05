@@ -1,7 +1,7 @@
 # Google Play Data Safety - Gampong Blang Digital
 
 Use this worksheet when completing **Policy > App content > Data safety** in Play Console.
-It reflects the production app as reviewed on 2026-09-13. Recheck it whenever SDKs or data flows change.
+It reflects the production app as reviewed on 2026-10-05. Recheck it whenever SDKs or data flows change.
 
 ## General Answers
 
@@ -20,7 +20,9 @@ It reflects the production app as reviewed on 2026-09-13. Recheck it whenever SD
 | Personal info - Email address | OTP verification, history, replies | Authentication, app functionality, communications | Required for personal history and submissions |
 | Personal info - Phone number | Letter request or report contact | App functionality, communications | Optional where the form permits |
 | Personal info - Address | Letter form and subject details | App functionality | Required for relevant letter types |
-| Personal info - User IDs / Other info | NIK and other civil-administration fields | App functionality | Required for relevant letter types |
+| Personal info - User IDs | NIK and other identity numbers | App functionality | Required for relevant letter types |
+| Personal info - Political or religious beliefs | Religion on civil-administration letter forms | App functionality | Required for relevant letter types |
+| Personal info - Other info | Place/date of birth, gender, occupation, and other civil fields | App functionality | Required for relevant letter types |
 | Location - Approximate and precise location | GPS coordinates selected for prayer times; approximate location may be provided by Android | App functionality | Optional |
 | Photos | User-selected image attachments | App functionality | Optional or required by a selected service |
 | Files and docs | Identity and supporting documents | App functionality | Optional or required by a selected service |
@@ -39,8 +41,16 @@ The app does not sell personal data. Review Play's service-provider exception be
 - AlAdhan prayer-time service: GPS coordinates when the user explicitly selects location-based prayer times.
 - Production hosting infrastructure: submitted service data and files.
 
-If any provider uses data for its own purposes outside service-provider processing, update the relevant
-data type to **shared** in Play Console and revise the privacy policy.
+Declare approximate and precise location as **collected and shared** for the optional AlAdhan
+GPS prayer-time lookup. A service-provider exemption has not been established for this external
+service, so do not assume that exemption. Other listed processors are used for service delivery.
+Recheck these answers if a provider uses data for its own purposes.
+
+For Play's app-wide optional/required question, these data types are optional: residents can browse
+public information without signing in, submitting a service request, enabling notifications, or
+using GPS. Individual service forms may still require fields as described above. Service submissions
+are stored, not processed ephemerally; do not claim ephemeral processing for the external location
+provider without evidence of its retention behavior.
 
 ## Security And Deletion
 

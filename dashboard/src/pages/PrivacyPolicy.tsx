@@ -41,7 +41,11 @@ export function PrivacyPolicyPage() {
 
         <PolicySection title="2. Data yang kami kelola">
           <ul>
-            <li>Nama, alamat email, nomor telepon, alamat, NIK, dan informasi formulir layanan.</li>
+            <li>
+              Nama, alamat email, nomor telepon, alamat, NIK, tempat dan tanggal lahir, jenis
+              kelamin, pekerjaan, agama, serta informasi lain yang diminta pada formulir layanan
+              administrasi tertentu.
+            </li>
             <li>Dokumen, foto, atau berkas yang dipilih warga sebagai lampiran permohonan atau laporan.</li>
             <li>Isi laporan, kode referensi, status layanan, jawaban petugas, dan riwayat proses.</li>
             <li>Token perangkat dan pilihan notifikasi untuk mengirim pembaruan layanan.</li>
