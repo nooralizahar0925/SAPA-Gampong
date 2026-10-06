@@ -15,4 +15,12 @@ describe('image upload guidance', () => {
     expect(guide).toHaveTextContent(size);
     expect(guide).toHaveTextContent(limit);
   });
+
+  it('explains circular cropping for staff and leader photos', () => {
+    render(<ImageUploadGuide purpose="official" />);
+    const guide = screen.getByText(/Disarankan 800 × 800/);
+    expect(guide).toHaveTextContent('Foto Pemimpin dan Perangkat mengisi bingkai lingkaran');
+    expect(guide).toHaveTextContent('tepi dan sudut dapat terpotong');
+    expect(guide).toHaveTextContent('Letakkan wajah di tengah');
+  });
 });

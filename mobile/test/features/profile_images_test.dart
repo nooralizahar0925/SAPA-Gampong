@@ -108,7 +108,7 @@ void main() {
   }
 
   testWidgets(
-    'leader and staff display API photos with uncropped fit and missing-photo fallback',
+    'leader and staff photos use circular cover with missing-photo fallback',
     (tester) async {
       tester.view.physicalSize = const Size(360, 1400);
       tester.view.devicePixelRatio = 1;
@@ -127,7 +127,16 @@ void main() {
             .first,
       );
       expect(leader.url, 'https://example.test/leader.png');
-      expect(leader.fit, BoxFit.contain);
+      expect(leader.fit, BoxFit.cover);
+      expect(
+        find.ancestor(
+          of: find.byWidgetPredicate(
+            (w) => w is CachedApiImage && w.cacheKey == 'leader-photo',
+          ),
+          matching: find.byType(ClipOval),
+        ),
+        findsOneWidget,
+      );
       expect(leader.height, 80);
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Perangkat'));
@@ -140,7 +149,16 @@ void main() {
             .last,
       );
       expect(staff.url, 'https://example.test/staff.png');
-      expect(staff.fit, BoxFit.contain);
+      expect(staff.fit, BoxFit.cover);
+      expect(
+        find.ancestor(
+          of: find.byWidgetPredicate(
+            (w) => w is CachedApiImage && w.cacheKey == 'staff-photo',
+          ),
+          matching: find.byType(ClipOval),
+        ),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('official-no-photo')), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

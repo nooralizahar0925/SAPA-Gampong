@@ -708,6 +708,7 @@ class _PerangkatList extends StatelessWidget {
                     fileId: official.photoFileId,
                     size: 48,
                     highlighted: official.isLeadershipHighlight,
+                    fit: BoxFit.cover,
                   ),
                   title: Text(
                     official.name,
@@ -876,12 +877,14 @@ class _OfficialPhoto extends StatelessWidget {
     required this.fileId,
     required this.size,
     required this.highlighted,
+    this.fit = BoxFit.cover,
   });
 
   final String? url;
   final String? fileId;
   final double size;
   final bool highlighted;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -893,8 +896,7 @@ class _OfficialPhoto extends StatelessWidget {
         size: size * 0.5,
       ),
     );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+    return ClipOval(
       child: ColoredBox(
         color: AppTheme.g100,
         child: CachedApiImage(
@@ -902,7 +904,7 @@ class _OfficialPhoto extends StatelessWidget {
           cacheKey: fileId,
           width: size,
           height: size,
-          fit: BoxFit.contain,
+          fit: fit,
           fallback: fallback,
         ),
       ),

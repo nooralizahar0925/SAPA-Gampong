@@ -1398,6 +1398,11 @@ input {
   padding: 20px;
 }
 
+/* Standalone upload guidance aligns with the card header and content rows. */
+.detail-card > .field-hint {
+  margin: 12px 20px 0;
+}
+
 .detail-card-body.stacked {
   display: flex;
   flex-direction: column;
