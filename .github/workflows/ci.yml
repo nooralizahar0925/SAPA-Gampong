@@ -10,6 +10,19 @@ on:
       - production
 
 jobs:
+  preview-route:
+    name: Optional Mobile Preview Route
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test nginx missing-build and SPA route behavior
+        run: node --test scripts/tests/mobile-preview-nginx.test.mjs
+
   backend:
     name: Backend
     runs-on: ubuntu-latest

@@ -6,6 +6,17 @@ The deployment is intentionally conservative. It never runs database reset comma
 
 ## Workflows
 
+### Local dashboard runtime
+
+Use Node.js 22.12+ (22 LTS recommended) or a supported Node.js 24+ release
+for the dashboard. Its patched Vite/Vitest versions are not supported on the
+previous local Node.js 23 runtime. CI and the production VPS already use Node 22.
+
+Dashboard checks: `npm ci`, `npm run typecheck`, `npm test`, `npm run build`,
+and `npm audit`. The optional nginx route regression uses Docker:
+`node --test scripts/tests/mobile-preview-nginx.test.mjs`. It runs an isolated
+nginx container with generated fixtures, never against live uploaded content.
+
 ### CI
 
 File:

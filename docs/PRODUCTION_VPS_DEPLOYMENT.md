@@ -283,10 +283,8 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /mobile/ {
-        alias /opt/gampong-blang/production/SAPA-Gampong/mobile/build/web/;
-        try_files $uri $uri/ /mobile/index.html;
-    }
+    # Returns 404 rather than 500 if the optional web build is absent.
+    include /opt/gampong-blang/production/SAPA-Gampong/infra/nginx/production-mobile-preview.conf;
 
     location / {
         try_files $uri $uri/ /index.html;
@@ -338,7 +336,15 @@ For the first deployment only, run:
 RUN_SEED=true DEPLOY_BRANCH=production bash scripts/deploy-production.sh
 ```
 
-If the VPS should also publish `/mobile/`, install Flutter first and run:
+The optional preview is not published by default. The nginx fragment above
+returns 404 when its build is absent, supports SPA deep links when it exists,
+and marks preview responses `noindex, nofollow, noarchive`. Publishing this
+browser-accessible app preview requires separate approval while public launch
+is on hold; `noindex` is not access control. After installing or changing the
+fragment, run `sudo nginx -t` before reloading nginx, retaining the previous
+server configuration for rollback.
+
+After separate approval, install Flutter on the VPS and publish `/mobile/` with:
 
 ```bash
 BUILD_MOBILE_WEB=true DEPLOY_BRANCH=production bash scripts/deploy-production.sh
