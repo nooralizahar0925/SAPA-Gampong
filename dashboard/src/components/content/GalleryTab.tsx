@@ -12,6 +12,7 @@ import {
 } from '../../api/client';
 import { alertApiError, confirmDelete, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
+import { ImageUploadGuide } from './ImageUploadGuide';
 import { useMarkDirty, useRegisterSave } from './save-context';
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -36,7 +37,7 @@ function sameOrder(a: string[], b: string[]) {
 }
 
 function mediaTypeFor(file: File): GalleryMediaType | null {
-  if (file.type.startsWith('image/')) return 'photo';
+  if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return 'photo';
   if (file.type === 'video/mp4' || file.type === 'video/webm' || file.type === 'video/quicktime') return 'video';
   return null;
 }
@@ -218,7 +219,8 @@ export function GalleryTab() {
               id="gallery-upload"
               className="visually-hidden"
               type="file"
-              accept="image/*,video/mp4,video/webm,video/quicktime"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+              aria-describedby="gallery-upload-guide"
               aria-label="Unggah media galeri"
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -236,6 +238,7 @@ export function GalleryTab() {
             </button>
           </div>
 
+          <ImageUploadGuide purpose="gallery" id="gallery-upload-guide" />
           {query.isLoading ? <div className="loading-state">Memuat galeri...</div> : null}
 
           {drafts.length === 0 && !query.isLoading ? (

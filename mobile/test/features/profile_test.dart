@@ -106,6 +106,22 @@ Widget _buildApp({
 }
 
 void main() {
+  testWidgets('fallback leaders fit a narrow phone without overflow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_buildApp(officialsOverride: const AsyncData([])));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Visi & Misi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sofian'), findsOneWidget);
+    expect(find.text('Afzalul Zikri'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('office map uses dashboard coordinates when configured', () {
     final uri = officeMapUri(_profile);
 

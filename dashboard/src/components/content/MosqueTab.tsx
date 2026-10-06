@@ -13,6 +13,7 @@ import {
 import { alertApiError, confirmDelete, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
 import { Modal } from './Modal';
+import { ImagePicker } from './ImagePicker';
 import { useMarkDirty, useRegisterSave } from './save-context';
 
 type PrayerForm = {
@@ -50,9 +51,13 @@ type DraftMosque = {
   name: string;
   address: string;
   landmark: string;
+  photo_file_id: string | null;
+  photo_url: string | null;
 };
 
-const BLANK_MOSQUE: DraftMosque = { id: null, name: '', address: '', landmark: '' };
+const BLANK_MOSQUE: DraftMosque = {
+  id: null, name: '', address: '', landmark: '', photo_file_id: null, photo_url: null,
+};
 
 const FALLBACK_FIELDS: Array<{ key: keyof PrayerForm; label: string }> = [
   { key: 'fallback_subuh', label: 'Subuh' },
@@ -69,6 +74,7 @@ export function MosqueTab() {
   const [adzanFileId, setAdzanFileId] = useState<string | null>(null);
   const [adzanUrl, setAdzanUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftMosque | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [adzanUploading, setAdzanUploading] = useState(false);
   const adzanInputRef = useRef<HTMLInputElement>(null);
 
@@ -167,6 +173,7 @@ export function MosqueTab() {
         name: input.name.trim(),
         address: input.address.trim(),
         landmark: input.landmark.trim() || null,
+        photo_file_id: input.photo_file_id,
       };
 
       return input.id ? updateMosqueRequest(input.id, payload) : createMosqueRequest(payload);
@@ -389,6 +396,8 @@ export function MosqueTab() {
                                 name: mosque.name,
                                 address: mosque.address,
                                 landmark: mosque.landmark ?? '',
+                                photo_file_id: mosque.photo_file_id,
+                                photo_url: mosque.photo_url,
                               })
                             }
                           >
@@ -434,16 +443,16 @@ export function MosqueTab() {
       {draft ? (
         <Modal
           title={draft.id ? 'Ubah Masjid' : 'Tambah Masjid'}
-          onClose={() => setDraft(null)}
+          onClose={() => { if (!photoUploading) setDraft(null); }}
           footer={
             <>
-              <button className="secondary-button" type="button" onClick={() => setDraft(null)}>
+              <button className="secondary-button" type="button" disabled={photoUploading} onClick={() => setDraft(null)}>
                 Batal
               </button>
               <button
                 className="primary-button"
                 type="button"
-                disabled={!draft.name.trim() || !draft.address.trim() || saveMosque.isPending}
+                disabled={!draft.name.trim() || !draft.address.trim() || saveMosque.isPending || photoUploading}
                 onClick={() => saveMosque.mutate(draft)}
               >
                 {saveMosque.isPending ? 'Menyimpan...' : 'Simpan'}
@@ -452,6 +461,17 @@ export function MosqueTab() {
           }
         >
           <div className="modal-form-fields">
+            <ImagePicker
+              imageUrl={draft.photo_url}
+              aspect="4 / 3"
+              purpose="mosque"
+              inputId="mosque-photo"
+              onBusyChange={setPhotoUploading}
+              buttonLabel={draft.photo_url ? 'Ganti foto masjid' : 'Unggah foto masjid'}
+              onUploaded={(fileId, url) =>
+                setDraft((prev) => prev ? { ...prev, photo_file_id: fileId, photo_url: url } : prev)
+              }
+            />
             <div className="field">
               <label htmlFor="mosque-name">Nama masjid</label>
               <input

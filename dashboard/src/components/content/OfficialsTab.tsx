@@ -42,6 +42,7 @@ function initials(name: string): string {
 export function OfficialsTab() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<DraftOfficial | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const query = useQuery({
     queryKey: ['content', 'officials'],
@@ -197,16 +198,16 @@ export function OfficialsTab() {
       {draft ? (
         <Modal
           title={draft.id ? 'Ubah Perangkat' : 'Tambah Perangkat'}
-          onClose={() => setDraft(null)}
+          onClose={() => { if (!photoUploading) setDraft(null); }}
           footer={
             <>
-              <button className="secondary-button" type="button" onClick={() => setDraft(null)}>
+              <button className="secondary-button" type="button" disabled={photoUploading} onClick={() => setDraft(null)}>
                 Batal
               </button>
               <button
                 className="primary-button"
                 type="button"
-                disabled={!draft.name.trim() || !draft.role.trim() || saveMutation.isPending}
+                disabled={!draft.name.trim() || !draft.role.trim() || saveMutation.isPending || photoUploading}
                 onClick={() => saveMutation.mutate(draft)}
               >
                 {saveMutation.isPending ? 'Menyimpan...' : 'Simpan'}
@@ -220,6 +221,8 @@ export function OfficialsTab() {
                 imageUrl={draft.photo_url}
                 aspect="1 / 1"
                 inputId="official-photo"
+                onBusyChange={setPhotoUploading}
+                purpose="official"
                 buttonLabel={draft.photo_url ? 'Ganti foto' : 'Unggah foto'}
                 onUploaded={(fileId, url) =>
                   setDraft((prev) =>

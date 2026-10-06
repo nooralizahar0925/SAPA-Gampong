@@ -182,8 +182,45 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 
 ## Remaining launch checks
 
-- Copy the upload keystore backup to secure off-device storage; the current protected backup and passwords are on this Mac.
-- Complete restricted closed-testing review of candidate 4 and inspect Google's pre-launch report when available. Do not submit a production binary before explicit launch authorization.
-- Test the latest Play-installed bundle on a real device, including ordinary OTP, reviewer access, legitimate submissions, Firebase push, and prayer-alarm delivery. Emulator/local APK checks do not establish Play-installed physical-device behavior.
-- Obtain responsible village-official or legal review of the privacy policy.
+### Follow-up preparation on 2026-10-06
+
+- Checked Google review status: the 13 submitted changes, including closed-testing candidate 4, remain in review. Console states that review is underway; no approval was observed.
+- Checked pre-launch report Overview: no report is available yet. The introductory upload-artifacts message remains; this must not be treated as a passing report.
+- Prepared and saved **draft** `1.0.0 (4) – Production`, using existing bundle version code 4 from the artifact library. Added Indonesian production release notes, accurately noting that news/announcements are still in development.
+- Preview validation displays **Ready to release**, target SDK 36, API 24+, and estimated new-install download 13.8 MB. This is artifact validation, not policy approval.
+- Verified Production remains **Inactive**, with **Draft release: 1.0.0 (4) – Production**, one country (Indonesia), and zero production installs. The draft was not added to review or rolled out.
+- User authorized steps 1 and 2 (review check and production preparation/review), but not public launch. Production review submission remains on hold until first review is approved and the closed-testing publication/managed-publishing safeguards can be verified. Google's guide says managed publishing cannot be relied on for first publication and recommends publishing to closed testing first: https://support.google.com/googleplay/android-developer/answer/9859654?hl=en
+- Website distribution was rechecked: `enabled: false`, channel `google_play`, release date `null`. No production deployment or public activation was performed.
+
+- User subsequently confirmed the final real-phone test passed (user-reported, not independently observed). Device model, installed version code, and installation source were not captured; retain the detailed emulator evidence above separately.
+- Follow-up Console check: candidate 4 remains **Changes in review**; quick-check progress is no longer shown. Approval is still pending and production submission has not been made.
+- Follow-up pre-launch report check: no report is available yet; Console still displays its introductory upload-artifacts message. This is not a successful test report.
+- User confirmed the responsible village official approved the privacy policy.
+- Off-device signing backup completed on 2026-10-05: `Gampong-Blang-upload-key-2026-10-05.dmg` uploaded to the user's explicitly chosen Google Drive account, in `Gampong Blang - Private Signing Backup`. Both folder and file sharing were verified as Restricted, with only the owner having access. The AES-256 encrypted image contains the upload keystore and signing configuration; no raw signing files were uploaded.
+- Backup recovery was verified locally before upload: both files restored byte-for-byte. Google Drive download returned HTTP 200, with matching server-provided CRC32C and file size (142336 bytes). Local encrypted-image SHA-256: `16f62df431cba0f93a237ade86f733d0fb1f375bc2036739dba7dec501371bd8`.
+- User entered and confirmed the backup password through hidden local Mac dialogs; it was not saved, printed, put in Git, or uploaded. Keep this password in an independently recoverable password manager outside Drive. Temporary plaintext staging copies were removed; original signing files are unchanged.
+- Complete restricted closed-testing review of candidate 4 and inspect Google's pre-launch report when available. Submit the prepared Production draft for review only once the launch hold can be preserved; any submission that might automatically become public still requires explicit launch authorization.
+- Retain the user's real-phone test sign-off; ensure it applies to final candidate 4 before production promotion. Emulator/local APK checks do not establish Play-installed physical-device behavior.
+- Privacy policy approval: completed, per the user's confirmation.
 - Obtain explicit launch authorization before submitting any release that might automatically become public or activating website downloads.
+
+### Client testing invitations on 2026-10-06
+
+- User explicitly requested immediate Client invitations despite the temporary unreviewed Store title, and requested the latest version.
+- Verified the saved default Store listing app name is `Gampong Blang Digital`; internal testing still displays Google's temporary `id.gampongblang.sapa_gampong (unreviewed)` title while first review is pending. No listing or package-name changes were made.
+- Released existing library bundle version code 4 to **Internal testing** as `1.0.0 (4) – Client Testing`, replacing internal build 2. Console confirms **Available to internal testers**, **Not reviewed**. This was a restricted internal release, not a production publication.
+- Created email list **Client** with exactly `putratillah32@gmail.com`, `asra.roniasra@gmail.com`, and `nooralizahar@gmail.com`. Saved internal track access with both **Client** and the existing **Developer** lists enabled; verified selections persisted after reload. Existing Developer members were not changed.
+- Copied the internal opt-in URL from Console: `https://play.google.com/apps/internaltest/4701688071444989507`.
+- Sent separate Bahasa Indonesia invitation emails from the configured Gmail sender `sapagampong@gmail.com`. Each explains joining with the invited Google account, downloading/updating build 4, propagation delays, the temporary Store title, feedback instructions, and coming-soon features. No reviewer credentials were shared.
+- Gmail accepted all three recipients with zero rejections. Message IDs: Putra `<6e71b506-b47a-c2c6-a53e-4191cd74a93f@gmail.com>`; Asra `<a8dffc8f-fad9-0fed-657c-f35355c47257@gmail.com>`; Noor `<d0049f8a-32cd-4da2-7a77-0e54cc6a56ff@gmail.com>`. SMTP acceptance is not confirmation of inbox delivery or tester enrollment.
+- Safety recheck: Production remains **Inactive**, with draft `1.0.0 (4) – Production`; website distribution remains `enabled: false` and release date `null`. Closed-testing review remains pending. No public launch, website activation, code deployment, or production review submission was performed.
+
+### Batch 1 fixes and verification on 2026-10-06
+
+- User authorized implementing Batch 1, then testing, committing/pushing, live website deployment, and a Google Play testing update. Public launch remains separately on hold.
+- Tentang photos now use full available width and intrinsic proportional height. Pemimpin and Perangkat use uploaded API photos with uncropped containment and missing/error fallbacks; leader cards grow to fit long names. Narrow-phone boundary cards have sufficient height.
+- Dashboard mosque create/edit dialogs now upload and retain `photo_file_id`; text-only edits preserve existing photos. Photo upload blocks premature saving. The existing backend/API supports these fields, so no database migration or backend change is required.
+- Mobile mosque photos use a taller responsive 4:3 area and contain the full image. Homepage carousel, image, and fallback height increased by 25%, from 176 to 220 logical pixels.
+- Every dashboard content-image upload has Bahasa guidance for recommended dimensions/ratio, formats, size limits, and honest crop/letterbox behavior. Recommendations: Tentang 1280×720 (16:9, other ratios supported); people 800×800 (1:1); mosques 1200×900 (4:3); banners 1200×800 (3:2); gallery 1200×900 (4:3). Limits remain 2 MB except gallery 5 MB; accepted photo formats are JPG/PNG/WebP.
+- Local verification: dashboard production build passed; 114 dashboard tests passed. Flutter analysis passed; 138 mobile tests passed, including image proportions, missing/corrupt bytes, long names, narrow-phone layouts, and banner-height checks. The subsequently expanded mosque-photo regression also passed (11 prayer-screen tests).
+- Preparing signed production-flavor candidate `1.0.0+5` for **internal testing only**. Build/deployment/Console outcomes must be recorded after completion; unit/widget passes do not replace a final Play-installed physical-phone check.

@@ -359,16 +359,22 @@ class _MosqueCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: hasImage
-                ? CachedApiImage(
-                    url: mosque.photoUrl,
-                    cacheKey: mosque.photoFileId,
-                    height: 120,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    fallback: const _MosqueImageFallback(),
-                  )
-                : const _MosqueImageFallback(),
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: ColoredBox(
+                color: AppTheme.g100,
+                child: hasImage
+                    ? CachedApiImage(
+                        url: mosque.photoUrl,
+                        cacheKey: mosque.photoFileId,
+                        height: double.infinity,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        fallback: const _MosqueImageFallback(),
+                      )
+                    : const _MosqueImageFallback(),
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(14),
@@ -418,7 +424,7 @@ class _MosqueImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 120,
+      height: double.infinity,
       width: double.infinity,
       color: AppTheme.g100,
       child: const Icon(Icons.mosque_outlined, size: 48, color: AppTheme.g400),

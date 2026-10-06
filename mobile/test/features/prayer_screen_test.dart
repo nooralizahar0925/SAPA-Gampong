@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sapa_gampong/core/widgets/cached_api_image.dart';
 import 'package:sapa_gampong/data/models/mosque.dart';
 import 'package:sapa_gampong/data/models/prayer_config.dart';
 import 'package:sapa_gampong/data/providers/app_preferences_providers.dart';
@@ -293,6 +294,8 @@ void main() {
                 name: 'Masjid Baiturrahim',
                 address: 'Jl. Pesisir No. 1, Dusun Meunasah',
                 landmark: 'Depan balai gampong',
+                photoFileId: 'mosque-photo',
+                photoUrl: 'https://example.test/mosque.jpg',
               ),
             ],
           ),
@@ -303,6 +306,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('prayer-mosques-list')), findsOneWidget);
+    final imageArea = find.descendant(
+      of: find.byKey(const Key('mosque-card-m1')),
+      matching: find.byType(AspectRatio),
+    );
+    expect(tester.widget<AspectRatio>(imageArea).aspectRatio, 4 / 3);
+    expect(tester.getSize(imageArea).height, greaterThan(120));
+    final photo = tester.widget<CachedApiImage>(
+      find.descendant(
+        of: find.byKey(const Key('mosque-card-m1')),
+        matching: find.byType(CachedApiImage),
+      ),
+    );
+    expect(photo.cacheKey, 'mosque-photo');
+    expect(photo.fit, BoxFit.contain);
     expect(find.text('Masjid Baiturrahim'), findsOneWidget);
     expect(
       find.text('Jl. Pesisir No. 1, Dusun Meunasah · Depan balai gampong'),

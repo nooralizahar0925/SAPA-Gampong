@@ -872,7 +872,7 @@ export function listMosquesRequest() {
   return apiRequest<Mosque[]>('/content/mosques');
 }
 
-export function createMosqueRequest(input: { name: string; address: string; landmark?: string | null }) {
+export function createMosqueRequest(input: { name: string; address: string; landmark?: string | null; photo_file_id?: string | null }) {
   return apiRequest<Mosque>('/content/mosques', {
     method: 'POST',
     body: JSON.stringify(input),
@@ -881,7 +881,7 @@ export function createMosqueRequest(input: { name: string; address: string; land
 
 export function updateMosqueRequest(
   id: string,
-  input: { name?: string; address?: string; landmark?: string | null },
+  input: { name?: string; address?: string; landmark?: string | null; photo_file_id?: string | null },
 ) {
   return apiRequest<Mosque>(`/content/mosques/${id}`, {
     method: 'PATCH',

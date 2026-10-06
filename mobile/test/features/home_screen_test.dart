@@ -144,6 +144,10 @@ void main() {
     );
     // Still loading: the top slot stays a banner, not the announcement card.
     expect(find.byKey(const Key('home-banner-fallback')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('home-banner-fallback'))).height,
+      220,
+    );
     completer.complete([]);
   });
 
@@ -173,6 +177,10 @@ void main() {
     await tester.pumpWidget(await _buildWithSlides([slide1]));
     await tester.pump();
     expect(find.byKey(const Key('home-banner-carousel')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('home-banner-carousel'))).height,
+      220,
+    );
     expect(find.byKey(const Key('home-banner-fallback')), findsNothing);
   });
 

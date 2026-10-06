@@ -121,9 +121,8 @@ class _TentangContent extends StatelessWidget {
               ? CachedApiImage(
                   url: profile!.photoUrl,
                   cacheKey: profile!.photoFileId,
-                  height: 168,
                   width: double.infinity,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.fitWidth,
                   fallback: const _PhotoPlaceholder(),
                 )
               : const _PhotoPlaceholder(),
@@ -179,7 +178,7 @@ class _TentangContent extends StatelessWidget {
           mainAxisSpacing: 10,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 2.4,
+          mainAxisExtent: 80,
           children: const [
             _BoundaryCard('UTARA', 'Panton Makmur'),
             _BoundaryCard('TIMUR', 'Dayah Baro'),
@@ -567,27 +566,40 @@ class _VisiMisiContent extends StatelessWidget {
         ),
         _SectionLabel('Pemimpin'),
         if (leaders != null && leaders.isNotEmpty)
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.1,
-            children: [for (final l in leaders) _LeaderCard(l.name, l.role)],
+          LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final l in leaders)
+                  SizedBox(
+                    width: (constraints.maxWidth - 12) / 2,
+                    child: _LeaderCard(
+                      l.name,
+                      l.role,
+                      photoUrl: l.photoUrl,
+                      photoFileId: l.photoFileId,
+                    ),
+                  ),
+              ],
+            ),
           )
         else
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.1,
-            children: const [
-              _LeaderCard('Sofian', 'Keuchik'),
-              _LeaderCard('Afzalul Zikri', 'Sekretaris Gampong'),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final leader in const [
+                  ('Sofian', 'Keuchik'),
+                  ('Afzalul Zikri', 'Sekretaris Gampong'),
+                ])
+                  SizedBox(
+                    width: (constraints.maxWidth - 12) / 2,
+                    child: _LeaderCard(leader.$1, leader.$2),
+                  ),
+              ],
+            ),
           ),
         _SectionLabel('Potensi Keunggulan Desa'),
         if (strengths != null && strengths!.isNotEmpty)
@@ -691,23 +703,11 @@ class _PerangkatList extends StatelessWidget {
                     horizontal: 14,
                     vertical: 6,
                   ),
-                  leading: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: official.isLeadershipHighlight
-                          ? AppTheme.g100
-                          : AppTheme.g50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      official.isLeadershipHighlight
-                          ? Icons.workspace_premium_outlined
-                          : Icons.person_outline,
-                      color: official.isLeadershipHighlight
-                          ? AppTheme.g700
-                          : AppTheme.g500,
-                    ),
+                  leading: _OfficialPhoto(
+                    url: official.photoUrl,
+                    fileId: official.photoFileId,
+                    size: 48,
+                    highlighted: official.isLeadershipHighlight,
                   ),
                   title: Text(
                     official.name,
@@ -830,10 +830,12 @@ class _BoundaryCard extends StatelessWidget {
 }
 
 class _LeaderCard extends StatelessWidget {
-  const _LeaderCard(this.name, this.role);
+  const _LeaderCard(this.name, this.role, {this.photoUrl, this.photoFileId});
 
   final String name;
   final String role;
+  final String? photoUrl;
+  final String? photoFileId;
 
   @override
   Widget build(BuildContext context) {
@@ -843,14 +845,11 @@ class _LeaderCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: const BoxDecoration(
-                color: AppTheme.g100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, size: 28, color: AppTheme.g700),
+            _OfficialPhoto(
+              url: photoUrl,
+              fileId: photoFileId,
+              size: 80,
+              highlighted: true,
             ),
             const SizedBox(height: 10),
             Text(
@@ -865,6 +864,46 @@ class _LeaderCard extends StatelessWidget {
               style: const TextStyle(fontSize: 11.5, color: AppTheme.ink500),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialPhoto extends StatelessWidget {
+  const _OfficialPhoto({
+    required this.url,
+    required this.fileId,
+    required this.size,
+    required this.highlighted,
+  });
+
+  final String? url;
+  final String? fileId;
+  final double size;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = SizedBox.square(
+      dimension: size,
+      child: Icon(
+        highlighted ? Icons.workspace_premium_outlined : Icons.person_outline,
+        color: AppTheme.g700,
+        size: size * 0.5,
+      ),
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ColoredBox(
+        color: AppTheme.g100,
+        child: CachedApiImage(
+          url: url,
+          cacheKey: fileId,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          fallback: fallback,
         ),
       ),
     );

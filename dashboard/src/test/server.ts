@@ -1351,14 +1351,14 @@ export const server = setupServer(
     HttpResponse.json(contentState.mosques),
   ),
   http.post('http://localhost:8080/api/content/mosques', async ({ request }) => {
-    const body = (await request.json()) as { name: string; address: string; landmark?: string };
+    const body = (await request.json()) as { name: string; address: string; landmark?: string; photo_file_id?: string | null };
     const created = {
       id: `mosque-${contentState.mosques.length + 1}`,
       name: body.name,
       address: body.address,
       landmark: body.landmark ?? null,
-      photo_file_id: null,
-      photo_url: null,
+      photo_file_id: body.photo_file_id ?? null,
+      photo_url: body.photo_file_id ? `http://localhost:8080/api/uploads/${body.photo_file_id}` : null,
     };
     contentState.mosques = [...contentState.mosques, created];
     return HttpResponse.json(created, { status: 201 });
@@ -1369,6 +1369,10 @@ export const server = setupServer(
     if (index < 0) return new HttpResponse(null, { status: 404 });
 
     contentState.mosques[index] = { ...contentState.mosques[index], ...body };
+    if ('photo_file_id' in body) {
+      contentState.mosques[index].photo_url = body.photo_file_id
+        ? `http://localhost:8080/api/uploads/${body.photo_file_id}` : null;
+    }
     return HttpResponse.json(contentState.mosques[index]);
   }),
   http.delete('http://localhost:8080/api/content/mosques/:id', ({ params }) => {

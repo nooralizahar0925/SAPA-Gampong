@@ -607,15 +607,13 @@ export function ProfileTab() {
               aspect="16 / 9"
               buttonLabel={profileQuery.data?.photo_url ? 'Ganti Foto' : 'Unggah Foto'}
               inputId="profile-photo"
+              purpose="profile"
               onUploaded={async (fileId) => {
                 await updateVillageProfileRequest({ photo_file_id: fileId });
                 await queryClient.invalidateQueries({ queryKey: ['content', 'profile'] });
                 toastSuccess('Foto header diperbarui');
               }}
             />
-            <small className="field-hint">
-              Disarankan rasio 16:9, minimal 1280×720 px, maksimal 2 MB.
-            </small>
           </div>
         </section>
 

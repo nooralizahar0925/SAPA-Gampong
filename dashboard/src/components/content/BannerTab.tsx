@@ -10,6 +10,7 @@ import {
 } from '../../api/client';
 import { alertApiError, confirmDelete, toastSuccess } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
+import { ImageUploadGuide } from './ImageUploadGuide';
 import { useMarkDirty, useRegisterSave } from './save-context';
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -91,7 +92,7 @@ export function BannerTab() {
 
   /** Upload the file now, then stage the banner row until the header save is pressed. */
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       alertApiError({ message: 'Banner harus berupa gambar (JPG, PNG, atau WebP).' });
       return;
     }
@@ -165,7 +166,8 @@ export function BannerTab() {
               id="banner-upload"
               className="visually-hidden"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
+              aria-describedby="banner-upload-guide"
               aria-label="Unggah banner"
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -183,6 +185,7 @@ export function BannerTab() {
             </button>
           </div>
 
+          <ImageUploadGuide purpose="banner" id="banner-upload-guide" />
           {query.isLoading ? <div className="loading-state">Memuat banner...</div> : null}
 
           {banners.length === 0 && !query.isLoading ? (

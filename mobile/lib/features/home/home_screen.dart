@@ -16,6 +16,9 @@ import '../../data/providers/letter_providers.dart';
 import '../../data/providers/resident_providers.dart';
 import '../services/services_screen.dart';
 
+// Shared by the carousel, each image, and the loading/error fallback.
+const _homeBannerHeight = 220.0;
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -392,7 +395,7 @@ class _FallbackBanner extends StatelessWidget {
       children: [
         Container(
           key: const Key('home-banner-fallback'),
-          height: 176,
+          height: _homeBannerHeight,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -499,7 +502,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
       children: [
         SizedBox(
           key: const Key('home-banner-carousel'),
-          height: 176,
+          height: _homeBannerHeight,
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.slides.length,
@@ -530,13 +533,13 @@ class _BannerCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: 176,
+        height: _homeBannerHeight,
         width: double.infinity,
         child: slide.imageUrl != null
             ? CachedApiImage(
                 url: slide.imageUrl,
                 cacheKey: slide.imageFileId,
-                height: 176,
+                height: _homeBannerHeight,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 fallback: _gradientBox(),

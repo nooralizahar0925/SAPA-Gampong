@@ -36,14 +36,14 @@ class _CachedApiImageState extends ConsumerState<CachedApiImage> {
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _future = _loadIfPresent();
   }
 
   @override
   void didUpdateWidget(CachedApiImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url || oldWidget.cacheKey != widget.cacheKey) {
-      _future = _load();
+      _future = _loadIfPresent();
     }
   }
 
@@ -65,10 +65,14 @@ class _CachedApiImageState extends ConsumerState<CachedApiImage> {
           width: widget.width,
           fit: widget.fit,
           gaplessPlayback: true,
+          errorBuilder: (_, _, _) => fallback,
         );
       },
     );
   }
+
+  Future<Uint8List>? _loadIfPresent() =>
+      widget.url?.isNotEmpty == true ? _load() : null;
 
   Future<Uint8List> _load() async {
     final url = widget.url;

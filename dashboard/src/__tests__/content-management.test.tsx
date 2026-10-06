@@ -726,6 +726,38 @@ describe('masjid & sholat tab', () => {
 
     await waitFor(() => expect(contentState.mosques).toHaveLength(2));
   });
+
+  it('uploads and saves a new mosque photo', async () => {
+    const user = userEvent.setup();
+    renderApp(['/content/mosques']);
+    await screen.findByText(/Masjid Baiturrahim/);
+    await user.click(screen.getByRole('button', { name: /tambah masjid/i }));
+    await user.type(screen.getByLabelText(/nama masjid/i), 'Masjid Foto');
+    await user.type(screen.getByLabelText(/alamat masjid/i), 'Dusun Foto');
+    expect(screen.getByText(/1200 × 900 px/)).toHaveTextContent(/4:3.*2 MB/);
+    await user.upload(screen.getByLabelText('Unggah foto masjid'), new File(['photo'], 'masjid.jpg', { type: 'image/jpeg' }));
+    await screen.findByRole('button', { name: /ganti foto masjid/i });
+    await user.click(screen.getByRole('button', { name: /^simpan$/i }));
+    await waitFor(() => expect(contentState.mosques.find(m => m.name === 'Masjid Foto')?.photo_file_id).toBe('file-uploaded'));
+  });
+
+  it('preserves a mosque photo on text edits and supports replacing it', async () => {
+    contentState.mosques[0].photo_file_id = 'old-photo';
+    contentState.mosques[0].photo_url = 'http://localhost:8080/api/uploads/old-photo';
+    const user = userEvent.setup();
+    renderApp(['/content/mosques']);
+    await user.click(await screen.findByRole('button', { name: /ubah Masjid Baiturrahim/i }));
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute('src', contentState.mosques[0].photo_url);
+    await user.type(screen.getByLabelText(/alamat masjid/i), ' Baru');
+    await user.click(screen.getByRole('button', { name: /^simpan$/i }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(contentState.mosques[0].photo_file_id).toBe('old-photo');
+    await user.click(screen.getByRole('button', { name: /ubah Masjid Baiturrahim/i }));
+    await user.upload(screen.getByLabelText('Ganti foto masjid'), new File(['photo'], 'new.webp', { type: 'image/webp' }));
+    await waitFor(() => expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute('src', 'http://localhost:8080/api/uploads/file-uploaded'));
+    await user.click(screen.getByRole('button', { name: /^simpan$/i }));
+    await waitFor(() => expect(contentState.mosques[0].photo_file_id).toBe('file-uploaded'));
+  });
 });
 
 describe('settings navigation', () => {

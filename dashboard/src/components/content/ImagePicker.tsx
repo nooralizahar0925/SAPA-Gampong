@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { uploadFileRequest } from '../../api/client';
 import { alertApiError } from '../../lib/alerts';
 import { AppIcon } from '../AppIcon';
+import { ImageUploadGuide, type ImagePurpose } from './ImageUploadGuide';
 
 type ImagePickerProps = {
   imageUrl: string | null;
@@ -9,6 +10,8 @@ type ImagePickerProps = {
   aspect: string;
   buttonLabel: string;
   inputId: string;
+  purpose: ImagePurpose;
+  onBusyChange?: (busy: boolean) => void;
   onUploaded: (fileId: string, url: string) => Promise<void> | void;
 };
 
@@ -24,13 +27,15 @@ export function ImagePicker({
   aspect,
   buttonLabel,
   inputId,
+  purpose,
+  onBusyChange,
   onUploaded,
 }: ImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       alertApiError({ message: 'Berkas harus berupa gambar (JPG, PNG, atau WebP).' });
       return;
     }
@@ -41,6 +46,7 @@ export function ImagePicker({
     }
 
     setBusy(true);
+    onBusyChange?.(true);
     try {
       const uploaded = await uploadFileRequest(file, 'photo');
       await onUploaded(uploaded.file_id, uploaded.url);
@@ -48,6 +54,7 @@ export function ImagePicker({
       alertApiError(err, 'Gambar gagal diunggah.');
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
       if (inputRef.current) inputRef.current.value = '';
     }
   }
@@ -56,7 +63,7 @@ export function ImagePicker({
     <div className="image-picker">
       <div className="image-picker-preview" style={{ aspectRatio: aspect }}>
         {imageUrl ? (
-          <img src={imageUrl} alt="" />
+          <img src={imageUrl} alt="" style={{ objectFit: 'contain' }} />
         ) : (
           <span className="image-picker-placeholder">
             <AppIcon name="image" />
@@ -69,7 +76,9 @@ export function ImagePicker({
         id={inputId}
         className="visually-hidden"
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
+        aria-label={buttonLabel}
+        aria-describedby={`${inputId}-guide`}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) void handleFile(file);
@@ -85,6 +94,7 @@ export function ImagePicker({
         <AppIcon name="edit" />
         {busy ? 'Mengunggah...' : buttonLabel}
       </button>
+      <ImageUploadGuide purpose={purpose} id={`${inputId}-guide`} />
     </div>
   );
 }
