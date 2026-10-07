@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +9,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/localization/strings_id.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/cached_api_image.dart';
 import '../../core/widgets/sapa_scaffold.dart';
 import '../../data/mock/village_seed.dart';
 import '../../data/models/banner_slide.dart';
 import '../../data/providers/content_providers.dart';
+import '../../data/providers/cache_providers.dart';
+import '../../data/services/content_cache_service.dart';
 import '../../data/providers/letter_providers.dart';
 import '../../data/providers/resident_providers.dart';
 import '../services/services_screen.dart';
@@ -459,34 +462,138 @@ class _FallbackBanner extends StatelessWidget {
   }
 }
 
-class _BannerCarousel extends StatefulWidget {
+class _BannerCarousel extends ConsumerStatefulWidget {
   const _BannerCarousel({required this.slides});
 
   final List<BannerSlide> slides;
 
   @override
-  State<_BannerCarousel> createState() => _BannerCarouselState();
+  ConsumerState<_BannerCarousel> createState() => _BannerCarouselState();
 }
 
-class _BannerCarouselState extends State<_BannerCarousel> {
+class _BannerCarouselState extends ConsumerState<_BannerCarousel> {
   late final PageController _pageController;
   int _current = 0;
   Timer? _timer;
+  bool _dragging = false;
+  int _generation = 0;
+  final Map<int, Uint8List> _images = {};
+  final Map<int, Future<void>> _loads = {};
+  final Set<int> _settled = {};
+  final Set<int> _failed = {};
+
+  String _signature(List<BannerSlide> slides) =>
+      slides.map((s) => '${s.id}:${s.imageFileId}:${s.imageUrl}').join('|');
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    if (widget.slides.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-        final next = (_current + 1) % widget.slides.length;
+    unawaited(_prepare());
+  }
+
+  @override
+  void didUpdateWidget(_BannerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_signature(oldWidget.slides) == _signature(widget.slides)) return;
+    _generation++;
+    _timer?.cancel();
+    _current = 0;
+    _images.clear();
+    _loads.clear();
+    _settled.clear();
+    _failed.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_pageController.hasClients) _pageController.jumpToPage(0);
+      unawaited(_prepare());
+    });
+  }
+
+  int? _nextIndex() {
+    for (var offset = 1; offset < widget.slides.length; offset++) {
+      final next = (_current + offset) % widget.slides.length;
+      if (!_failed.contains(next)) return next;
+    }
+    return null;
+  }
+
+  Future<void> _prepare() async {
+    final generation = _generation;
+    final current = _current;
+    await _load(current, generation);
+    if (!mounted || generation != _generation || current != _current) return;
+    var next = _nextIndex();
+    // Preload and decode the next image before starting its transition.
+    while (next != null) {
+      await _load(next, generation);
+      if (!mounted || generation != _generation || current != _current) return;
+      if (!_failed.contains(next)) break;
+      next = _nextIndex();
+    }
+    if (next == null || _dragging) return;
+    _timer?.cancel();
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (!mounted ||
+          generation != _generation ||
+          current != _current ||
+          _dragging ||
+          !_pageController.hasClients) {
+        return;
+      }
+      unawaited(
         _pageController.animateToPage(
-          next,
+          next!,
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeInOut,
-        );
-      });
+        ),
+      );
+    });
+  }
+
+  Future<void> _load(int index, int generation) {
+    if (_settled.contains(index)) return Future.value();
+    return _loads.putIfAbsent(index, () => _loadImage(index, generation));
+  }
+
+  Future<void> _loadImage(int index, int generation) async {
+    final slide = widget.slides[index];
+    final url = slide.imageUrl;
+    if (url == null || url.isEmpty) {
+      _settled.add(index);
+      return;
     }
+    try {
+      final bytes = await ref
+          .read(apiFileCacheServiceProvider)
+          .getOrFetchBytes(
+            key: apiFileCacheKey(fileId: slide.imageFileId, url: url),
+            fetch: () async {
+              final response = await ref
+                  .read(dioClientProvider)
+                  .dio
+                  .get<List<int>>(
+                    url,
+                    options: Options(responseType: ResponseType.bytes),
+                  );
+              return Uint8List.fromList(response.data ?? []);
+            },
+          );
+      if (!mounted || generation != _generation) return;
+      Object? decodeError;
+      await precacheImage(
+        MemoryImage(bytes),
+        context,
+        onError: (error, _) => decodeError = error,
+      );
+      if (decodeError != null) throw decodeError!;
+      if (!mounted || generation != _generation) return;
+      setState(() => _images[index] = bytes);
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() => _failed.add(index));
+    }
+    if (mounted && generation == _generation) _settled.add(index);
   }
 
   @override
@@ -503,11 +610,32 @@ class _BannerCarouselState extends State<_BannerCarousel> {
         SizedBox(
           key: const Key('home-banner-carousel'),
           height: _homeBannerHeight,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: widget.slides.length,
-            onPageChanged: (i) => setState(() => _current = i),
-            itemBuilder: (_, i) => _BannerCard(slide: widget.slides[i]),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification &&
+                  notification.dragDetails != null) {
+                _dragging = true;
+                _timer?.cancel();
+              } else if (notification is ScrollEndNotification) {
+                _dragging = false;
+                unawaited(_prepare());
+              }
+              return false;
+            },
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.slides.length,
+              onPageChanged: (i) {
+                _timer?.cancel();
+                setState(() => _current = i);
+                unawaited(_prepare());
+              },
+              itemBuilder: (_, i) => _BannerCard(
+                slide: widget.slides[i],
+                bytes: _images[i],
+                loading: !_settled.contains(i),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -524,9 +652,11 @@ class _BannerCarouselState extends State<_BannerCarousel> {
 }
 
 class _BannerCard extends StatelessWidget {
-  const _BannerCard({required this.slide});
+  const _BannerCard({required this.slide, this.bytes, required this.loading});
 
   final BannerSlide slide;
+  final Uint8List? bytes;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -535,14 +665,14 @@ class _BannerCard extends StatelessWidget {
       child: SizedBox(
         height: _homeBannerHeight,
         width: double.infinity,
-        child: slide.imageUrl != null
-            ? CachedApiImage(
-                url: slide.imageUrl,
-                cacheKey: slide.imageFileId,
+        child: bytes != null
+            ? Image.memory(
+                bytes!,
                 height: _homeBannerHeight,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                fallback: _gradientBox(),
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => _gradientBox(),
               )
             : _gradientBox(),
       ),
@@ -557,6 +687,7 @@ class _BannerCard extends StatelessWidget {
         end: Alignment.bottomRight,
       ),
     ),
+    child: loading ? const Center(child: CircularProgressIndicator()) : null,
   );
 }
 

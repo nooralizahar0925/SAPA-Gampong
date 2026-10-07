@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sapa_gampong/data/models/prayer_config.dart';
 import 'package:sapa_gampong/data/providers/app_preferences_providers.dart';
 import 'package:sapa_gampong/data/providers/content_providers.dart';
@@ -76,6 +77,36 @@ Widget _wrap({
 }
 
 void main() {
+  setUp(() {
+    PackageInfo.setMockInitialValues(
+      appName: 'Gampong Blang Digital',
+      packageName: 'id.gampongblang.sapa_gampong',
+      version: '1.0.0',
+      buildNumber: '7',
+      buildSignature: '',
+    );
+  });
+
+  testWidgets('shows the actual installed version and build number', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        preferences: AppPreferencesService.memory(),
+        notifications: _FakeNotificationService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Tentang Aplikasi'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.text('Gampong Blang Digital · Versi 1.0.0 (Build 7)'),
+      findsOneWidget,
+    );
+  });
   testWidgets('shows privacy and data deletion entry', (tester) async {
     final preferences = AppPreferencesService.memory();
     final notifications = _FakeNotificationService();

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/config/env.dart';
@@ -14,6 +15,10 @@ import '../../data/providers/app_preferences_providers.dart';
 import '../../data/providers/content_providers.dart';
 import '../../data/services/notification_service.dart';
 import '../../data/services/prayer_times_service.dart';
+
+final installedAppInfoProvider = FutureProvider<PackageInfo>(
+  (_) => PackageInfo.fromPlatform(),
+);
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -29,6 +34,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final values = preferences.value;
     final profile = ref.watch(villageProfileProvider).asData?.value;
     final contactPhone = resolveOfficePhone(profile?.contactPhone);
+    final appInfo = ref.watch(installedAppInfoProvider);
 
     return SapaScaffold(
       title: 'Pengaturan',
@@ -97,7 +103,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SapaListTile(
             icon: Icons.info_outline,
             title: 'Tentang Aplikasi',
-            subtitle: 'Gampong Blang Digital · Versi 1.0.0',
+            subtitle: appInfo.when(
+              data: (info) =>
+                  'Gampong Blang Digital · Versi ${info.version} (Build ${info.buildNumber})',
+              loading: () => 'Memuat informasi versi…',
+              error: (_, _) => 'Informasi versi belum tersedia',
+            ),
             trailing: const SizedBox.shrink(),
             onTap: () {},
           ),
@@ -105,9 +116,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.privacy_tip_outlined,
             title: 'Privasi & Penghapusan Data',
             subtitle: 'Baca kebijakan atau ajukan penghapusan data',
-            onTap: () => unawaited(
-              openExternalWebsite(context, Env.privacyPolicyUrl),
-            ),
+            onTap: () =>
+                unawaited(openExternalWebsite(context, Env.privacyPolicyUrl)),
           ),
         ],
       ),

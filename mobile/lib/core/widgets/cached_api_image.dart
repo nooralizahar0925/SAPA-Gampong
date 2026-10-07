@@ -81,25 +81,22 @@ class _CachedApiImageState extends ConsumerState<CachedApiImage> {
     final cache = ref.read(apiFileCacheServiceProvider);
     final key = apiFileCacheKey(fileId: widget.cacheKey, url: url);
 
-    try {
-      final res = await ref
-          .read(dioClientProvider)
-          .dio
-          .get<List<int>>(
-            url,
-            options: Options(responseType: ResponseType.bytes),
-          );
-      final data = res.data;
-      if (data == null || data.isEmpty) {
-        throw StateError('Response gambar kosong.');
-      }
-      final bytes = Uint8List.fromList(data);
-      await cache.putBytes(key, bytes);
-      return bytes;
-    } catch (_) {
-      final cached = cache.getBytes(key);
-      if (cached != null) return cached.bytes;
-      rethrow;
-    }
+    return cache.getOrFetchBytes(
+      key: key,
+      fetch: () async {
+        final res = await ref
+            .read(dioClientProvider)
+            .dio
+            .get<List<int>>(
+              url,
+              options: Options(responseType: ResponseType.bytes),
+            );
+        final data = res.data;
+        if (data == null || data.isEmpty) {
+          throw StateError('Response gambar kosong.');
+        }
+        return Uint8List.fromList(data);
+      },
+    );
   }
 }

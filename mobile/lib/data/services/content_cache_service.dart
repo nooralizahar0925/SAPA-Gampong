@@ -132,6 +132,51 @@ String apiFileCacheKey({String? fileId, String? url}) {
 
 abstract class ApiFileCacheService {
   static const boxName = 'api_file_cache';
+  final Map<String, Future<Uint8List>> _pending = {};
+
+  /// File IDs identify uploads; reuse their bytes even when signed URLs rotate.
+  /// A bounded lifetime also refreshes images supplied through mutable URLs.
+  Future<Uint8List> getOrFetchBytes({
+    required String key,
+    required Future<Uint8List> Function() fetch,
+    Duration maxAge = const Duration(days: 1),
+  }) async {
+    final cached = getBytes(key);
+    if (cached != null &&
+        DateTime.now().difference(cached.updatedAt) < maxAge) {
+      return cached.bytes;
+    }
+    final pending = _pending[key];
+    if (pending != null) return pending;
+    final request = _fetchBytes(key, fetch, cached);
+    _pending[key] = request;
+    try {
+      return await request;
+    } finally {
+      _pending.remove(key);
+    }
+  }
+
+  Future<Uint8List> _fetchBytes(
+    String key,
+    Future<Uint8List> Function() fetch,
+    CachedBytes? cached,
+  ) async {
+    Uint8List bytes;
+    try {
+      bytes = await fetch();
+      if (bytes.isEmpty) throw StateError('Response gambar kosong.');
+    } catch (_) {
+      if (cached != null) return cached.bytes;
+      rethrow;
+    }
+    try {
+      await putBytes(key, bytes);
+    } catch (_) {
+      // A cache write failure must not hide a successfully downloaded image.
+    }
+    return bytes;
+  }
 
   Future<void> putBytes(String key, Uint8List bytes);
 
