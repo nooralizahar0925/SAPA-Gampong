@@ -165,6 +165,21 @@ node -e "require('dotenv').config(); JSON.parse(process.env.FIREBASE_SERVICE_ACC
 
 ## 4. First Build And Migration
 
+Chromium needs OS libraries in addition to its downloaded browser binary. After
+`npm ci`, provision them once as root using the installed Playwright version:
+
+```bash
+cd /opt/gampong-blang/production/SAPA-Gampong/backend
+sudo ./node_modules/.bin/playwright install-deps chromium
+```
+
+Run the browser installation/build below as the backend service account (`gbd`),
+so the downloaded browser is available in that account's cache. On subsequent
+deployments, `./node_modules/.bin/playwright install-deps --dry-run chromium`
+checks that OS dependencies are still present. A browser download alone does not
+install libraries such as `libnspr4` and `libnss3`; missing libraries cause PDF
+generation to fail even while the health endpoint succeeds.
+
 ```bash
 cd /opt/gampong-blang/production/SAPA-Gampong/backend
 npm ci

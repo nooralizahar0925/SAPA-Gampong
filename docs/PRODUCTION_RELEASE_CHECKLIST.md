@@ -269,3 +269,11 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Google validated bundle 7 as Ready to release. Published **Internal testing only** as `1.0.0 (7) – Banner Cache Client Testing`, released Oct 7 at 12:37 WIB. Console confirms **Available to internal testers**, one version code, and **Not reviewed**. Client (3 users) and Developer (3 users) remain selected; no invitation emails were sent.
 - Testers use the existing opt-in URL `https://play.google.com/apps/internaltest/4701688071444989507` and update through Google Play. Console advises that changes usually appear within one hour but may take longer. Verify Settings shows Build 7 before checking the fixes on a physical phone.
 - Final safety check: managed publishing remains on; **Publish 13 changes** is still pending, and production `1.0.0 (6) – Production` remains **not yet submitted for review**. Neither action was taken. Website distribution remains `enabled: false`, channel `google_play`, release date `null`.
+
+### Production PDF dependency repair on 2026-10-07
+
+- User reported a server error while generating a PDF and explicitly approved immediate repair. Live logs showed Chromium failing to load `libnspr4.so`; `ldd` confirmed eight unresolved library dependencies.
+- Installed Chromium OS dependencies with the production backend's existing Playwright 1.61.1 CLI (`playwright install-deps chromium`). Package manager installed 30 packages and updated libfreetype6; no packages were removed. Dependency dry-run then passed and Chromium had no unresolved libraries.
+- Ran the compiled production PDF renderer as service user `gbd`: a diagnostic document and all 10 live letter-template previews (L1–L10) produced valid PDF buffers. Checked the existing seeded marker before preview calls; no templates were initialized, no resident records were changed, and no generated PDFs were persisted. This is renderer/template verification, not regeneration of the client's actual request.
+- Backend MainPID remained `812259`; no backend restart, app rebuild, migration, seed, or mobile update was needed. Live health returned `ok: true`. Website distribution remains disabled with no release date; Google Play release state was not changed.
+- Deployment runbook now explicitly covers Chromium OS dependency provisioning and a dry-run check, separate from downloading the browser binary.
