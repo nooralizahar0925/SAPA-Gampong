@@ -8,7 +8,7 @@ Use this checklist before publishing the Android app to Google Play and the web 
 - Android app label: `Gampong Blang Digital`
 - Android compile SDK: `36`
 - Android upload signing: configured locally with alias `upload`; private files are ignored by Git. Google Play uses a separate Google-managed app-signing key.
-- Latest signed internal-testing release: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+6`). Production remains unpublished; its saved draft is still candidate 4.
+- Latest signed internal-testing release: `mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab` (`1.0.0+7`), available to Client and Developer testers. Production remains unpublished; candidate 6 is saved in Publishing overview but has not been submitted for review.
 - Upload/direct-local-APK certificate SHA-1: `C8:96:B9:FE:FA:C6:B1:73:D9:D6:5B:27:9C:5F:88:F2:F1:44:9B:6B`.
 - Upload/direct-local-APK certificate SHA-256: `6A:3D:7F:AC:18:F4:34:4F:E0:B0:98:16:B2:3F:C8:F2:E0:16:93:1B:03:0C:EB:A7:E6:69:73:4B:3D:4F:F6:97`.
 - Google Play app-signing certificate SHA-256: `CA:DF:F8:88:47:87:C4:70:29:7D:7B:63:CC:E4:FE:C8:9F:6D:93:63:78:BB:53:99:10:48:34:0B:3D:F8:AA:D2`.
@@ -258,3 +258,14 @@ VITE_API_BASE_URL=https://gampongblangdigital.com/api npm run build
 - Installed APK build 6 on the API 36 emulator and visually verified homepage, circular cover photos in both Visi & Misi and Perangkat, and circular missing-photo fallbacks against live client content. Emulator was stopped after testing. This is not a Play-installed physical-phone sign-off.
 - Google validated bundle 6 as Ready to release. Published **Internal testing only** as `1.0.0 (6) – Circular Photos Client Testing` at approximately 15:36 WIB. Console confirms Available to internal testers and Not reviewed. Existing Client (3 users) and Developer (3 users) lists remain selected; no new invitation emails were sent.
 - Website distribution remains `enabled: false`, channel `google_play`, release date `null`; private APK returns 404. No public website activation or Google Play production rollout/review submission was performed. Testers need to update through Play using the existing opt-in URL, allowing for propagation; final physical-phone validation should use build 6 before launch.
+
+### Banner-cache build 7 testing release on 2026-10-07
+
+- User clarified that build 7 should be published to testers only. The 13 approved closed-testing/listing/declaration changes remain unpublished, and production review/public launch remains on hold.
+- Implementation commit `4b7ff137267ec4421706488594267d076b48d808` was pushed to main and production. Mobile analysis and 147 tests passed; GitHub CI run `37576386109` passed. Production source was fast-forwarded without rebuilding the dashboard, restarting the backend, running migrations/seeds, or changing client content.
+- Banner image bytes now use cache-first retrieval with concurrent-fetch deduplication and stale-cache offline fallback. The carousel decodes/preloads images before automatic rotation and gives each ready slide five seconds. Settings displays the installed version and build number.
+- API 36 emulator checks against live content confirmed circular leader/staff photos in build 6 and banner loading, offline cached banner display, and the visible build number in the local build 7 candidate. This does not verify the client's Play-installed phone; no resident requests were created.
+- Built signed production-flavor AAB/APK `1.0.0 (7)`. Signing certificates match the registered upload key; APK 16-KB ZIP alignment and all 14 arm64/x86-64 native ELF alignment checks passed. AAB SHA-256: `6df1698afd07b72cccc7dc158ad2d99a52133df64148609928181377fe93dda4`. APK SHA-256: `280c84b7659eea4187b04261b348d3acb42bf545e03f0cff830e4e671eeefd7d`.
+- Google validated bundle 7 as Ready to release. Published **Internal testing only** as `1.0.0 (7) – Banner Cache Client Testing`, released Oct 7 at 12:37 WIB. Console confirms **Available to internal testers**, one version code, and **Not reviewed**. Client (3 users) and Developer (3 users) remain selected; no invitation emails were sent.
+- Testers use the existing opt-in URL `https://play.google.com/apps/internaltest/4701688071444989507` and update through Google Play. Console advises that changes usually appear within one hour but may take longer. Verify Settings shows Build 7 before checking the fixes on a physical phone.
+- Final safety check: managed publishing remains on; **Publish 13 changes** is still pending, and production `1.0.0 (6) – Production` remains **not yet submitted for review**. Neither action was taken. Website distribution remains `enabled: false`, channel `google_play`, release date `null`.
