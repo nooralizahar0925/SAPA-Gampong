@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getLetterTemplatePreviewRequest,
@@ -9,6 +10,7 @@ import {
 } from '../api/client';
 import { DashboardFrame } from '../components/DashboardFrame';
 import { SettingsTabs } from '../components/SettingsTabs';
+import { LetterNumberReference } from '../components/LetterNumberReference';
 import { AppIcon } from '../components/AppIcon';
 import { Modal } from '../components/content/Modal';
 import { PdfPreview } from '../components/PdfPreview';
@@ -39,6 +41,8 @@ function toForm(template: LetterTemplateDefinition): TemplateForm {
 }
 
 export function LetterTemplateSettingsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const showNumbers = searchParams.get('tab') === 'numbers';
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState<LetterTypeCode | null>(null);
   const [form, setForm] = useState<TemplateForm | null>(null);
@@ -142,10 +146,10 @@ export function LetterTemplateSettingsPage() {
         <div className="content-header">
           <div className="dashboard-topbar-copy">
             <h1>Pengaturan Surat</h1>
-            <p>Template layanan surat, status aktif, dan copy yang tampil di aplikasi warga.</p>
+            <p>Template layanan surat dan referensi nomor induk untuk setiap kategori.</p>
           </div>
 
-          <div className="content-header-actions">
+          {!showNumbers && <div className="content-header-actions">
             <span className="content-saved-at">
               {dirty
                 ? 'Ada perubahan belum disimpan'
@@ -161,15 +165,32 @@ export function LetterTemplateSettingsPage() {
             >
               {saveMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
-          </div>
+          </div>}
         </div>
       }
     >
       <SettingsTabs />
+      <div className="content-tabs letter-settings-tabs" role="tablist" aria-label="Menu pengaturan surat">
+        {[{ label: 'Template Surat', value: 'templates' }, { label: 'Nomor Induk Surat', value: 'numbers' }].map((tab) => (
+          <button key={tab.value} type="button" role="tab"
+            aria-selected={showNumbers === (tab.value === 'numbers')}
+            className={`content-tab${showNumbers === (tab.value === 'numbers') ? ' active' : ''}`}
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              if (tab.value === 'numbers') next.set('tab', 'numbers');
+              else next.delete('tab');
+              setSearchParams(next);
+              setPreviewOpen(false);
+            }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {showNumbers ? <LetterNumberReference /> : null}
 
-      {query.isLoading ? <div className="loading-state">Memuat template surat...</div> : null}
+      {!showNumbers && query.isLoading ? <div className="loading-state">Memuat template surat...</div> : null}
 
-      <div className="content-layout">
+      {!showNumbers && <div className="content-layout">
         <div className="content-main">
           <section className="detail-card">
             <div className="detail-card-head">
@@ -311,7 +332,7 @@ export function LetterTemplateSettingsPage() {
             )}
           </section>
         </aside>
-      </div>
+      </div>}
 
       {previewOpen && selected && form ? (
         <Modal

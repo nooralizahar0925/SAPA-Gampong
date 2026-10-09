@@ -57,6 +57,8 @@ describe('app settings', () => {
         letterhead_line1: 'PEMERINTAH KABUPATEN ACEH JAYA',
         letterhead_line2: 'KECAMATAN KRUENG SABEE',
         letterhead_line3: 'GAMPONG BLANG',
+        letterhead_address: 'Jalan Kantor Baru',
+        letterhead_postal_code: '23655',
         keuchik_title: 'Keuchik Gampong Blang',
         keuchik_name: 'SOFIAN',
         secretary_title: 'Sekretaris Gampong a.n. Keuchik Gampong Blang',
@@ -71,6 +73,8 @@ describe('app settings', () => {
     expect(res.status).toBe(200);
     expect(res.body.contact_phone).toBe('0651-123456');
     expect(res.body.letterhead_line2).toBe('KECAMATAN KRUENG SABEE');
+    expect(res.body.letterhead_address).toBe('Jalan Kantor Baru');
+    expect(res.body.letterhead_postal_code).toBe('23655');
     expect(res.body.secretary_name).toBe('AFZALUL ZIKRI, S.P');
   });
 
@@ -258,10 +262,16 @@ describe('letter number counters', () => {
 
     const l1 = res.body.counters.find((c: { letter_type: string }) => c.letter_type === 'L1');
     expect(l1.last_number).toBe(12);
+    expect(l1.nomor_induk).toBe('400.12.2.1');
+    expect(l1.next_number).toBe('400.12.2.1/13/2026');
 
     // A type with no row yet still appears, at 0, so the dashboard can show all ten.
     const l2 = res.body.counters.find((c: { letter_type: string }) => c.letter_type === 'L2');
     expect(l2.last_number).toBe(0);
+    expect(l2.next_number).toBe('400.10.4.4/01/2026');
+    // Reading the reference must not allocate or change agenda numbers.
+    expect(await testPrisma.letterNumberCounter.count()).toBe(1);
+    expect((await testPrisma.letterNumberCounter.findFirst())?.lastNumber).toBe(12);
   });
 
   it('updates a counter so the next generated letter continues from it', async () => {

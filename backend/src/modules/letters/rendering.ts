@@ -32,6 +32,8 @@ const DEFAULT_LETTERHEAD = {
   line1: 'PEMERINTAH KABUPATEN ACEH JAYA',
   line2: 'KECAMATAN KRUENG SABEE',
   line3: 'GAMPONG BLANG',
+  address: 'Jln. Pendidikan, Lr. Mesjid Al-Istiqamah, Dusun Kuini Gp. Blang',
+  postalCode: '23654',
 };
 
 /** Treats "" like "not set", so a cleared field falls back instead of printing blank. */
@@ -52,6 +54,8 @@ async function resolveBranding(signatoryRole: string) {
       letterheadLine1: true,
       letterheadLine2: true,
       letterheadLine3: true,
+      letterheadAddress: true,
+      letterheadPostalCode: true,
       keuchikTitle: true,
       keuchikName: true,
       secretaryTitle: true,
@@ -72,6 +76,9 @@ async function resolveBranding(signatoryRole: string) {
     letterheadLine1: orDefault(config?.letterheadLine1, DEFAULT_LETTERHEAD.line1),
     letterheadLine2: orDefault(config?.letterheadLine2, DEFAULT_LETTERHEAD.line2),
     letterheadLine3: orDefault(config?.letterheadLine3, DEFAULT_LETTERHEAD.line3),
+    // Null means not configured yet; an explicit empty value hides these optional lines.
+    letterheadAddress: config?.letterheadAddress?.trim() ?? DEFAULT_LETTERHEAD.address,
+    letterheadPostalCode: config?.letterheadPostalCode?.trim() ?? DEFAULT_LETTERHEAD.postalCode,
     signatoryTitle: orDefault(configuredTitle, fallback.title),
     signatoryName: orDefault(configuredName, fallback.name),
   };

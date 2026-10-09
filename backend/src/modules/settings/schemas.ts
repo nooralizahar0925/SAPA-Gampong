@@ -95,6 +95,8 @@ export const AppSettingsResponse = registry.register(
     letterhead_line1: z.string().nullable(),
     letterhead_line2: z.string().nullable(),
     letterhead_line3: z.string().nullable(),
+    letterhead_address: z.string().nullable(),
+    letterhead_postal_code: z.string().nullable(),
     keuchik_title: z.string().nullable(),
     keuchik_name: z.string().nullable(),
     secretary_title: z.string().nullable(),
@@ -112,6 +114,8 @@ export const UpdateAppSettingsBody = registry.register(
     letterhead_line1: z.string().max(200).nullish(),
     letterhead_line2: z.string().max(200).nullish(),
     letterhead_line3: z.string().max(200).nullish(),
+    letterhead_address: z.string().trim().max(300).nullish(),
+    letterhead_postal_code: z.string().trim().max(20).nullish(),
     keuchik_title: z.string().max(200).nullish(),
     keuchik_name: z.string().max(200).nullish(),
     secretary_title: z.string().max(200).nullish(),
@@ -181,6 +185,8 @@ export const LetterCounterEntry = registry.register(
   z.object({
     letter_type: LetterTypeEnum,
     last_number: z.number().int(),
+    nomor_induk: z.string(),
+    next_number: z.string(),
   }),
 );
 

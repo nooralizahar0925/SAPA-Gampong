@@ -1,6 +1,7 @@
 import type { EmailProvider } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../lib/errors';
+import { formatLetterNumber, PREFIX_BY_TYPE } from '../letters/number.service';
 import { getDirectApkReleaseMetadata } from '../../services/app-release.service';
 import {
   EmailService,
@@ -57,6 +58,8 @@ type AppSettingsInput = {
   letterhead_line1?: string | null;
   letterhead_line2?: string | null;
   letterhead_line3?: string | null;
+  letterhead_address?: string | null;
+  letterhead_postal_code?: string | null;
   keuchik_title?: string | null;
   keuchik_name?: string | null;
   secretary_title?: string | null;
@@ -83,6 +86,8 @@ export async function getAppSettings() {
     letterhead_line1: config?.letterheadLine1 ?? null,
     letterhead_line2: config?.letterheadLine2 ?? null,
     letterhead_line3: config?.letterheadLine3 ?? null,
+    letterhead_address: config?.letterheadAddress ?? null,
+    letterhead_postal_code: config?.letterheadPostalCode ?? null,
     keuchik_title: config?.keuchikTitle ?? null,
     keuchik_name: config?.keuchikName ?? null,
     secretary_title: config?.secretaryTitle ?? null,
@@ -99,6 +104,8 @@ export async function updateAppSettings(input: AppSettingsInput) {
     letterheadLine1: input.letterhead_line1,
     letterheadLine2: input.letterhead_line2,
     letterheadLine3: input.letterhead_line3,
+    letterheadAddress: input.letterhead_address,
+    letterheadPostalCode: input.letterhead_postal_code,
     keuchikTitle: input.keuchik_title,
     keuchikName: input.keuchik_name,
     secretaryTitle: input.secretary_title,
@@ -212,6 +219,8 @@ export async function getLetterCounters(year: number) {
     counters: LETTER_TYPES.map((letterType) => ({
       letter_type: letterType,
       last_number: byType.get(letterType) ?? 0,
+      nomor_induk: PREFIX_BY_TYPE[letterType],
+      next_number: formatLetterNumber(letterType, (byType.get(letterType) ?? 0) + 1, year),
     })),
   };
 }

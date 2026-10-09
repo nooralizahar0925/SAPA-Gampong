@@ -66,7 +66,7 @@ describe('POST /api/requests/:id/generate', () => {
       expect(generated.body.pdf_id).toEqual(expect.any(String));
       expect(generated.body.pdf_url).toContain(`/api/uploads/${generated.body.pdf_id}?`);
       expect(generated.body.verification_token).toMatch(/^[a-f0-9]{32}$/);
-      expect(generated.body.nomor_surat).toBe(`400.12.2.1/1/${currentYear}`);
+      expect(generated.body.nomor_surat).toBe(`400.12.2.1/01/${currentYear}`);
 
       const reloaded = await testPrisma.letterRequest.findUnique({
         where: { id: created.id },

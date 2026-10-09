@@ -61,6 +61,44 @@ describe('letter branding from app settings', () => {
     expect(html).not.toContain('SOFIAN');
   });
 
+  it('reads updated address and postal code for every new rendering', async () => {
+    await saveBranding({ letterheadAddress: 'Jalan Baru 10', letterheadPostalCode: '23655' });
+    const first = await renderRequestLetterHtml({ ...BASE_INPUT, letterType: 'L3' });
+    expect(first).toContain('Alamat : Jalan Baru 10');
+    expect(first).toContain('Kode POS. 23655');
+    await saveBranding({ letterheadAddress: 'Alamat terbaru <aman>', letterheadPostalCode: '23656' });
+    const next = await renderRequestLetterHtml({ ...BASE_INPUT, letterType: 'L3' });
+    expect(next).toContain('Alamat : Alamat terbaru &lt;aman&gt;');
+    expect(next).toContain('Kode POS. 23656');
+    expect(next).not.toContain('Jalan Baru 10');
+  });
+
+  it('keeps the sample signature order and copy for all ten letter types', async () => {
+    for (const letterType of ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10']) {
+      const html = await renderRequestLetterHtml({ ...BASE_INPUT, letterType });
+      const place = html.indexOf('class="sign-place"');
+      const title = html.indexOf('class="sign-title"');
+      const qr = html.indexOf('class="qr"');
+      const name = html.indexOf('class="sign-name"');
+      const caption = html.indexOf('class="qr-caption"');
+      expect(place).toBeGreaterThan(0);
+      expect(title).toBeGreaterThan(place);
+      expect(qr).toBeGreaterThan(title);
+      expect(name).toBeGreaterThan(qr);
+      expect(caption).toBeGreaterThan(name);
+      expect(html).toContain('Dokumen ini telah ditandatangani secara elektronik');
+      expect(html).toContain('Pindai QR untuk verifikasi keaslian');
+    }
+  });
+
+  it('supports explicitly hiding address and postal lines', async () => {
+    await saveBranding({ letterheadAddress: '', letterheadPostalCode: '' });
+    const html = await renderRequestLetterHtml({ ...BASE_INPUT, letterType: 'L1' });
+    expect(html).toContain('class="letterhead-address" data-value=""');
+    expect(html).toContain('class="letterhead-postal" data-value=""');
+    expect(html).not.toContain('23654');
+  });
+
   it('prints the secretary for letters the secretary signs', async () => {
     await saveBranding({
       secretaryTitle: 'Sekretaris Gampong a.n. Keuchik Ujong Kalak',

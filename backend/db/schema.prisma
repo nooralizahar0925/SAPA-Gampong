@@ -430,6 +430,8 @@ model AppConfig {
   letterheadLine1 String?
   letterheadLine2 String?
   letterheadLine3 String?
+  letterheadAddress String?
+  letterheadPostalCode String?
 
   // Signatory blocks, previously hardcoded in modules/letters/rendering.ts.
   keuchikTitle     String?

@@ -3576,6 +3576,18 @@
               "null"
             ]
           },
+          "letterhead_address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "letterhead_postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "keuchik_title": {
             "type": [
               "string",
@@ -3614,6 +3626,8 @@
           "letterhead_line1",
           "letterhead_line2",
           "letterhead_line3",
+          "letterhead_address",
+          "letterhead_postal_code",
           "keuchik_title",
           "keuchik_name",
           "secretary_title",
@@ -3665,6 +3679,20 @@
               "null"
             ],
             "maxLength": 200
+          },
+          "letterhead_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          },
+          "letterhead_postal_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20
           },
           "keuchik_title": {
             "type": [
@@ -3857,11 +3885,19 @@
           },
           "last_number": {
             "type": "integer"
+          },
+          "nomor_induk": {
+            "type": "string"
+          },
+          "next_number": {
+            "type": "string"
           }
         },
         "required": [
           "letter_type",
-          "last_number"
+          "last_number",
+          "nomor_induk",
+          "next_number"
         ]
       },
       "LetterCountersResponse": {

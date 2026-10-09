@@ -169,7 +169,7 @@ describe('admin request management', () => {
 
     expect(approved.status).toBe(200);
     expect(approved.body.status).toBe('APPROVED');
-    expect(approved.body.nomor_surat).toBe(`400.12.2.1/1/${currentYear}`);
+    expect(approved.body.nomor_surat).toBe(`400.12.2.1/01/${currentYear}`);
     expect(approved.body.status_history).toHaveLength(2);
     expect(approved.body.status_history[0]).toMatchObject({
       status: 'IN_REVIEW',
@@ -180,7 +180,7 @@ describe('admin request management', () => {
       status: 'APPROVED',
       action: 'approve',
       by: 'Admin Gampong',
-      nomor_surat: `400.12.2.1/1/${currentYear}`,
+      nomor_surat: `400.12.2.1/01/${currentYear}`,
     });
 
     const another = await testPrisma.letterRequest.create({

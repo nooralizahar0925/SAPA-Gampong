@@ -520,6 +520,8 @@ function initialContentState(): {
       letterhead_line1: 'PEMERINTAH KABUPATEN ACEH JAYA',
       letterhead_line2: 'KECAMATAN KRUENG SABEE',
       letterhead_line3: 'GAMPONG BLANG',
+      letterhead_address: 'Jln. Pendidikan, Lr. Mesjid Al-Istiqamah, Dusun Kuini Gp. Blang',
+      letterhead_postal_code: '23654',
       keuchik_title: 'Keuchik Gampong Blang',
       keuchik_name: 'SOFIAN',
       secretary_title: 'Sekretaris Gampong a.n. Keuchik',
@@ -1489,7 +1491,13 @@ export const server = setupServer(
         ? contentState.letterCounters
         : contentState.letterCounters.map((c) => ({ ...c, last_number: 0 }));
 
-    return HttpResponse.json({ year, counters });
+    const prefixes = ['400.12.2.1', '400.10.4.4', '400.10.2.2', '400.10.4.3', '400.1.4.3',
+      '400.12.2.2', '400.12.3.1', '400.10.2.4', '400.12.2.3', '400.10.2.3'];
+    return HttpResponse.json({ year, counters: counters.map((counter) => {
+      const prefix = prefixes[Number(counter.letter_type.slice(1)) - 1];
+      return { ...counter, nomor_induk: prefix,
+        next_number: `${prefix}/${String(counter.last_number + 1).padStart(2, '0')}/${year}` };
+    }) });
   }),
   http.patch('http://localhost:8080/api/settings/letter-counters', async ({ request }) => {
     const body = (await request.json()) as {

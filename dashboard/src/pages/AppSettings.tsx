@@ -13,6 +13,7 @@ import { DashboardFrame } from '../components/DashboardFrame';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { alertApiError, toastSuccess } from '../lib/alerts';
 import { formatSavedAt } from '../lib/format';
+import crestLogo from '../assets/logo.webp';
 
 type SettingsForm = Omit<AppSettings, 'updated_at'>;
 
@@ -23,6 +24,8 @@ const EMPTY_FORM: SettingsForm = {
   letterhead_line1: '',
   letterhead_line2: '',
   letterhead_line3: '',
+  letterhead_address: '',
+  letterhead_postal_code: '',
   keuchik_title: '',
   keuchik_name: '',
   secretary_title: '',
@@ -52,6 +55,11 @@ const LETTERHEAD_FIELDS: FieldSpec[] = [
   { key: 'letterhead_line1', label: 'Baris 1', placeholder: 'PEMERINTAH KABUPATEN ACEH JAYA' },
   { key: 'letterhead_line2', label: 'Baris 2', placeholder: 'KECAMATAN KRUENG SABEE' },
   { key: 'letterhead_line3', label: 'Baris 3', placeholder: 'GAMPONG BLANG' },
+  { key: 'letterhead_address', label: 'Alamat pada kop surat', wide: true,
+    placeholder: 'Jln. Pendidikan, Lr. Mesjid Al-Istiqamah, Dusun Kuini Gp. Blang',
+    hint: 'Khusus kop surat, terpisah dari alamat kontak aplikasi. Kosongkan untuk menyembunyikan.' },
+  { key: 'letterhead_postal_code', label: 'Kode pos pada kop surat', placeholder: '23654',
+    hint: 'Kosongkan untuk menyembunyikan baris kode pos.' },
 ];
 
 const SIGNATORY_FIELDS: FieldSpec[] = [
@@ -114,6 +122,8 @@ export function AppSettingsPage() {
       letterhead_line1: data.letterhead_line1 ?? '',
       letterhead_line2: data.letterhead_line2 ?? '',
       letterhead_line3: data.letterhead_line3 ?? '',
+      letterhead_address: data.letterhead_address ?? 'Jln. Pendidikan, Lr. Mesjid Al-Istiqamah, Dusun Kuini Gp. Blang',
+      letterhead_postal_code: data.letterhead_postal_code ?? '23654',
       keuchik_title: data.keuchik_title ?? '',
       keuchik_name: data.keuchik_name ?? '',
       secretary_title: data.secretary_title ?? '',
@@ -191,9 +201,11 @@ export function AppSettingsPage() {
     ));
   }
 
-  const letterheadLines = [form.letterhead_line1, form.letterhead_line2, form.letterhead_line3]
-    .map((line) => line?.trim())
-    .filter(Boolean) as string[];
+  const letterheadLines = [
+    form.letterhead_line1?.trim() || 'PEMERINTAH KABUPATEN ACEH JAYA',
+    form.letterhead_line2?.trim() || 'KECAMATAN KRUENG SABEE',
+    form.letterhead_line3?.trim() || 'GAMPONG BLANG',
+  ];
 
   const changedCounters = [...countersDirty];
 
@@ -248,7 +260,7 @@ export function AppSettingsPage() {
           <section className="detail-card">
             <div className="detail-card-head">
               <h2>Kop Surat</h2>
-              <small className="detail-card-note">Tiga baris di atas badan surat.</small>
+              <small className="detail-card-note">Mengikuti contoh surat desa. Perubahan tersimpan dipakai pada pratinjau dan PDF baru; PDF yang sudah dibuat tidak berubah otomatis.</small>
             </div>
             <div className="content-form-grid">{renderFields(LETTERHEAD_FIELDS)}</div>
           </section>
@@ -360,6 +372,9 @@ export function AppSettingsPage() {
             </div>
             <div className="content-aside-body">
               <div className="letterhead-preview">
+                <div className="letterhead-preview-main">
+                <img src={crestLogo} alt="Logo Kabupaten Aceh Jaya" />
+                <div>
                 {letterheadLines.length > 0 ? (
                   letterheadLines.map((line, index) => (
                     <p key={index} className={index === letterheadLines.length - 1 ? 'strong' : ''}>
@@ -369,13 +384,11 @@ export function AppSettingsPage() {
                 ) : (
                   <p className="muted">Isi baris kop surat untuk melihat pratinjau.</p>
                 )}
+                {form.letterhead_address?.trim() ? <small>Alamat : {form.letterhead_address}</small> : null}
+                </div>
+                </div>
+                {form.letterhead_postal_code?.trim() ? <small className="letterhead-preview-postal">Kode POS. {form.letterhead_postal_code}</small> : null}
                 <span className="letterhead-rule" />
-                {form.contact_address ? <small>{form.contact_address}</small> : null}
-                {form.contact_phone || form.contact_email ? (
-                  <small>
-                    {[form.contact_phone, form.contact_email].filter(Boolean).join(' · ')}
-                  </small>
-                ) : null}
               </div>
             </div>
           </section>

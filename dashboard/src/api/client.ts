@@ -950,6 +950,8 @@ export type AppSettings = {
   letterhead_line1: string | null;
   letterhead_line2: string | null;
   letterhead_line3: string | null;
+  letterhead_address: string | null;
+  letterhead_postal_code: string | null;
   keuchik_title: string | null;
   keuchik_name: string | null;
   secretary_title: string | null;
@@ -975,6 +977,8 @@ export type AppDistribution = {
 export type LetterCounterEntry = {
   letter_type: LetterTypeCode;
   last_number: number;
+  nomor_induk: string;
+  next_number: string;
 };
 
 export type LetterCountersResponse = {

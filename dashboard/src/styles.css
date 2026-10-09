@@ -5710,3 +5710,20 @@ select.field-input:focus {
     flex: 1 1 140px;
   }
 }
+:root .letter-settings-tabs { margin-top: -8px; }
+.letter-number-reference .detail-card-head { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+.letter-number-reference .detail-card-head p { margin: 8px 0 0; color: var(--muted, #64748b); }
+.letter-number-guide { padding: 20px; margin: 0 0 24px; border-radius: 12px; background: #f0f7f4; line-height: 1.6; }
+.letter-number-guide p { margin: 8px 0 0; }
+.letter-number-table-wrap { overflow-x: auto; }
+.letter-number-table { width: 100%; border-collapse: collapse; text-align: left; }
+.letter-number-table th, .letter-number-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; }
+.letter-number-table thead th { background: #f8fafc; font-size: 13px; white-space: nowrap; }
+.letter-number-table tbody th { font-weight: 500; min-width: 230px; }
+.letter-number-table code { white-space: nowrap; font-size: 13px; }
+
+.letterhead-preview-main { display: flex; align-items: center; gap: 12px; }
+.letterhead-preview-main img { width: 44px; height: 56px; object-fit: contain; flex-shrink: 0; }
+.letterhead-preview-main > div { flex: 1; min-width: 0; }
+.letterhead-preview-main p { overflow-wrap: anywhere; }
+.letterhead-preview-postal { text-align: right; font-weight: 700; }

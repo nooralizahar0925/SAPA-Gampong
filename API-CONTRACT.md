@@ -24,13 +24,15 @@ Codes: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_F
 | `L1` | Surat Keterangan Berdomisili | `400.12.2.1` | Keuchik | Yes |
 | `L2` | Surat Keterangan Domisili Kantor | `400.10.4.4` | Keuchik | No (an office/business) |
 | `L3` | Surat Keterangan Kehilangan | `400.10.2.2` | Keuchik | Yes (reporter) |
-| `L4` | Surat Keterangan Miskin (SKTM) | `400.10.4.4` | Keuchik | Yes |
+| `L4` | Surat Keterangan Miskin (SKTM) | `400.10.4.3` | Keuchik | Yes |
 | `L5` | Surat Keterangan Usaha | `400.1.4.3` | Keuchik | Yes |
-| `L6` | Surat Keterangan Yatim/Piatu | `400.12.2.1` | Keuchik | No (a child) |
-| `L7` | Surat Keterangan Kematian | `400.12.2.1` | Keuchik | No (the deceased) |
-| `L8` | Surat Keterangan Berkelakuan Baik | `400.10.2.2` | Keuchik | Yes |
-| `L9` | Surat Keterangan Belum Menikah | `400.12.2.1` | **Sekretaris Gampong, a.n. Keuchik** | Yes |
-| `L10` | Surat Rekomendasi | `400.10.2.2` | Keuchik | Yes (see note) |
+| `L6` | Surat Keterangan Yatim/Piatu | `400.12.2.2` | Keuchik | No (a child) |
+| `L7` | Surat Keterangan Kematian | `400.12.3.1` | Keuchik | No (the deceased) |
+| `L8` | Surat Keterangan Berkelakuan Baik | `400.10.2.4` | Keuchik | Yes |
+| `L9` | Surat Keterangan Belum Menikah | `400.12.2.3` | **Sekretaris Gampong, a.n. Keuchik** | Yes |
+| `L10` | Surat Rekomendasi | `400.10.2.3` | Keuchik | Yes (see note) |
+
+Nomor Induk follows the supplied `NOMOR SURAT (1).pdf` (2026-10-09). New letter numbers use `<prefix>/<agenda>/<year>`, with agenda padded to at least two digits (`01`, `02`, …, `100`). Counters remain separate per type and year; previously issued numbers are preserved.
 
 Brief §6 specifies only `L1`–`L7`; `L8`–`L10` were derived from their `.docx` templates on 2026-07-20 after the template count was reconciled (10 files, not 7). Two consequences for implementers:
 
@@ -321,6 +323,20 @@ Rules:
 - The response payload matches `GET /settings/email-provider`.
 
 ---
+
+## 9. Letter-number reference and editable letterhead (admin)
+
+### `GET /settings/letter-counters?year=2026`
+
+Each existing counter entry additionally includes `nomor_induk` (the category prefix above) and `next_number` (a formatted example for `last_number + 1`). Reading this endpoint never reserves or increments an agenda number. The dashboard displays these fields in Pengaturan Surat → Nomor Induk Surat. PATCH counter responses include the same additional fields.
+
+### `GET /settings/app` and `PATCH /settings/app`
+
+Additional nullable fields:
+- `letterhead_address`: trimmed text, maximum 300 characters; independent of the office contact address.
+- `letterhead_postal_code`: trimmed text, maximum 20 characters.
+
+Null uses the village defaults; an explicit empty string hides the optional address/postal line in newly rendered letters. These fields supplement the existing editable government, district, and village headings. Rendering reads the latest saved configuration and escapes its text. Existing stored PDF files are not automatically regenerated. Database migration `20261009100000_letterhead_address` is required before deploying this version.
 
 ## Notes for both teams
 - Reference codes are user-facing (`GB-<year>-<seq>`); `id`s are opaque internal ids.
